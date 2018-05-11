@@ -739,7 +739,8 @@ int main(int argc, char** argv)
       ROS_INFO("Controller started in Standalone mode");
     }
 
-    ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback);
+    ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1, PhaseSpaceCallback);
+    //ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback);
     //ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback);
     //ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback,ros::TransportHints().tcpNoDelay(true));
   

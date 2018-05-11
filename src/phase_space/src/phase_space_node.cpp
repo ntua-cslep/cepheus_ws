@@ -91,7 +91,7 @@ class PhaseSpaceClient
         // activate tracker
         owlTracker(tracker_, OWL_ENABLE);
 
-	owlSetInteger(OWL_COMMDATA, OWL_ENABLE) ;
+	//owlSetInteger(OWL_COMMDATA, OWL_ENABLE) ;
 
         // flush requests and check for errors
         if(!owlGetStatus())
@@ -108,7 +108,7 @@ class PhaseSpaceClient
 	//----Panagiotis Mavridis 03/05/2018-------
  
 	// Enable Timestamps
-
+        owlSetInteger(OWL_TIMESTAMP, OWL_ENABLE) ;
 	//----------------------------------------
 	
 
