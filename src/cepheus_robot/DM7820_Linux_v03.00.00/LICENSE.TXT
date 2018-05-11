@@ -1,0 +1,125 @@
+
+RTD END-USER LICENSE AGREEMENT
+
+IMPORTANT - REVIEW THE FOLLOWING TERMS AND CONDITIONS CAREFULLY BEFORE
+INSTALLING OR USING THE SOFTWARE PROVIDED TO YOU ON COMPACT DISC, VIA WEB OR
+FTP SITE, OR ON ANOTHER MEDIUM OR THROUGH ANOTHER DELIVERY MECHANISM.
+
+BY DOWNLOADING, COPYING, INSTALLING, OR USING THIS SOFTWARE OF RTD EMBEDDED
+TECHNOLOGIES, ITS SUBSIDIARIES, AND ITS SUPPLIERS (RTD), YOU (LICENSEE) ARE 
+AGREEING TO BE BOUND BY THE TERMS AND CONDITIONS OF THIS LICENSE AGREEMENT.  
+DO NOT DOWNLOAD, COPY, INSTALL, OR USE THIS SOFTWARE UNTIL YOU HAVE CAREFULLY
+READ AND AGREED TO THE FOLLOWING TERMS AND CONDITIONS.  IF YOU DO NOT AGREE TO
+THE TERMS AND CONDITIONS OF THIS AGREEMENT, DO NOT DOWNLOAD, COPY, INSTALL, OR
+USE THIS SOFTWARE; IF YOU HAVE RECEIVED A COPY ON COMPACT DISC OR ANOTHER 
+MEDIUM, PLEASE PROMPTLY RETURN THE SOFTWARE UNUSED TO RTD.
+
+1. RTD Definition:  RTD means RTD Embedded Technologies, Inc. (formerly known
+as Real Time Devices USA, Inc.), its subsidiaries, and its Suppliers.
+
+2. Software Definition:  Software means any of the Software provided under
+this Agreement on compact disc, via a web or FTP site, or on another medium,
+or through another delivery mechanism to include SOURCE CODE, SOFTWARE AND
+FUNCTION LIBRARIES, EXAMPLE PROGRAMS, TEST PROGRAMS AND APPLICATIONS, and USER
+MANUALS AND DOCUMENTATION.
+
+3. Ownership and Copyright of Software: Title to the Software and all copies
+thereof remain with RTD.  The Software is copyrighted and is protected by
+United States copyright laws and international treaty provisions.  You will
+not remove the copyright notice from the Software. You agree to prevent any
+unauthorized copying of the Software.
+
+4. License:  RTD grants the Licensee the right to use this Software under the
+following conditions
+
+    a. NO PART OF THE COMPILED SOFTWARE OR SOURCE CODE MAY BE USED OR ADAPTED
+    TO SUPPORT OR WORK ON ANY DEVICE OR BOARD NOT ORIGINALLY MANUFACTURED AND
+    SUPPLIED BY RTD.
+
+    b. Ready compiled programs must carry the name of RTD Embedded
+    Technologies.  This information may not be modified in the case of
+    recompilation.
+
+    c. All Source Code, original or modified, must carry a complete
+    description of the original source and holder of rights of the source
+    code.
+
+    d. This condition of use description must follow with the Software package
+    if it is delivered with a product.
+
+5. Limitations on Reverse Engineering, Decompilation, and Disassembly: You may
+not reverse engineer, decompile, or disassemble the Licensed Software.
+
+6. Termination: Without prejudice to any other rights, RTD may terminate this
+Agreement if you fail to comply with the terms and conditions of this
+Agreement. In such event, you must destroy all copies of the Licensed Software
+and all of its component parts.
+
+7. Disclaimer On Warranties: To the maximum extent permitted by applicable
+law, RTD provides the Software and any (if any) support services related to
+the Software ("Support Services") AS IS AND WITH ALL FAULTS, and hereby
+disclaim all warranties and conditions, either express, implied or statutory,
+including, but not limited to, any (if any) implied warranties or conditions
+of merchantability, of fitness for a particular purpose, of lack of viruses,
+of accuracy or completeness of responses, of results, and of lack of
+negligence or lack of workmanlike effort, all with regard to the Software, and
+the provision of or failure to provide Support Services. ALSO, THERE IS NO
+WARRANTY OR CONDITION OF TITLE, QUIET ENJOYMENT, QUIET POSSESSION,
+CORRESPONDENCE TO DESCRIPTION OR NON-INFRINGEMENT, WITH REGARD TO THE PRODUCT.
+THE ENTIRE RISK AS TO THE QUALITY OF OR ARISING OUT OF USE OR PERFORMANCE OF
+THE SOFTWARE AND SUPPORT SERVICES, IF ANY, REMAINS WITH THE LICENSEE.
+
+No oral or written advice or information given by RTD shall create a warranty
+of any kind or increase in any way the limited warranty, and the customer may
+not rely on any such information or advice.
+
+8. Limitation of Liability. To the maximum extent permitted by applicable law,
+in no event shall RTD, its subsidiaries, or its suppliers be liable for any
+special, incidental, indirect, or consequential damages whatsoever (including,
+but not limited to, damages for loss of profits or confidential or other
+information, for business interruption, for personal injury, for loss of
+privacy, for failure to meet any duty including of good faith or of reasonable
+care, for negligence, and for any other pecuniary or other loss whatsoever)
+arising out of or in any way related to the use of or inability to use the
+Software, the provision of or failure to provide Support Services, or
+otherwise under or in connection with any provision of License Agreement, and
+even if RTD, its subsidiaries, or its suppliers has been advised of the
+possibility of such damages.
+
+9. Audit:  RTD reserves the right to conduct or have conducted audits to
+verify your compliance with this License Agreement.
+
+10. U.S. Government Export Restrictions:  The Licensee acknowledges that this
+Software may be subject to the export control laws and regulations of the
+United State, and any amendments thereof.  The Licensee is responsible for
+complying with all trade regulations and laws both foreign and domestic.  The
+Licensee acknowledges that none of the Software or underling information or
+technology may be downloaded or otherwise exported or re- exported (i) into
+(or to a national or resident of) any country subject to a U.S. embargo; (ii)
+to anyone on the U.S. Treasury Department’s list of Specially Designated
+Nationals or the U.S. Commerce Department’s Denied Parties List or Entity
+List; or (iii) to any one you know or have reason to know will utilize this
+Software in the development or production of nuclear, chemical, or biological
+weapons.  By downloading the Software from a compact disc, via a web or FTP
+site, or on another medium or through another delivery mechanism you are
+agreeing to the foregoing and are representing and warranting that (i) no U.S.
+federal agency has suspended, revoked, or denied you export privileges, (ii)
+you are not located in or under the control of a national or resident of any
+such country or on any such list, and (iii) you will not export or re-export
+the Software to any prohibited country, or to any prohibited person, entity,
+or end-user as specified by U.S. or other Government export controls.  You
+further acknowledge that the Software may include technical data subject to
+export and re-export restrictions imposed by United States law.  You shall, at
+your own expense, obtain and arrange for the maintenance in full force and
+effect of all governmental approvals, consents, licenses, authorizations,
+declarations, filings, and registrations as may be necessary or advisable for
+the performance of all of the terms and conditions of the Agreement, including
+but not limited to, foreign exchange approvals, import and offer agent
+licenses, fair trade approvals and all approvals which may be required to
+realize the purpose of the Agreement.
+
+11. Applicable Laws:  Any litigation arising under or relating to this License
+Agreement shall be brought and jurisdiction and venue shall be proper only in
+a state or federal district court in RTD’s choice of County.
+
+

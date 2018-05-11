@@ -1,0 +1,417 @@
+<?xml version="1.0"?>
+<robot name="cepheus">
+
+<material name="LightGrey">
+  <color rgba="0.6 0.6 0.6 1.0"/>
+</material>
+ 
+<link
+    name="cepheus">
+    <inertial>
+      <origin
+        xyz="0.0024 0.02937 0.15711"
+        rpy="0 0 0" />
+      <mass
+        value="7.11891369052411" />
+      <inertia
+        ixx="0.0937165866660239"
+        ixy="-0.004838152027527"
+        ixz="-0.00397891305009112"
+        iyy="0.0905199286322999"
+        iyz="-0.00257712868335304"
+        izz="0.0755866683160163" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/cepheus.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0.215"
+        rpy="0 0 0" />
+      <geometry>
+         <cylinder length="0.43" radius="0.2"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="reaction_wheel">
+    <visual>
+      <material name="silver"> <color rgba="0.5 0.5 0.5 1"/> </material>
+		<geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/reaction_wheel.STL" />
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="reaction_wheel_joint" type="continuous">
+    <parent link="cepheus"/>
+    <child link="reaction_wheel"/>
+    <origin xyz="0.065 0 0.03815" rpy="0 0 0"/>
+    <axis xyz="0 0 1" /> 
+    <!--limit effort="0.22" velocity="200.5"/-->
+  </joint>
+
+
+  <link
+    name="left_arm">
+    <inertial>
+      <origin
+        xyz="0.10516 0.00268 0.00996"
+        rpy="0 0 0" />
+      <mass
+        value="0.07974" />
+      <inertia
+        ixx="0.0971318625270812"
+        ixy="0.00469370636895255"
+        ixz="-0.000908920687249813"
+        iyy="0.0755866683160163"
+        iyz="0.000665178045940108"
+        izz="0.0871046527712426" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 -0.0085 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/left_arm.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual>
+    <collision>
+      <origin
+        xyz="0.08 0.0 0.01"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.13 0.02 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="left_shoulder"
+    type="revolute">
+    <origin
+      xyz="0.17271 0.091404 0.05875"
+      rpy="0 0 0" />
+    <parent
+      link="cepheus" />
+    <child
+      link="left_arm" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-0.86"
+      upper="2.54"
+      effort="20"
+      velocity="20" />
+    <calibration
+      rising="5"/>
+    <dynamics
+      damping="1"
+      friction="1" />
+    <safety_controller
+      soft_upper="5"
+      soft_lower="-5"
+      k_position="1"
+      k_velocity="2" />
+  </joint>
+
+	<!--transmission name="left_hand_four_link_trans">
+	  <type>transmission_interface/FourBarLinkageTransmission</type>
+	  <joint name="left_shoulder">
+	    <hardwareInterface>EffortJointInterface</hardwareInterface>
+	  </joint>
+	  <joint name="left_elbow">
+	    <hardwareInterface>EffortJointInterface</hardwareInterface>
+	  </joint>
+	  <actuator name="left_shoulder_motor">
+	    <mechanicalReduction>190.109375</mechanicalReduction>
+	    <hardwareInterface>EffortJointInterface</hardwareInterface>
+	  </actuator>
+	  <actuator name="left_elbow_motor">
+	    <mechanicalReduction>190.109375</mechanicalReduction>
+	    <hardwareInterface>EffortJointInterface</hardwareInterface>
+	  </actuator>
+	</transmission-->
+
+  <link
+    name="left_forearm">
+    <inertial>
+      <origin
+        xyz="0.06831 0.00878 0.01558"
+        rpy="0 0 0" />
+      <mass
+        value="0.06392" />
+      <inertia
+        ixx="0.0899469386204598"
+        ixy="0.00233152849604969"
+        ixz="-0.00460952756399212"
+        iyy="0.0755866683160163"
+        iyz="0.00412762839689509"
+        izz="0.0942895766778639" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/left_forearm.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual>
+    <collision>
+      <origin
+        xyz="0.105 0.0115 0.0125"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.13 0.025 0.025"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="left_elbow"
+    type="revolute">
+    <origin
+      xyz="0.18120 -0.01176 -0.002"
+      rpy="0 0 0" />
+    <parent
+      link="left_arm" />
+    <child
+      link="left_forearm" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3.14"
+      upper="1.5"
+      effort="2"
+      velocity="20" />
+    <!--calibration
+      rising="5"
+      falling="-5" />
+    <dynamics
+      damping="1"
+      friction="1" />
+    <safety_controller
+      soft_upper="5"
+      soft_lower="-5"
+      k_position="1"
+      k_velocity="1" /-->
+  </joint>
+
+  <link
+    name="left_grip">
+    <inertial>
+      <origin
+        xyz="0.01947 -0.00226 -0.00228"
+        rpy="0 0 0" />
+      <mass
+        value="0.03547" />
+      <inertia
+        ixx="0.0926325136613974"
+        ixy="-0.00333421740190982"
+        ixz="0.00529966557344093"
+        iyy="0.0752633235560557"
+        iyz="0.00191940596202769"
+        izz="0.0919273463968869" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/left_grip.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual>
+    <collision>
+      <origin
+        xyz="0.0375 0 0.022"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.085 0.07 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="left_wrist"
+    type="revolute">
+    <origin
+      xyz="0.15965 0.01176 -0.00838"
+      rpy="0 0 0 " />
+    <parent
+      link="left_forearm" />
+    <child
+      link="left_grip" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.570796327"
+      upper="1.570796327"
+      effort="1"
+      velocity="10" />
+    <!--calibration
+      rising="-5"
+      falling="5" />
+    <dynamics
+      damping="1"
+      friction="1" />
+    <safety_controller
+      soft_upper="5"
+      soft_lower="-5"
+      k_position="1"
+      k_velocity="1" /-->
+  </joint>
+
+  <link name="left_finger">
+    <visual>
+      <geometry>
+        <box size="0.09 .05 .03"/>
+      </geometry>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <mass value="0.15"/>
+      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.02"/>
+    </inertial>
+  </link>
+
+  <joint
+    name="left_finger_joint"
+    type="revolute">
+    <origin
+      xyz="0.15965 0.01176 -0.00838"
+      rpy="0 0 0 " />
+    <parent
+      link="left_grip" />
+    <child
+      link="left_finger" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1"
+      upper="1.35"
+      effort="1"
+      velocity="10" />
+  </joint>
+
+  <!--link name="right_mouse">
+    <visual>
+      <geometry>
+        <box size="0.09 .05 .03"/>
+      </geometry>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <mass value="15"/>
+      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.02"/>
+    </inertial>
+  </link>
+
+  <link name="left_mouse">
+    <visual>
+      <geometry>
+        <box size="0.09 .05 .03"/>
+      </geometry>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <mass value="15"/>
+      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.02"/>
+    </inertial>
+  </link-->
+
+  <!--link name="T1">
+    <visual>
+      <material name="thruster"> <color rgba="0 0 0.5 1"/> </material>
+      <geometry>
+        <cylinder length="0.05" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.004" ixy="0.0" ixz="0.0" iyy="0.004" iyz="0.0" izz="0.002"/>
+    </inertial>
+  </link>
+
+  <link name="T2">
+    <visual>
+      <material name="thruster"> <color rgba="0 0 0.5 1"/> </material>
+      <geometry>
+        <cylinder length="0.05" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.004" ixy="0.0" ixz="0.0" iyy="0.004" iyz="0.0" izz="0.002"/>
+    </inertial>
+  </link>
+
+  <link name="T3">
+    <visual>
+      <material name="thruster"> <color rgba="0 0 0.5 1"/> </material>
+      <geometry>
+        <cylinder length="0.05" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    </visual>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.004" ixy="0.0" ixz="0.0" iyy="0.004" iyz="0.0" izz="0.002"/>
+    </inertial>
+  </link-->
+
+  <!--joint name="r_odom" type="fixed">
+    <parent link="cepheus"/>
+    <child link="right_mouse"/>
+    <origin xyz="0 -0.1 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="l_odom" type="fixed">
+    <parent link="cepheus"/>
+    <child link="left_mouse"/>
+    <origin xyz="0 0.1 0" rpy="0 0 0"/>
+  </joint>
+
+
+
+  <joint name="j_T1" type="fixed">
+    <parent link="cepheus"/>
+    <child link="T1"/>
+    <origin xyz="-0.085 0.147224319 0.23" rpy="0 0 0.523598776"/>
+  </joint>
+
+  <joint name="j_T2" type="fixed">
+    <parent link="cepheus"/>
+    <child link="T2"/>
+    <origin xyz="0.17 0 0.23" rpy="0 0 -1.570796327"/>
+  </joint>
+
+  <joint name="j_T3" type="fixed">
+    <parent link="cepheus"/>
+    <child link="T3"/>
+    <origin xyz="-0.085 -0.147224319 0.23" rpy="0 0 -0.523598776"/>
+  </joint-->
+  
+</robot>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="granite">
+ 
+
+  <link name="map">
+    <visual>
+      <material name="black"> <color rgba="0.2 0.2 0.2 1"/> </material>
+      <geometry>
+        <box size="1.8 2.2 0.4"/>
+      </geometry>
+      <origin xyz="0.85 1.05 -0.2" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  
+</robot>

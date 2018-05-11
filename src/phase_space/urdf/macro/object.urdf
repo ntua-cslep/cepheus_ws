@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find phase_space)/urdf/macro/materials.urdf"/>
+
+  <macro name="object" params="name parent color">
+  
+    <joint name="${parent}_${name}_joint" type="floating">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+    </joint>
+
+    <link name="${name}">
+      <visual>
+        <geometry>
+         <mesh filename="package://phase_space/urdf/mesh/${name}.stl"/>
+        </geometry>
+        <material name="${color}" />
+      </visual>
+    </link>
+    
+  </macro>
+
+</robot>

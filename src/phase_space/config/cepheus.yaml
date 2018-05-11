@@ -1,0 +1,12 @@
+cepheus_leds:
+  - id: 0
+    position: [0.099, 0.099, 0.43]
+  - id: 1
+    position: [-0.099, 0.099, 0.43]
+  - id: 2
+    position: [-0.140, 0.0, 0.43]
+  - id: 3
+    position: [-0.099, -0.099, 0.43]
+  - id: 4
+    position: [0.099, -0.099, 0.43]
+    

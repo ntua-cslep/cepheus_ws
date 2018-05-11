@@ -1,0 +1,7 @@
+gripper_leds:
+  - id: 0
+    position: [0.0, 0.0, 0.01]
+  - id: 1
+    position: [-0.124, 0.0, 0.01]
+  - id: 2
+    position: [-0.124, -0.085, 0.01]

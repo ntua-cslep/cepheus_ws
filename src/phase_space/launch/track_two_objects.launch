@@ -1,0 +1,71 @@
+<launch>
+
+   <!-- SprGrf addition - if we launch this file solo, not from the harware.launch, there was not a parameter description to appear in Rviz --> 
+   <param name="robot_description" command="cat $(find cepheus_robot)/model/cepheus.urdf" />   
+   <param name="robot_description2" command="cat $(find cepheus_robot)/model/assist_robot.urdf" />   
+
+
+  <!-- select the object by name -->
+<!--   <arg name="object" default="cepheus" />
+ -->
+    <arg name="object" default="cepheus" />
+    <arg name="object2" default="assist_robot" />
+
+
+
+  <!-- decide wether to visualize the object or not -->
+  <arg name="turn_rviz_on" default="true" />
+  <arg name="turn_phase_space_on" default="true" />
+
+  <!-- DO NOT EDIT BELOW, EVERYTHING IS HANDLED AUTOMATICALLY IF YOU FOLLOW THE INSTRUCTIONS GIVEN IN THE README -->
+
+  <rosparam command="load" file="$(find phase_space)/config/$(arg object).yaml" />
+
+    <rosparam command="load" file="$(find phase_space)/config/$(arg object2).yaml" />
+
+
+<!--   <node name="track_$(arg object)" pkg="phase_space" type="track_body_node" output="screen">
+    <param name="reference_frame" value="/map" />
+    <param name="object_frame" value="$(arg object)"/>
+  </node> -->
+
+    <node name="track_$(arg object)" pkg="phase_space" type="track_body_node" output="screen">
+    <param name="reference_frame" value="/map" />
+    <param name="object_frame" value="$(arg object)"/>
+  </node>
+
+    <node name="track_$(arg object2)" pkg="phase_space" type="track_body_node" output="screen">
+    <param name="reference_frame" value="/map" />
+    <param name="object_frame" value="$(arg object2)"/>
+  </node>
+
+<node pkg="robot_state_publisher" type="state_publisher" name="rob2_st_pub" >
+	<remap from="robot_description" to="robot_description2" />
+	<param name="publish_frequency" value="100"/>
+</node>
+
+  <group ns="$(arg object)">
+
+    <!-- load the urdf file of your object -->
+    <!--arg name="model" default="$(find phase_space)/urdf/object.urdf.xacro"/-->
+    <!--param name="robot_description" command="$(find xacro)/xacro.py $(arg model) object:=$(arg object)"/-->
+
+  </group>
+
+
+    <group ns="$(arg object2)">
+
+    <!-- load the urdf file of your object -->
+    <!--arg name="model" default="$(find phase_space)/urdf/object.urdf.xacro"/-->
+    <!--param name="robot_description" command="$(find xacro)/xacro.py $(arg model) object:=$(arg object)"/-->
+
+  </group>
+
+ <group if="$(arg turn_phase_space_on)">
+  <!-- and launch the phase space client -->
+ <include file="$(find phase_space)/launch/phase_space.launch">
+    <arg name="turn_rviz_on" value="$(arg turn_rviz_on)" />
+  </include>
+</group>
+
+</launch>

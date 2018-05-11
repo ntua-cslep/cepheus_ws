@@ -1,0 +1,15 @@
+# Things to track followed by their properties
+camera_servo_robot_list:
+  [
+    "cepheus",
+    "target"
+  ]
+
+camera_servo_params:
+  cepheus:
+    "camera_id": 11
+    "link_frame": "cepheus"
+
+  target:
+    "camera_id": 12
+    "link_frame": "target_robot"

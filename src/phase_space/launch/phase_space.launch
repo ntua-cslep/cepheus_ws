@@ -1,0 +1,17 @@
+<launch>
+	
+	<arg name="turn_rviz_on" default="True" />
+
+	<node name="phase_space_node" pkg="phase_space" type="phase_space_node">
+		<param name="ip" value="192.168.1.18" />
+		<param name="init_flags" value="0" />
+		<param name="marker_count" value="72" />
+	</node>
+
+	<group if="$(arg turn_rviz_on)">
+  		<node name="phase_space_rviz" pkg="phase_space" type="phase_space_rviz_publisher" />
+  		<!-- load a customized rviz -->
+		<node name="$(anon rviz)" launch-prefix="" pkg="rviz" type="rviz" respawn="false" args="-d $(find phase_space)/launch/rviz.rviz" output="screen"/>
+	</group>
+
+</launch>

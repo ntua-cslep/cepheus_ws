@@ -1,0 +1,12 @@
+<launch>
+	<node name="assist_board" pkg="marker" type="assist_board" output="screen">
+		<param name="board" value="/home/cepheus/catkin_ws/src/marker/markers/assist_board_meters.txt"/>
+		<param name="dictionary" value="/home/cepheus/catkin_ws/src/marker/markers/assist_dictionary.yml"/>
+		<param name="camera" value="/home/cepheus/catkin_ws/src/marker/calib/xs_1280_720_noAF.yml"/>
+		<param name="th0" value="25"/>
+		<param name="th1" value="23"/>
+		<param name="marker_max_size" value="0.8"/>
+		<param name="marker_min_size" value="0.002"/>
+		<param name="image" value="/camera/image_raw/"/>
+	</node>
+</launch>

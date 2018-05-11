@@ -1,0 +1,13 @@
+controller_list:
+  - name: "left_manipulator_trajectory_controller"
+    action_ns: action_ns
+    type: FollowJointTrajectory
+    joints:
+      - left_shoulder
+      - left_elbow
+      - left_wrist
+
+  - name: "left_gripper_controller"
+    type: GripperCommand
+    joints:
+      - left_finger_joint

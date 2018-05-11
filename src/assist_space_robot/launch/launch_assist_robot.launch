@@ -1,0 +1,21 @@
+<launch>
+        <param name="assist_robot_description" command="cat $(find assist_robot)/model/assist_robot.urdf" />   
+
+        <param name="granite_description" command="cat $(find assist_robot)/model/granite.urdf" /> 
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+                <!--param name="tf_prefix" value="servicer" /-->
+                <!--param name="publish_frequency" value="50" -->
+                <remap from="robot_description" to="assist_robot_description"/>
+        </node>  
+        
+        <!--node name="mouse_odom_publisher" pkg="assist_robot" type="mouse_odom_node" output="screen">
+                <param name="left_dev_event" value="/dev/input/by-path/pci-0000:00:1f.5-usb-0:4.3:1.0-event-mouse"/>
+                <param name="right_dev_event" value="/dev/input/by-path/pci-0000:00:1f.5-usb-0:4.4:1.0-event-mouse"/>
+        </node-->
+        
+        <!--node name="camera_odom_publisher" pkg="assist_robot" type="camera_odom_node" output="screen">
+                <param name="robot_id" value="12" />
+                <param name="udp_port" value="25000" />
+        </node-->
+</launch>

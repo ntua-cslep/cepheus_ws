@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+	<node pkg="botasys_force_torque_sensor" type="botasys_force_torque_sensor_node"  name="cepheus_force_torque_sensor_node">
+		<rosparam command="load" file="$(find botasys_force_torque_sensor)/config/offset.yaml"/>
+		<param name="port" value="/dev/ttyUSB0" />
+		<param name="frame_id" value="probe_ft_sensor" />
+	</node>
+	
+	<node pkg="botasys_force_torque_sensor" type="botasys_force_torque_sensor_low_pass_filter" name="botasys_force_torque_sensor_low_pass_filter" />
+<!-- 
+	node pkg="rqt_plot" type="rqt_plot" name="raw" 
+		args="/botasys/wrench/force/x:y:z /botasys/wrench/torque/x:y:z" /> -->
+<!-- 	<node pkg="rqt_plot" type="rqt_plot" name="filtered" 
+		args="/filtered_botasys/wrench/force/x:y:z /filtered_botasys/wrench/torque/x:y:z" />
+	<node pkg="rviz" type="rviz" name="rviz" 
+		args=" -d $(find botasys_force_torque_sensor)/config/settings.rviz" /> -->
+</launch>

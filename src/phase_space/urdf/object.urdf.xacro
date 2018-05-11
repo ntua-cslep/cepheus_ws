@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg object)">
+
+  <xacro:include filename="$(find phase_space)/urdf/macro/object.urdf"/>
+  
+  <link name="phase_space_world"/>
+
+  <xacro:object name="$(arg object)" parent="phase_space_world" color="PhaseSpace/SickBlue">
+  </xacro:object>
+
+</robot>

@@ -1,0 +1,122 @@
+Change log for SWP-700010101 rev D
+
+Linux Software (DM7820/DM9820)
+
+Copyright (C) RTD Embedded Technologies, Inc.  All Rights Reserved.
+
+
+
+v01.00.00 (rev A)   08/30/2007  WJT
+-----------------------------------
+
+- Initial version
+
+
+
+v01.00.01 (rev B)   01/04/2009  WJT
+-----------------------------------
+
+- Fixed a kernel 2.6.24 kernel issue in which the identifier 'handler_t' was 
+  being used in the kernel.  This caused a change in dm7820_kernel.h and 
+  rtd-dm7820.c.  The 'handler_t' identifier was changed to 'dm7820_handler_t'.
+  
+- Added MODULES_DEVICE_TABLE() export macro for planned hot-plug support of
+  compatible DM9820 device.
+  
+- Moved free_irq() call during resource release to before I/O memory release.
+  This was causing a segfault during rmmod.
+  
+- Updated internal Gremlin build script to revision 32878.
+
+- Added a few items to 'make clean' command to remove more unnecessary files.
+
+- Asychronous user space notification is now done via pthread instead of thread
+  cloning.  This is safer and easier to understand and code.
+  
+- Fixed an issue in kernels greater than 2.6.25.  The device spinlock was being
+  initialized while being held in dm7820_initialize_device_descriptor().  This
+  was causing a hard system lock.
+  
+- Fixed order of sanity checks in dm7820_interrupt_handler().  The previous 
+  order was causing a scary message during insmod.
+  
+- Fixed some spin lock placement when freeing DMA memory as locks were being held
+  while calling functions that could possibly sleep.
+  
+- Added support for RTD's DM9820.
+
+
+
+v02.00.00 (rev C)   10/20/2011  RGG
+-----------------------------------
+
+- Removed a wake statement from inside spinlocks in the driver, as it wasn't 
+  necessary to be placed inside.
+  
+- Added a new example, pwm_measure.c.  It can measure the duty cycle of a pwm
+  without the use of interrupts.
+  
+- Added interrupt queuing to the driver to decrease the chance of missing
+  interrupts.
+  
+- Fixed issue with DMA causing system lockups when unexpectedly halted.
+
+- Fixed typo in loopback.c that was keeping FIFO1 from being disabled on 
+  cleanup.
+  
+- Improved readability of debug output in cases where the input buffer doesn't
+  match the output buffer in loopback.c
+  
+- Changed driver printk() statements to be more consistent with kernel modules.  
+
+- Added timeout counter to DMA abort function in driver.
+
+- Removed un-used macros and functions.
+
+- Corrected bugs in pwm_measure and tmrctr_interrupt tests.
+
+- Fixed error in library_test for testing PCI Bus Master bit
+
+- Added Ctrl-C interrupt capability to tmrctr_interrupt example program.
+
+- Added check for kernel > 2.6.35, when the BKL was completely removed.  This 
+  required a change to the assignment of the ioctl function in the driver.
+  
+- Added include for linux/sched.h due to changes in the kernel.
+
+- Removed fflush() from fast stdio output loops, as it was causing stuttering
+  in openSuse 11.1+ distros.
+  
+- You can now build a debug version of the driver by executing "make debug". 
+  The driver will then output useful information into the kernel log.
+
+- Added extra output statement in loopback so that correct number of interrupts
+  would be seen.
+  
+- Renamed adio-* example files and function names to advint_* to better reflect
+  their exercising of the advanced interrupts.
+  
+- Removed un-used dma_free_buffers from driver. Renamed remaining buffers to be
+  more indicative of their purpose.
+
+- Fixed a bug that was causing crashes when writing to the DMA multiple times.
+
+
+v03.00.00 (rev D)   7/8/2015  RGG
+-----------------------------------
+- Removed compatibility with all 2.4 kernel versions.  It now only supports
+  2.6.19 and later.  If you need support for pre-2.6.19 kernels, and this 
+  existing package does not compile correctly, then use the previous version.
+  
+- Removed /proc system, as it had changed in kernel 3.10, and was only being
+  kept around to help the Makefile create the correct number of device files.
+  Instead, now the driver itself will make the device files when the module
+  is inserted.
+ 
+- Adding GPLv2 License to Docs.
+
+- Library test example program modified so that it now longer checks for the
+  output of /proc or invalid minor numbers.
+  
+- References to the /proc system removed from basic_test.c example program.
+  It now just assumes there is only 1 board in the stack.

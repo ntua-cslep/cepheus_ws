@@ -1,0 +1,11 @@
+cylinder_leds:
+- id: 11
+  position: [-0.03, 0.0, -0.18]
+- id: 10
+  position: [0.0, -0.03, -0.18]
+- id: 9
+  position: [0.0, 0.03, -0.18]
+- id: 8
+  position: [0.03, 0.0, -0.18]
+- id: 7
+  position: [0.0, 0.0, -0.195]

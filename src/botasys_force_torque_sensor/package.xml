@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>botasys_force_torque_sensor</name>
+  <version>0.0.0</version>
+  <description>The botasys_force_torque_sensor package</description>
+  <maintainer email="asynodinos@botasys.com">Aris Synodinos</maintainer>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>cmake_modules</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+</package>

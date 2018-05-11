@@ -1,0 +1,6 @@
+controller_list:
+  - name: fake_left_manipulator_controller
+    joints:
+      - left_shoulder
+      - left_elbow
+      - left_wrist

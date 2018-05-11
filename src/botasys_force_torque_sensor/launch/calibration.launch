@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+	<node pkg="botasys_force_torque_sensor" 
+		type="botasys_force_torque_sensor_calibration_node" 
+		name="botasys_calibration_node" >
+		<param name="port" value="/dev/ttyUSB0" />
+	</node>
+</launch>

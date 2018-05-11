@@ -1,0 +1,9 @@
+<launch>
+	<rosparam command="load" file="$(find csl_camera_servo)/config/tracker.yaml"/>
+
+	<node name="csl_camera_interface" pkg="csl_camera_servo" type="csl_camera_servo_ros_bridge" output="screen">
+		<param name="map_frame" value="map"/>
+		<param name="udp_port" value="25000"/>
+	</node>
+
+</launch>

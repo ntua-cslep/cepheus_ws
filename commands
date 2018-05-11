@@ -1,0 +1,3 @@
+roslaunch cepheus_robot launch_cepheus_robot.launch 2>&1 | tee log.txt
+grep -i "error" log.txt | wc -l > nerr.txt
+roslaunch cepheus_robot launch_cepheus_robot.launch 2>/dev/pts/18

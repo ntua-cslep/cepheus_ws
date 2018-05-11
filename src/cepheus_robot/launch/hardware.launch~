@@ -1,0 +1,80 @@
+<launch>
+        <param name="robot_description" command="cat $(find cepheus_robot)/model/cepheus.urdf" />   
+
+        <rosparam command="load" file="$(find cepheus_robot)/config/controllers.yaml"/>
+        
+
+        <node name="cepheus_interface_node" pkg="cepheus_robot" type="cepheus_interface_node" respawn="false" output="screen">
+                <param name="thruster_force" value="0.5"/>
+                <param name="max_motor_current" value="2.00"/>
+                <param name="rw_max_speed" value="400"/>
+                <param name="rw_total_inertia" value="0.00197265"/>
+                <param name="rw_max_torque" value="0.02"/>
+                <param name="rw_max_power" value="30"/>
+                <param name="loop_rate" value="200.0"/>
+                <param name="left_shoulder_limit_pos" value="2.59" />
+                <param name="left_elbow_limit_pos" value="1.5" />
+                
+        </node>
+
+        <node name="cepheus_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" 
+            args="joint_state_publisher 
+                  reaction_wheel_velocity_controller 
+                  left_shoulder_position_controller 
+                  left_elbow_position_controller 
+                  left_wrist_position_controller 
+                  left_gripper_position_controller" 
+                  output="screen">
+        </node>
+
+        <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
+                <!--param name="tf_prefix" value="servicer" /-->
+                <param name="publish_frequency" value="100"/>
+        </node>  
+
+
+        <!--node name="cepheus_mouse_odom_publisher" pkg="cepheus_robot" type="mouse_odom_node" output="screen">
+                <param name="left_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.3:1.0-event-mouse"/>
+                <param name="right_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.4:1.0-event-mouse"/>
+                <param name="frame_id" value="cepheus" />
+        </node-->
+
+        <!--node name="camera_odom_publisher_11" pkg="cepheus_robot" type="camera_odom_node" output="screen">
+                <param name="robot_id" value="11" />
+                <param name="frame_id" value="cepheus_link" />
+        </node-->
+        
+        <!--include file="$(find botasys_force_torque_sensor)/launch/driver.launch">
+        </include-->
+
+        <!--include file="$(find phase_space)/launch/track_object.launch">
+            <arg name="turn_rviz_on" value="false" />
+            <arg name="turn_phase_space_on" value="true" />
+        </include-->
+
+        <!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen">
+                <param name="use_reaction_wheel" value="True"/>
+                <param name="loop_rate" value="400.0"/>
+                <param name="use_with_planner" value="false"/>
+                <param name="kp_gain_lin" value="1.2"/> 
+                <param name="kp_gain_ang" value="1.0"/>
+                <param name="kd_gain_lin" value="12.0"/>
+                <param name="kd_gain_ang" value="1.24035"/>
+        </node-->  
+
+        <!--node name="assist_board" pkg="marker" type="assist_board" output="screen">
+            <param name="board" value="/home/cepheus/catkin_ws/src/marker/markers/assist_board_meters_scaled.txt"/>
+            <param name="dictionary" value="/home/cepheus/catkin_ws/src/marker/markers/assist_dictionary.yml"/>
+            <param name="camera" value="/home/cepheus/catkin_ws/src/marker/calib/xs_1280_720_noAF.yml"/>
+            <param name="th0" value="25"/>
+            <param name="th1" value="23"/>
+            <param name="marker_max_size" value="0.35"/>
+            <param name="marker_min_size" value="0.006"/>
+            <param name="image" value="/camera/image_raw/"/>
+            <param name="~camera_frame" value="camera"/>
+            <param name="~target_frame" value="marker_drogue"/>
+        </node-->
+
+        <!--include file="$(find ueye_cam)/launch/xs_1280x720_noAF_scaled.launch">
+        </include-->
+</launch>

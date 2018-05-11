@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="assist_robot">
+ 
+
+  <link name="assist_robot">
+    <visual>
+      <material name="black"> <color rgba="0.4 0.4 0.4 1"/> </material>
+      <geometry>
+        <box size="0.45 0.45 0.43"/>
+      </geometry>
+      <origin xyz="0 0 0.245" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  <link name="drogue">
+    <visual>
+      <material name="silver"> <color rgba="0.8 0.8 0.8 1"/> </material>
+      <geometry>
+        <cylinder length="0.1" radius="0.072"/>
+      </geometry>
+      <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="drogue_joint" type="fixed">
+    <parent link="assist_robot"/>
+    <child link="drogue"/>
+    <origin xyz="0.3 0 0.145" rpy="1.570796 0 1.570796"/>
+    <axis xyz="0 0 1" /> 
+  </joint>
+  
+</robot>

@@ -1,0 +1,9 @@
+calibrator_leds:
+  - id: 9
+    position: [0.07, 0.0, 0.0065]
+  - id: 8
+    position: [0.0, 0.07, 0.0065]
+  - id: 10
+    position: [-0.01, -0.07, 0.0065]
+  - id: 11
+    position: [-0.07, -0.01, 0.0065]
