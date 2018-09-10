@@ -292,9 +292,12 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~target_speed", target_speed, 0.01); 
 	ros::param::param<double>("~target_accel", target_accel, 0.02); 
 	ros::param::param<double>("~probe_offset", probe_offset, 0.525); 
+	
+	double rate;
+	ros::param::param<double>("~loop_rate", rate, 200.0);	
 
-	ros::Duration time_step(path_t_step);
-
+	//ros::Duration time_step(path_t_step);
+	ros::Rate loop_rate(rate);
 	ros::Subscriber cmd_pose_sub = nh.subscribe("/move_base_simple/goal", 1, moveBaseSimpleCallback);
 
 	//ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1, PhaseSpaceCallback);
@@ -418,7 +421,7 @@ int main(int argc, char** argv)
 
 		ros::spinOnce(); 
 		//wait one time step
-		time_step.sleep();
+		loop_rate.sleep();
 	}
 
 	//fclose(latency_fp);

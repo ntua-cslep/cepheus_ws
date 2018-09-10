@@ -32,7 +32,7 @@
 
         <node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen">
                 <param name="use_reaction_wheel" value="True"/>
-                <param name="loop_rate" value="400.0"/>
+                <param name="loop_rate" value="200.0"/>
                 <param name="use_with_planner" value="True"/>
                 <param name="kp_gain_lin" value="1.2"/> 
                 <param name="kp_gain_ang" value="1.0"/>
@@ -42,6 +42,7 @@
 
         <node name="base_planner" pkg="cepheus_robot" type="base_planner_node" output="screen">
                 <param name="time_step" value="0.0100"/>
+		<param name="loop_rate" value="200.0"/>
                 <param name="target_speed" value="0.02"/>
                 <param name="target_accel" value="0.005"/>
                 <param name="probe_offset" value="0.523"/>
