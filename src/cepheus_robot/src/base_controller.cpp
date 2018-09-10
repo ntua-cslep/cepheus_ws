@@ -474,7 +474,7 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
   //---Panagiotis Mavridis 24/04/2018
   /*
   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  */
+  
 	static int m_counter = 0;
       struct timespec ts_arrived;
       clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
@@ -484,7 +484,7 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 
 	m_counter++;
 	fprintf(latency_fp,"%ld\n",latency);
-
+   */	
   //--i----------------------------------------------
 
 
@@ -575,13 +575,13 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
   //---Panagiotis Mavridis 24/04/2018
   /*
   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  */
+  
       struct timespec ts_arrived;
       clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
       
       long latency = ((ts_arrived.tv_sec - msg->header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - msg->header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
       //std::cout << "LATENCY IN PLANNER->CONTROLLER (POSITION) : "<< latency;
-
+   */	
 
   //-------------------------------------------------
 
@@ -622,13 +622,13 @@ void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
   //---Panagiotis Mavridis 24/04/2018
   /*
   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  */
+  
       struct timespec ts_arrived;
       clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
       
       long latency = ((ts_arrived.tv_sec - msg->header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - msg->header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
       //std::cout << "LATENCY IN PLANNER->CONTROLLER (VELOCITY) : "<< latency;
-
+   */	
 
   //-------------------------------------------------
 
@@ -683,8 +683,9 @@ int main(int argc, char** argv)
 
     //....and a handler for phase space callback queue	
     ros::NodeHandle nh_ps;
-
     ros::CallbackQueue phase_space_callback_queue;
+
+    nh_ps.setCallbackQueue(&phase_space_callback_queue);	
     //---------------------------------------------
 
 
@@ -718,7 +719,7 @@ int main(int argc, char** argv)
 	//----Create file with Phase Space message latencies in order to plot---
 	
 
-	latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_ctrl-latencies.txt","w");
+	//latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_ctrl-latencies.txt","w");
 
 	//------------------------------------------------------ 
 
@@ -740,8 +741,6 @@ int main(int argc, char** argv)
     }
 
     ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1, PhaseSpaceCallback);
-    //ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback);
-    //ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback);
     //ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1000, PhaseSpaceCallback,ros::TransportHints().tcpNoDelay(true));
   
     ros::Subscriber rmt_vel_sub = nh.subscribe("cmd_vel", 1000, remoteCallback);
@@ -788,17 +787,18 @@ int main(int argc, char** argv)
 
     ros::Duration(8).sleep(); //wait to recieve phasespace 
     //ros::spinOnce();
+    phase_space_callback_queue.callOne(ros::WallDuration());
 
   //-----------------Panagiotis Mavridis 08/05/2018-----
 
 
     // 1 thread to answer phase space callbacks from the dedicated queue...
-    ros::AsyncSpinner phase_space_spinner(1, &phase_space_callback_queue); // Use 1 thread
-    phase_space_spinner.start();
+    //ros::AsyncSpinner phase_space_spinner(1, &phase_space_callback_queue); // Use 1 thread
+    //phase_space_spinner.start();
 
     //...and  2 threads to answer callbacks from the global queue of the handler
-    ros::AsyncSpinner spinner(2); // Use 2 threads
-    spinner.start();
+    //ros::AsyncSpinner spinner(2); // Use 2 threads
+    //spinner.start();
 
  //--------------------------------------------------------
  
@@ -897,11 +897,13 @@ int main(int argc, char** argv)
           thrust_vector.vector.y = 0.0;
           thrust_vector.vector.z = 0.0;
 
-          struct timespec ts_thrust;
+          /*
+	  struct timespec ts_thrust;
           clock_gettime(CLOCK_MONOTONIC_RAW, &ts_thrust);
           thrust_vector.header.stamp.sec = ts_thrust.tv_sec;
           thrust_vector.header.stamp.nsec = ts_thrust.tv_nsec;
-          //---------------------------------------          
+          */
+	   //---------------------------------------          
 
           torque.data     = 0.0;
           thrust_pub.publish(thrust_vector);
@@ -924,7 +926,7 @@ int main(int argc, char** argv)
         frobot.wrench.torque.z = f_robot[2];
         frobot_pub.publish(frobot);
 
-        //ros::spinOnce();
+        ros::spinOnce();
 
 	//---------Panagiotis Mavridis 08/05/2018---------
     	phase_space_callback_queue.callOne(ros::WallDuration());
@@ -934,6 +936,6 @@ int main(int argc, char** argv)
     }
 
 	//---Phase Space Latencies file
-	fclose(latency_fp);
+	//fclose(latency_fp);
     return 0;
 }

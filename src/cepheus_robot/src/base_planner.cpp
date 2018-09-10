@@ -50,7 +50,7 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
   //---Panagiotis Mavridis 24/04/2018
   /*
   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  */
+  
         static int m_counter = 0;
       struct timespec ts_arrived;
       clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
@@ -62,7 +62,7 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
         fprintf(latency_fp,"%ld\n",latency);
 
   //--i----------------------------------------------
-
+   */
 	return;
 }
 
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
         //----Create file with Phase Space message latencies in order to plot---
 
 
-        latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_planner-latencies.txt","w");
+        //latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_planner-latencies.txt","w");
 
         //------------------------------------------------------ 
 
@@ -421,6 +421,6 @@ int main(int argc, char** argv)
 		time_step.sleep();
 	}
 
-	fclose(latency_fp);
+	//fclose(latency_fp);
 	return 0;
 }

@@ -138,8 +138,8 @@ add_library(librtd_dm7820 include/${PROJECT_NAME}/librtd-dm7820.c)
 # add_dependencies(cepheus_robot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(camera_odom_node src/camera_odom.cpp)
-add_executable(mouse_odom_node src/mouse_odom_2.cpp)
+#add_executable(camera_odom_node src/camera_odom.cpp)
+#add_executable(mouse_odom_node src/mouse_odom_2.cpp)
 add_executable(phase_space_inverted_node src/phase_space_axes_swap.cpp)
 add_executable(thrusters_node src/thruster_controller.cpp)
 add_executable(cepheus_interface_node src/cepheus_interface.cpp src/cepheus_hardware.cpp src/cepheus_hardware.h)
@@ -154,8 +154,8 @@ add_executable(cepheus_force_sensor src/bota_FTS.cpp)
 # add_dependencies(cepheus_robot_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(camera_odom_node  ${catkin_LIBRARIES})
-target_link_libraries(mouse_odom_node  ${catkin_LIBRARIES})
+#target_link_libraries(camera_odom_node  ${catkin_LIBRARIES})
+#target_link_libraries(mouse_odom_node  ${catkin_LIBRARIES})
 target_link_libraries(phase_space_inverted_node  ${catkin_LIBRARIES})
 target_link_libraries(thrusters_node  ${catkin_LIBRARIES} librtd_dm7820)
 target_link_libraries(cepheus_interface_node  ${catkin_LIBRARIES} librtd_dm7820)

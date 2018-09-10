@@ -166,7 +166,7 @@ void thrusterCallback(const geometry_msgs::Vector3::ConstPtr& cmd)
 
 void thrusterCallback(const geometry_msgs::Vector3Stamped::ConstPtr& cmd)
 {
-  	static int m_counter=0;
+  	/*static int m_counter=0;
 	//CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
 	struct timespec ts_arrived;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
@@ -175,7 +175,7 @@ void thrusterCallback(const geometry_msgs::Vector3Stamped::ConstPtr& cmd)
 	//std::cout << " LATENCY IN CONTROLLER->INTERFACE (THRUSTERS) : "<< latency;
 	m_counter++;
 	fprintf(latency_fp,"%ld\n",latency);
-
+	*/
 	double thrust[4];
 	thrust[0] = (double)cmd->vector.x;
 	thrust[1] = (double)cmd->vector.y;
@@ -236,7 +236,7 @@ int main(int argc, char** argv)
         //----Create file with Thrust message latencies in order to plot---
 
 
-        latency_fp = fopen("/home/mrrobot/Desktop/cmd_thrust_laytencies.txt","w");
+        //latency_fp = fopen("/home/mrrobot/Desktop/cmd_thrust_laytencies.txt","w");
 
         //------------------------------------------------------ 
 
@@ -430,6 +430,6 @@ int main(int argc, char** argv)
 
 	robot.safeClose();
 
-	fclose(latency_fp);
+	//fclose(latency_fp);
 	return 0;
 }

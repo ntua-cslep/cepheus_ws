@@ -156,7 +156,7 @@ void PoseTracker::estimatePose(const phase_space::PhaseSpaceMarkerArray & msg)
   //---Panagiotis Mavridis 24/04/2018
   /*
   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  */
+  
         static int m_counter = 0;
       struct timespec ts_arrived;
       clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
@@ -166,7 +166,7 @@ void PoseTracker::estimatePose(const phase_space::PhaseSpaceMarkerArray & msg)
 
         m_counter++;
         fprintf(latency_fp,"%ld\n",latency);
-
+  */
   //--i---------------------------------------------
 
 	
@@ -326,22 +326,22 @@ int main(int argc, char **argv)
         sched_setscheduler(0, sched_policy, &schedParam);
 	*/
 
-        latency_fp = fopen("/home/mrrobot/Desktop/phase_space-to-track_body_node-latencies.txt","w");
+        //latency_fp = fopen("/home/mrrobot/Desktop/phase_space-to-track_body_node-latencies.txt","w");
 
         //------------------------------------------------------ 
 
 
     phase_space::PoseTracker node(nh,argc,argv);
   
-    //ros::spin();
+    ros::spin();
 	//ros::AsyncSpinner spinner(1); // Use 1 thread
 	//spinner.start();
 
-	ros::MultiThreadedSpinner spinner(2); // Use 2 threads
-	spinner.spin(); 
+	//ros::MultiThreadedSpinner spinner(2); // Use 2 threads
+	//spinner.spin(); 
 	
 	//-------Panagiotis Mavridis-----------------
-	fclose(latency_fp);	
+	//fclose(latency_fp);	
 	//------------------------------------------
 
     return 0;

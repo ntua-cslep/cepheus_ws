@@ -256,7 +256,7 @@ int main(int argc, char **argv)
         sched_setscheduler(0, sched_policy, &schedParam);
 	*/
 
-        latency_fp = fopen("/home/mrrobot/Desktop/phase_space-send_marker_latency.txt","w");
+        //latency_fp = fopen("/home/mrrobot/Desktop/phase_space-send_marker_latency.txt","w");
 
         //------------------------------------------------------ 
 
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
         
     }
 
-	fclose(latency_fp);	
+	//fclose(latency_fp);	
 
     // cleanup
     owlDone();
