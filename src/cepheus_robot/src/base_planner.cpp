@@ -46,23 +46,23 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 	ps_transform = *msg;
 
 
- //-------------------------------------------------
-  //---Panagiotis Mavridis 24/04/2018
-  /*
-  CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-  
-        static int m_counter = 0;
-      struct timespec ts_arrived;
-      clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
+	//-------------------------------------------------
+	//---Panagiotis Mavridis 24/04/2018
+	/*
+	   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
 
-      long latency = ((ts_arrived.tv_sec - ps_transform.header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - ps_transform.header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
-      //std::cout << "LATENCY IN PHASE_SPACE->CONTROLLER  : "<< latency << std::endl;
+	   static int m_counter = 0;
+	   struct timespec ts_arrived;
+	   clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
 
-        m_counter++;
-        fprintf(latency_fp,"%ld\n",latency);
+	   long latency = ((ts_arrived.tv_sec - ps_transform.header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - ps_transform.header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
+	//std::cout << "LATENCY IN PHASE_SPACE->CONTROLLER  : "<< latency << std::endl;
 
-  //--i----------------------------------------------
-   */
+	m_counter++;
+	fprintf(latency_fp,"%ld\n",latency);
+
+	//--i----------------------------------------------
+	 */
 	return;
 }
 
@@ -262,25 +262,25 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "base_planner_node", ros::init_options::NoSigintHandler);
 	signal(SIGINT, ctrl_C_Handler);
 
-   //-----Panagiotis Mavridis 08/05/2018----------   
+	//-----Panagiotis Mavridis 08/05/2018----------   
 
-    //Node Handler for global callback queue
-    ros::NodeHandle nh;
+	//Node Handler for global callback queue
+	ros::NodeHandle nh;
 
-    //....and a handler for phase space callback queue  
-    //ros::NodeHandle nh_ps;
+	//....and a handler for phase space callback queue  
+	//ros::NodeHandle nh_ps;
 
-    //ros::CallbackQueue phase_space_callback_queue;
-    //---------------------------------------------
-	
-       //--------Panagiotis Mavridis 25/04/2018----------------
+	//ros::CallbackQueue phase_space_callback_queue;
+	//---------------------------------------------
 
-        struct sched_param schedParam;
-        schedParam.sched_priority = RT_PRIORITY;
-        int sched_policy = SCHED_RR;
-        sched_setscheduler(0, sched_policy, &schedParam);
+	//--------Panagiotis Mavridis 25/04/2018----------------
 
-        //--------------------------------------------------
+	struct sched_param schedParam;
+	schedParam.sched_priority = RT_PRIORITY;
+	int sched_policy = SCHED_RR;
+	sched_setscheduler(0, sched_policy, &schedParam);
+
+	//--------------------------------------------------
 
 	tf::TransformListener lr(ros::Duration(3));
 	listener = &lr;
@@ -292,7 +292,7 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~target_speed", target_speed, 0.01); 
 	ros::param::param<double>("~target_accel", target_accel, 0.02); 
 	ros::param::param<double>("~probe_offset", probe_offset, 0.525); 
-	
+
 	double rate;
 	ros::param::param<double>("~loop_rate", rate, 200.0);	
 
@@ -302,17 +302,17 @@ int main(int argc, char** argv)
 
 	//ros::Subscriber phase_space_sub =  nh_ps.subscribe("map_to_cepheus", 1, PhaseSpaceCallback);
 	ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallback);
-        //ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallback,ros::TransportHints().tcpNoDelay(true));
+	//ros::Subscriber phase_space_sub =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallback,ros::TransportHints().tcpNoDelay(true));
 
 	ros::Publisher path_pub = nh.advertise<nav_msgs::Path>("path", 1000);
 
-        //--------Panagiotis Mavridis 25/04/2018----------------
-        //----Create file with Phase Space message latencies in order to plot---
+	//--------Panagiotis Mavridis 25/04/2018----------------
+	//----Create file with Phase Space message latencies in order to plot---
 
 
-        //latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_planner-latencies.txt","w");
+	//latency_fp = fopen("/home/mrrobot/Desktop/track_cepheus-to-base_planner-latencies.txt","w");
 
-        //------------------------------------------------------ 
+	//------------------------------------------------------ 
 
 
 	geometry_msgs::PoseStamped cmd_pos;
@@ -328,15 +328,15 @@ int main(int argc, char** argv)
 	bool path_running=false;
 	int cnt;
 
-  //-----------------Panagiotis Mavridis 08/05/2018-----
+	//-----------------Panagiotis Mavridis 08/05/2018-----
 
 
-    // 1 thread to answer phase space callbacks from the dedicated queue...
-    //ros::AsyncSpinner phase_space_spinner(1, &phase_space_callback_queue); // Use 1 thread
-    //phase_space_spinner.start();
+	// 1 thread to answer phase space callbacks from the dedicated queue...
+	//ros::AsyncSpinner phase_space_spinner(1, &phase_space_callback_queue); // Use 1 thread
+	//phase_space_spinner.start();
 
 
- //--------------------------------------------------------
+	//--------------------------------------------------------
 
 
 	while(!g_request_shutdown)
@@ -377,9 +377,9 @@ int main(int argc, char** argv)
 
 			//------------------------------------------
 			/*Panagiotis Mavridis 24/04/2018
-				PUTTING MONOTONIC CLOCK TIMESTAMP IN THE MESSAGE
-				IN ORDER TO CALCULATE COMMUNCATION LATENCY 
-				BETWEEN THE ROS NODES*/
+			  PUTTING MONOTONIC CLOCK TIMESTAMP IN THE MESSAGE
+			  IN ORDER TO CALCULATE COMMUNCATION LATENCY 
+			  BETWEEN THE ROS NODES*/
 
 			//ONLY FOR POS AND VEL FOR NOW	
 
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
 			clock_gettime(CLOCK_MONOTONIC_RAW, &ts_vel);
 			cmd_vel.header.stamp.sec = ts_vel.tv_sec;
 			cmd_vel.header.stamp.nsec = ts_vel.tv_nsec;
-				std::cout<<"TO PUBLISH"<<std::endl;
+			std::cout<<"TO PUBLISH"<<std::endl;
 			//-----------------------------------------
 			pos_pub.publish(cmd_pos);
 			vel_pub.publish(cmd_vel);
@@ -414,9 +414,9 @@ int main(int argc, char** argv)
 			}
 		}
 
-	       //---------Panagiotis Mavridis 08/05/2018---------
-	        //phase_space_callback_queue.callOne(ros::WallDuration());
-	        //------------------------------------------------
+		//---------Panagiotis Mavridis 08/05/2018---------
+		//phase_space_callback_queue.callOne(ros::WallDuration());
+		//------------------------------------------------
 
 
 		ros::spinOnce(); 

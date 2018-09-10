@@ -147,17 +147,17 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
 //--------------------ORIGINAL---------------------------------
 /*
-void thrusterCallback(const geometry_msgs::Vector3::ConstPtr& cmd)
-{
-	double thrust[4];
-	thrust[0] = (double)cmd->x;
-	thrust[1] = (double)cmd->y;
-	thrust[2] = (double)cmd->z;
-	thrust[3] = (double)0;
-	robot.setThrustPwm(thrust, 0.001, 0.9);
-	return;
-}
-*/
+   void thrusterCallback(const geometry_msgs::Vector3::ConstPtr& cmd)
+   {
+   double thrust[4];
+   thrust[0] = (double)cmd->x;
+   thrust[1] = (double)cmd->y;
+   thrust[2] = (double)cmd->z;
+   thrust[3] = (double)0;
+   robot.setThrustPwm(thrust, 0.001, 0.9);
+   return;
+   }
+ */
 //-----------------------------------------------------------------
 
 
@@ -166,7 +166,7 @@ void thrusterCallback(const geometry_msgs::Vector3::ConstPtr& cmd)
 
 void thrusterCallback(const geometry_msgs::Vector3Stamped::ConstPtr& cmd)
 {
-  	/*static int m_counter=0;
+	/*static int m_counter=0;
 	//CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
 	struct timespec ts_arrived;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
@@ -175,7 +175,7 @@ void thrusterCallback(const geometry_msgs::Vector3Stamped::ConstPtr& cmd)
 	//std::cout << " LATENCY IN CONTROLLER->INTERFACE (THRUSTERS) : "<< latency;
 	m_counter++;
 	fprintf(latency_fp,"%ld\n",latency);
-	*/
+	 */
 	double thrust[4];
 	thrust[0] = (double)cmd->vector.x;
 	thrust[1] = (double)cmd->vector.y;
@@ -226,19 +226,19 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~left_shoulder_limit_pos", l1_limit_pos, 2.4); 
 	ros::param::param<double>("~left_elbow_limit_pos", l2_limit_pos, 1.4); 
 
-        //--------Panagiotis Mavridis 25/04/2018----------------
+	//--------Panagiotis Mavridis 25/04/2018----------------
 
-        struct sched_param schedParam;
-        schedParam.sched_priority = RT_PRIORITY;
-        int sched_policy = SCHED_RR;
-        sched_setscheduler(0, sched_policy, &schedParam);
-        //--------Panagiotis Mavridis 25/04/2018----------------
-        //----Create file with Thrust message latencies in order to plot---
+	struct sched_param schedParam;
+	schedParam.sched_priority = RT_PRIORITY;
+	int sched_policy = SCHED_RR;
+	sched_setscheduler(0, sched_policy, &schedParam);
+	//--------Panagiotis Mavridis 25/04/2018----------------
+	//----Create file with Thrust message latencies in order to plot---
 
 
-        //latency_fp = fopen("/home/mrrobot/Desktop/cmd_thrust_laytencies.txt","w");
+	//latency_fp = fopen("/home/mrrobot/Desktop/cmd_thrust_laytencies.txt","w");
 
-        //------------------------------------------------------ 
+	//------------------------------------------------------ 
 
 
 
@@ -270,13 +270,13 @@ int main(int argc, char** argv)
 	robot.setHomePos(4, l1_limit_pos); 
 	robot.setHomePos(5, l2_limit_pos);
 
-/*
-	int err = readErr();
-	if (err) {
-		fixJointPos();
-		ROS_INFO("Fixed, now init...\n");
-	}
-*/
+	/*
+	   int err = readErr();
+	   if (err) {
+	   fixJointPos();
+	   ROS_INFO("Fixed, now init...\n");
+	   }
+	 */
 
 
 	//INITIALIZE THE
