@@ -18,6 +18,35 @@
 
 #define TORQUE_REDUCE 1.0
 
+//--Panagiotis Mavridis----
+//For testing gripper finger
+void CepheusHW::testGripperFinger(){
+
+	ROS_INFO("Started testing finger...");
+
+	//set Port's 2 (1,3,5,7) bits to standard output for using it as direction signnal of motor controller
+        dm7820_status = DM7820_StdIO_Set_IO_Mode(board, DM7820_STDIO_PORT_2, 0x00AA, DM7820_STDIO_MODE_OUTPUT);
+        DM7820_Return_Status(dm7820_status, "Set Port's 2 (1,3,5,7) bits to standard output");
+
+	//Write to output port - move open close finger
+	uint16_t output_value = 1;
+
+	for(int shift = 0; shift <16; shift++){
+
+		ROS_INFO("Shift is %d", shift);
+
+		dm7820_status =
+		    DM7820_StdIO_Set_Output(board, DM7820_STDIO_PORT_2, (shift<<output_value));
+		DM7820_Return_Status(dm7820_status,
+				     "DM7820_StdIO_Set_Output()");
+
+		sleep(3);
+	}
+	
+}
+//-------------------------
+
+
 
 void print_binary(uint16_t x)
 {

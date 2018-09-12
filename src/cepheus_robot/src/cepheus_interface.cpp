@@ -370,15 +370,13 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 
 		robot.readEncoders(time_step);
-		//	printf("SK1\n");
 		cm.update(curr_time, time_step);
-		//      printf("SK2\n");
 
-		robot.writeMotors();
-		//	printf("SK3\n");
+
+		robot.testGripperFinger();
+		//robot.writeMotors();
 
 		robot.heartbeat();
-		//printf("SK4\n");
 
 		// //saturate acceleration og reaction wheel
 		// double rw_available_torque;

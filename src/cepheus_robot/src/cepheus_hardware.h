@@ -56,7 +56,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		void setCmd(int,double);
 		double getVel(int);
 		void safeClose(); 
-		CepheusHW(); 
+		CepheusHW();
+		void testGripperFinger(); 
 
 	private:
 		bool homing(int, float);
