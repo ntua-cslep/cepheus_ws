@@ -323,18 +323,18 @@ void CepheusHW::writeMotors()
 			width[i] = (uint16_t)((cmd[i]/M_PI + 0.5)*PWM_HOBBY_SERVO_RANGE + PWM_HOBBY_SERVO_MIN_DT); // rad to width
 		}
 		*/
-		if(cmd[i] > 0 && cmd[i] < M_PI) {
+		if(cmd[i] >= 0 && cmd[i] <= M_PI) {
                         width[i] = (uint16_t)((cmd[i]/M_PI)*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT); // rad to width
                 }
 
 		else {
 			width[i] = width[i];
-			ROS_WARN("Servo commanded out of rande. Command Ignored");
+			//ROS_WARN("Servo commanded out of rande. Command Ignored");
 		}
 
-		if(i == 9){
-                        std::cout<<"width[9] = "<< width[9]<<std::endl;
-                }
+		/*if(i == 10){
+                        std::cout<<"cmd[10] = "<< cmd[10]<< " , width[10] = "<<width[10]<<std::endl;
+                }*/
 
 	}
 

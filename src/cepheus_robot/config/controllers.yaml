@@ -33,14 +33,12 @@ left_wrist_position_controller:
   joint: left_wrist
 
 # Trajectory controller ------------------------------
-left_manipulator_trajectory_controller:
-  type: "effort_controllers/JointTrajectoryController"
+left_wrist_trajectory_controller:
+  type: "position_controllers/JointTrajectoryController"
   joints:
-      - left_shoulder
-      - left_elbow
+      - left_wrist
   gains: 
-    left_shoulder: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.01}
-    left_elbow: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.01}
+    left_wrist: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.01}
 
 # Gripper action Controller --------------------------
 left_gripper_position_controller:

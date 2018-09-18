@@ -780,7 +780,7 @@ int main(int argc, char** argv)
 	geometry_msgs::WrenchStamped frobot;
 	ros::Publisher frobot_pub = nh.advertise<geometry_msgs::WrenchStamped>("frobot", 1);
 
-	ros::Time prev_time = ros::Time::now()-ros::Duration(1000000);
+	ros::Time prev_time = ros::Time::now()-ros::Duration(100000);
 
 	double pose[3];
 	double des[9];
