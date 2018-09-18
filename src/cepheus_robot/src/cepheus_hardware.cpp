@@ -318,10 +318,6 @@ void CepheusHW::writeMotors()
 	for (int i=8; i<12; i++)
 	{
 
-		if(i == 9){
-			std::cout<<"cmd[9] = "<< cmd[9]<<std::endl;
-		}
-
 		/*
 		if(cmd[i]<M_PI/2 && cmd[i]>-M_PI/2) {
 			width[i] = (uint16_t)((cmd[i]/M_PI + 0.5)*PWM_HOBBY_SERVO_RANGE + PWM_HOBBY_SERVO_MIN_DT); // rad to width
