@@ -2,7 +2,6 @@
         <param name="robot_description" command="cat $(find cepheus_robot)/model/cepheus.urdf" />   
 
         <rosparam command="load" file="$(find cepheus_robot)/config/controllers.yaml"/>
-	<param name="controllers_to_spawn" type="str" value="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller"/>
 
         <node name="cepheus_interface_node" pkg="cepheus_robot" type="cepheus_interface_node" respawn="false" output="screen">
                 <param name="thruster_force" value="0.5"/>
@@ -18,10 +17,11 @@
         </node>
 
         <node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen">
+		<param name="controllers_to_spawn" value="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller"/>
 	</node>
 
 
-        <!-- node name="cepheus_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" args="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller" output="screen">
+        <!--node name="cepheus_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" args="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller" output="screen">
         </node-->
 
 
@@ -62,10 +62,10 @@
         <!--include file="$(find botasys_force_torque_sensor)/launch/driver.launch">
         </include-->
 
-        <include file="$(find phase_space)/launch/track_object.launch">
+        <!--include file="$(find phase_space)/launch/track_two_objects.launch">
             <arg name="turn_rviz_on" value="false" />
             <arg name="turn_phase_space_on" value="true" />
-        </include>
+        </include-->
 
         <!--node name="assist_board" pkg="marker" type="assist_board" output="screen">
             <param name="board" value="/home/cepheus/catkin_ws/src/marker/markers/assist_board_meters_scaled.txt"/>

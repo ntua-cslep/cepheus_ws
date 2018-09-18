@@ -280,7 +280,7 @@ int main(int argc, char** argv)
 
 
 	//INITIALIZE THE
-	//robot.init();
+//	robot.init();
 	//robot.init_2();
 
 
@@ -373,8 +373,8 @@ int main(int argc, char** argv)
 		cm.update(curr_time, time_step);
 
 
-		robot.testGripperFinger();
-		//robot.writeMotors();
+		//robot.testGripperFinger();
+		robot.writeMotors();
 
 		robot.heartbeat();
 

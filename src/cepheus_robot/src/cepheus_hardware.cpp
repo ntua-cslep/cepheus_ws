@@ -22,27 +22,6 @@
 //For testing gripper finger
 void CepheusHW::testGripperFinger(){
 
-	ROS_INFO("Started testing finger...");
-
-	//set Port's 2 (1,3,5,7) bits to standard output for using it as direction signnal of motor controller
-        dm7820_status = DM7820_StdIO_Set_IO_Mode(board, DM7820_STDIO_PORT_2, 0x00AA, DM7820_STDIO_MODE_OUTPUT);
-        DM7820_Return_Status(dm7820_status, "Set Port's 2 (1,3,5,7) bits to standard output");
-
-	//Write to output port - move open close finger
-	uint16_t output_value = 1;
-
-	for(int shift = 0; shift <16; shift++){
-
-		ROS_INFO("Shift is %d", shift);
-
-		dm7820_status =
-		    DM7820_StdIO_Set_Output(board, DM7820_STDIO_PORT_2, (shift<<output_value));
-		DM7820_Return_Status(dm7820_status,
-				     "DM7820_StdIO_Set_Output()");
-
-		sleep(3);
-	}
-	
 }
 //-------------------------
 
@@ -338,13 +317,29 @@ void CepheusHW::writeMotors()
 	//RC SERVOS
 	for (int i=8; i<12; i++)
 	{
+
+		if(i == 9){
+			std::cout<<"cmd[9] = "<< cmd[9]<<std::endl;
+		}
+
+		/*
 		if(cmd[i]<M_PI/2 && cmd[i]>-M_PI/2) {
 			width[i] = (uint16_t)((cmd[i]/M_PI + 0.5)*PWM_HOBBY_SERVO_RANGE + PWM_HOBBY_SERVO_MIN_DT); // rad to width
 		}
+		*/
+		if(cmd[i] > 0 && cmd[i] < M_PI) {
+                        width[i] = (uint16_t)((cmd[i]/M_PI)*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT); // rad to width
+                }
+
 		else {
 			width[i] = width[i];
 			ROS_WARN("Servo commanded out of rande. Command Ignored");
 		}
+
+		if(i == 9){
+                        std::cout<<"width[9] = "<< width[9]<<std::endl;
+                }
+
 	}
 
 	//Seting direction (pins for Port 2)

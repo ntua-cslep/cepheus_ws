@@ -60,7 +60,9 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 
 		std::string cnames;
-		assert(n.getParam("/controllers_to_spawn",cnames));
+		ros::param::get("~controllers_to_spawn",cnames);
+		ROS_WARN(cnames.c_str());
+
 		pid = fork();
 
 		//CHILD

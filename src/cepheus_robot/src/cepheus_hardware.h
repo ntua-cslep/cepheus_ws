@@ -19,7 +19,7 @@
 
 #define FIR_LENGTH 2 
 #define PWM_MOTOR_FREQ 5000
-#define PWM_HOBBY_SERVO_FREQ 50
+#define PWM_HOBBY_SERVO_FREQ 50 //Period is usually 20ms
 #define PWM_THRUSTER_FREQ 10
 #define ADC_PWM_FREQ 25000
 
@@ -36,6 +36,26 @@
 #define ADC_PWM_PERIOD_COUNTS (25000000/ADC_PWM_FREQ)
 
 #define MOVE_DURATION 2
+
+//-----Panagiotis Mavridis 18/09/2018--------
+//--Constants for the gripper servo----
+//--Model: TO DO put website
+
+//A servo motor expects to be updated every 20 ms
+//The servo used here expects the duration of the pulse to be from 0.9 ms to 2.1 ms
+//The minimum duty cycle is 0.9/20 = 4.5%
+//The maximum duty cycle is 2.1/20 = 10.5%
+
+//PWM_FINGER_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
+#define PWM_FINGER_SERVO_MIN_DT 2250 
+
+//PWM_FINGER_SERVO_MAX_DT = max duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS
+#define PWM_FINGER_SERVO_MAX_DT 5250 
+
+//
+#define PWM_FINGER_SERVO_RANGE  3000//PWM range must be 2.1ms - 0.9ms = 1.2ms for the servos
+//-------------------------------
+
 
 class CepheusHW : public hardware_interface::RobotHW
 {
