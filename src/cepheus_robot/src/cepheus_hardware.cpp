@@ -331,17 +331,13 @@ void CepheusHW::writeMotors()
 			width[i] = width[i];
 			//ROS_WARN("Servo commanded out of rande. Command Ignored");
 		}*/
-
+		
+		//Left Finger(0-120 deg)
 		if(i==8){
 
-                        uint16_t init_pos = 0;
-                        uint16_t goal_pos = 360;
-			uint16_t p = 0;
-
+			/*uint16_t p = 0;
+			
 			while(std::scanf("%d",&p) != 360){
-                        //for(int p = init_pos; p>= goal_pos; p--){
-                        //for(int p = init_pos; p<= goal_pos; p++){
-				
        
 				double div = (double)p/(double)120;
 				
@@ -352,17 +348,30 @@ void CepheusHW::writeMotors()
                                 dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
                                 DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 
-                                usleep(80000);
-                        //}
-			}
-			sleep(5);
-                        exit(2);
+                                
+			}*/
                 }
 
+		//Left Wrist (0-150 deg)
+                if(i==10){
 
-		/*if(i == 10){
-                        std::cout<<"cmd[10] = "<< cmd[10]<< " , width[10] = "<<width[10]<<std::endl;
-                }*/
+                        uint16_t p = 0;
+
+                        while(std::scanf("%d",&p) != 360){
+
+                                double div = (double)p/(double)150;
+
+                                ROS_WARN("div %f",div);
+                                 
+                                width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+                           
+                                dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[i]);
+                                DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+                           
+                         
+                        }
+                }
+
 
 	}
 

@@ -38,10 +38,13 @@
 #define MOVE_DURATION 2
 
 //-----Panagiotis Mavridis 18/09/2018--------
-//--Constants for the gripper servo----
+
 //--Model: TO DO put website
 
 //A servo motor expects to be updated every 20 ms
+
+//------------------------------------------------------------
+//Fingers Servos Info:
 //The servo used here expects the duration of the pulse to be from 0.9 ms to 2.1 ms
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
@@ -52,9 +55,23 @@
 //PWM_FINGER_SERVO_MAX_DT = max duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS
 #define PWM_FINGER_SERVO_MAX_DT 5250 
 
-
 #define PWM_FINGER_SERVO_RANGE  3000//PWM range must be 2.1ms - 0.9ms = 1.2ms for the servos
-//#define PWM_FINGER_SERVO_RANGE  4500//PWM range must be 2.7ms - 0.9ms = 1.8ms for the servos
+
+//-------------------------------
+
+//------------------------------------------------------------
+//Wrists Servos Info:
+//The servo used here expects the duration of the pulse to be from 0.9 ms to 2.1 ms
+//The minimum duty cycle is 0.9/20 = 4.5%
+//The maximum duty cycle is 2.1/20 = 10.5%
+
+//PWM_WRIST_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
+#define PWM_WRIST_SERVO_MIN_DT 2250 
+
+//PWM_WRIST_SERVO_MAX_DT = max duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS
+#define PWM_WRIST_SERVO_MAX_DT 5250 
+
+#define PWM_WRIST_SERVO_RANGE  3000//PWM range must be 0.9ms - 2.1ms = 1.2ms for the servos
 
 //-------------------------------
 
