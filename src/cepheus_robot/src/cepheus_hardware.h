@@ -52,8 +52,10 @@
 //PWM_FINGER_SERVO_MAX_DT = max duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS
 #define PWM_FINGER_SERVO_MAX_DT 5250 
 
-//
+
 #define PWM_FINGER_SERVO_RANGE  3000//PWM range must be 2.1ms - 0.9ms = 1.2ms for the servos
+//#define PWM_FINGER_SERVO_RANGE  4500//PWM range must be 2.7ms - 0.9ms = 1.8ms for the servos
+
 //-------------------------------
 
 

@@ -334,7 +334,7 @@ int main(int argc, char** argv)
 		cmd.data = 0;
 		left_elbow_pub.publish(cmd);
 	 */
-	ros::AsyncSpinner init_spinner(2);
+	ros::AsyncSpinner init_spinner(1);
 	init_spinner.start();
 
 	while(!controllers_started)
