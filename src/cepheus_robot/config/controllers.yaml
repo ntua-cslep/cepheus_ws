@@ -42,5 +42,5 @@ left_wrist_trajectory_controller:
 
 # Gripper action Controller --------------------------
 left_gripper_position_controller:
-  type: "position_controllers/GripperActionController"
+  type: position_controllers/GripperActionController
   joint: left_finger_joint

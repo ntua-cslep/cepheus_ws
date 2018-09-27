@@ -20,13 +20,19 @@
 		<param name="controllers_to_spawn" value="joint_state_publisher 
 							reaction_wheel_effort_controller
 							left_shoulder_position_controller
-							left_elbow_position_controller"/>
+							left_elbow_position_controller
+							left_wrist_position_controller"/>
 	</node>
 
 
         <!--node name="cepheus_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" args="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller" output="screen">
         </node-->
 
+	
+	<node pkg="rosserial_python" type="serial_node.py" name="serial_node">
+    			<param name="port" value="/dev/ttyACM0"/>
+    			<param name="baud" value="9600"/>
+  	</node>
 
         <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
                 <!--param name="tf_prefix" value="servicer" /-->
