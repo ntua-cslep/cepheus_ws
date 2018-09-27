@@ -323,7 +323,7 @@ void CepheusHW::writeMotors()
 			width[i] = (uint16_t)((cmd[i]/M_PI + 0.5)*PWM_HOBBY_SERVO_RANGE + PWM_HOBBY_SERVO_MIN_DT); // rad to width
 		}
 		*/
-		/*if(cmd[i] >= 0 && cmd[i] <= M_PI) {
+		/*if(cmd[i] >= 0 && cmd[i] <= M_PI) {:
                         width[i] = (uint16_t)((cmd[i]/M_PI)*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT); // rad to width
                 }
 
@@ -333,43 +333,54 @@ void CepheusHW::writeMotors()
 		}*/
 		
 		//Left Finger(0-120 deg)
-		if(i==8){
+		if(i==10){
 
-			/*uint16_t p = 0;
+			//uint16_t p = 0;
 			
-			while(std::scanf("%d",&p) != 360){
+			//while(std::scanf("%d",&p) != 360){
+			if(cmd[i] >= 0 && cmd[i] <= 120 ){
        
-				double div = (double)p/(double)120;
+				double div = (double)cmd[i]/(double)120;
 				
-			        ROS_WARN("div %f",div);                   
+			        //ROS_WARN("div %f",div);                   
 				 
                                 width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
                         
                                 dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
                                 DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-
+			}
+			else {
+                        	width[i] = width[i];
+                        	//ROS_WARN("Servo commanded out of rande. Command Ignored");
+                	}
                                 
-			}*/
+			//}
                 }
 
 		//Left Wrist (0-150 deg)
-                if(i==10){
+                if(i==8){
 
-                        uint16_t p = 0;
 
-                        while(std::scanf("%d",&p) != 360){
+                        //uint16_t p = 0;
 
-                                double div = (double)p/(double)150;
+                        //while(std::scanf("%d",&p) != 360){
+			if(cmd[i] >= 0 && cmd[i] <= 150 ){
 
-                                ROS_WARN("div %f",div);
+                                double div = (double)cmd[i]/(double)150;
+
+                                //ROS_WARN("div %f",div);
                                  
                                 width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
                            
                                 dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[i]);
                                 DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
                            
-                         
                         }
+			else {
+                        	width[i] = width[i];
+                        	//ROS_WARN("Servo commanded out of rande. Command Ignored");
+                	} 
+                        //}
                 }
 
 

@@ -29,6 +29,7 @@ FILE *latency_fp;
 
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
+#include <std_msgs/UInt8.h>
 
 #include "cepheus_hardware.h"
 
@@ -200,6 +201,13 @@ void ctrl_C_Handler(int sig)
 	g_request_shutdown = 1;
 }
 
+
+void fsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
+{
+        ROS_WARN("fsr val : %d",cmd->data);
+}
+
+
 int main(int argc, char** argv) 
 {
 
@@ -256,6 +264,11 @@ int main(int argc, char** argv)
 
 	ros::Subscriber thrust_sub =  nh.subscribe("cmd_thrust", 1, thrusterCallback);
 	ros::Subscriber torque_sub =  nh.subscribe("cmd_torque", 1, torqueCallback);
+
+	//For reading the fsr from the gripper
+	ros::Subscriber fsr_sub =  nh.subscribe("fsr", 1, fsrCallback);
+
+
 	// ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);
 
