@@ -109,7 +109,15 @@ class CepheusHW : public hardware_interface::RobotHW
 		//Panagiotis mavridis
 		void init_left_finger();
 		void init_left_wrist();
-		void set_left_fsr_value(uint8_t);
+
+		void set_left_fsr_value(uint8_t val){
+			fsr_values[0] = val;
+		}
+
+		uint8_t get_left_fsr_val(){
+			return fsr_values[0];
+		}
+		
 
 	private:
 		bool homing(int, float);

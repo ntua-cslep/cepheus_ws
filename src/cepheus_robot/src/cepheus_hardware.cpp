@@ -177,7 +177,7 @@ uint8_t CepheusHW::init_2()
 //The gripper opens full  
 void CepheusHW::init_left_finger(){
 
-	for(int i = LEFT_FINGER_MAX_ANGLE; i >= LEFT_FINGER_INIT_ANGLE; i--){
+	for(int i = LEFT_FINGER_INIT_ANGLE; i <= LEFT_FINGER_MAX_ANGLE; i++){
 
 		cmd[10] = i;
 		double div = (double)cmd[10]/(double)LEFT_FINGER_MAX_ANGLE;
@@ -185,27 +185,25 @@ void CepheusHW::init_left_finger(){
 	
 		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
 		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+		sleep(0.5);
 	}
 }
 
 //The left wrist in middle position  
 void CepheusHW::init_left_wrist(){
 
-	for(int i = LEFT_WRIST_MAX_ANGLE; i >= LEFT_WRIST_INIT_ANGLE; i--){
+	//for(int i = LEFT_WRIST_MAX_ANGLE; i >= LEFT_WRIST_INIT_ANGLE; i--){
 
-	        cmd[8] = i;
+	        //cmd[8] = i;
+		cmd[8] = LEFT_WRIST_INIT_ANGLE;
 	        double div = (double)cmd[8]/(double)LEFT_WRIST_MAX_ANGLE;
 	        width[8] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
 	        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]);
 	        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	}
+	//}
 }
 
-void CepheusHW::set_left_fsr_value(uint8_t left_fsr_val){
-	
-	fsr_values[0] = left_fsr_val;
-}
 
 uint8_t CepheusHW::init()
 {

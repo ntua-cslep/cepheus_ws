@@ -38,6 +38,15 @@ FILE *latency_fp;
 #define SH_DUR 2
 #define ELB_DUR 2
 
+//Panagiotis Mavridis
+//---Constants for fsr force controller
+#define F_DES 5
+#define KP 1
+#define KI 1
+
+//------------------------------------
+
+
 CepheusHW robot;
 
 double rw_torque = 0.0;
@@ -209,6 +218,24 @@ void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 }
 
 
+//Pnagiotis Mavridis
+//PI controller for left gripper (force controll)
+void left_fsr_update(){
+	
+
+	static uint8_t error_sum = 0;
+	
+	uint8_t fsr_val = robot.get_left_fsr_val();
+	uint8_t error = (uint8_t)F_DES - fsr_val;
+
+	//PI out (Kp * error + Ki * sum(error))
+	error_sum += error;
+	uint8_t pi_out = KP * error + KI * error_sum;
+
+}
+
+//-------------------------------------------
+
 
 
 int main(int argc, char** argv) 
@@ -289,8 +316,8 @@ int main(int argc, char** argv)
 	
 	   //int err = readErr();
 	   //if (err) {
-	   fixJointPos();
-	   ROS_INFO("Fixed, now init...\n");
+	   //fixJointPos();
+	   //ROS_INFO("Fixed, now init...\n");
 	   //}
 	 
 
@@ -354,7 +381,7 @@ int main(int argc, char** argv)
 		cmd.data = 0;
 		left_elbow_pub.publish(cmd);
 	 */
-	ros::AsyncSpinner init_spinner(1);
+	ros::AsyncSpinner init_spinner(2);
 	init_spinner.start();
 
 	while(!controllers_started)
