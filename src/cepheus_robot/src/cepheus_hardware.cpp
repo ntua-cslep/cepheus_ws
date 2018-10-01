@@ -18,13 +18,6 @@
 
 #define TORQUE_REDUCE 1.0
 
-//--Panagiotis Mavridis----
-//For testing gripper finger
-void CepheusHW::testGripperFinger(){
-
-}
-//-------------------------
-
 
 
 void print_binary(uint16_t x)
@@ -123,9 +116,9 @@ void CepheusHW::setHomePos(int i, float val)
 
 void CepheusHW::setJointTorque(int sh,  int elb)
 {
-	cmd[5] = elb * 0.020/TORQUE_REDUCE;
+	cmd[5] = elb * 0.010/TORQUE_REDUCE;
 	//cmd[4] = sh * 0.0020/TORQUE_REDUCE;
-	cmd[4] = sh * 0.00010/TORQUE_REDUCE;
+	cmd[4] = sh * 0.00015/TORQUE_REDUCE;
 
 	fflush(stdout);
 	//ROS_WARN("shoulder: %f, elbow: %f\n",cmd[4],cmd[5]);
@@ -160,7 +153,7 @@ uint8_t CepheusHW::init_2()
 	{
 		assert (home_pos[i]>0);
 		if (i==4) {
-			assert(homing(i,0.0020));
+			assert(homing(i,0.0015));
 			setJointTorque(-1,0);
 			writeMotors();
 
@@ -173,12 +166,45 @@ uint8_t CepheusHW::init_2()
 
 		} 
 		else if (i==5) {
-			assert(homing(i,0.0020));
+			assert(homing(i,0.0015));
 		}
 
 		for(int j=0; j<8; j++) cmd[j] = 0.0;    
 		writeMotors();
 	}
+}
+
+//The gripper opens full  
+void CepheusHW::init_left_finger(){
+
+	for(int i = LEFT_FINGER_MAX_ANGLE; i >= LEFT_FINGER_INIT_ANGLE; i--){
+
+		cmd[10] = i;
+		double div = (double)cmd[10]/(double)LEFT_FINGER_MAX_ANGLE;
+		width[10] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+	
+		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
+		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	}
+}
+
+//The left wrist in middle position  
+void CepheusHW::init_left_wrist(){
+
+	for(int i = LEFT_WRIST_MAX_ANGLE; i >= LEFT_WRIST_INIT_ANGLE; i--){
+
+	        cmd[8] = i;
+	        double div = (double)cmd[8]/(double)LEFT_WRIST_MAX_ANGLE;
+	        width[8] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+
+	        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]);
+	        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	}
+}
+
+void CepheusHW::set_left_fsr_value(uint8_t left_fsr_val){
+	
+	fsr_values[0] = left_fsr_val;
 }
 
 uint8_t CepheusHW::init()
@@ -189,20 +215,20 @@ uint8_t CepheusHW::init()
 		ROS_INFO_STREAM("homing "<< i << " joint");
 		if(home_pos[i]>0) {
 			if(i==7 || i==5) {
-				//cmd[i] = 0.0028;
-				cmd[i] = 0.01;
-				//cmd[i-1] = -0.0015;
-				cmd[i-1] = -0.01;
+				cmd[i] = 0.001;
+				//cmd[i] = 0.01;
+				cmd[i-1] = -0.0015;
+				//cmd[i-1] = -0.01;
 			}
 			else{
-				//cmd[i] = 0.0020;
-                                cmd[i] = 0.01;
+				cmd[i] = 0.0020;
+                                //cmd[i] = 0.01;
 
 			}
 			writeMotors();
 			ros::Time init_time = ros::Time::now();
 			ros::Duration timer;
-			while(timer.toSec()<20.0) {
+			while(timer.toSec()<10.0) {
 				heartbeat();
 				readLimitSwitches();
 				readEncoders(timer);
@@ -317,44 +343,29 @@ void CepheusHW::writeMotors()
 	//RC SERVOS
 	for (int i=8; i<12; i++)
 	{
-
-		/*
-		if(cmd[i]<M_PI/2 && cmd[i]>-M_PI/2) {
-			width[i] = (uint16_t)((cmd[i]/M_PI + 0.5)*PWM_HOBBY_SERVO_RANGE + PWM_HOBBY_SERVO_MIN_DT); // rad to width
-		}
-		*/
-		/*if(cmd[i] >= 0 && cmd[i] <= M_PI) {:
-                        width[i] = (uint16_t)((cmd[i]/M_PI)*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT); // rad to width
-                }
-
-		else {
-			width[i] = width[i];
-			//ROS_WARN("Servo commanded out of rande. Command Ignored");
-		}*/
-		
 		//Left Finger(0-120 deg)
 		if(i==10){
 
-			//uint16_t p = 0;
 			
-			//while(std::scanf("%d",&p) != 360){
-			if(cmd[i] >= 0 && cmd[i] <= 120 ){
-       
-				double div = (double)cmd[i]/(double)120;
-				
-			        //ROS_WARN("div %f",div);                   
-				 
-                                width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
+
+
+       				double div = (double)cmd[i]/(double)LEFT_FINGER_MAX_ANGLE;
+			
+			       	//ROS_WARN("div %f",div);                   
+			 
+                               	width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
                         
-                                dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
-                                DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+                               	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
+                               	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 			}
 			else {
                         	width[i] = width[i];
                         	//ROS_WARN("Servo commanded out of rande. Command Ignored");
-                	}
+                	
+			}
                                 
-			//}
+			
                 }
 
 		//Left Wrist (0-150 deg)
@@ -364,9 +375,9 @@ void CepheusHW::writeMotors()
                         //uint16_t p = 0;
 
                         //while(std::scanf("%d",&p) != 360){
-			if(cmd[i] >= 0 && cmd[i] <= 150 ){
+			if(cmd[i] >= 0 && cmd[i] <= LEFT_WRIST_MAX_ANGLE ){
 
-                                double div = (double)cmd[i]/(double)150;
+                                double div = (double)cmd[i]/(double)LEFT_WRIST_MAX_ANGLE;
 
                                 //ROS_WARN("div %f",div);
                                  
@@ -821,7 +832,13 @@ double CepheusHW::getVel(int idx)
 }
 
 CepheusHW::CepheusHW() 
-{ 
+{
+	//Panagiotis Mavridis
+	//Initialzing the force sensor values to 0
+	for(int i=0; i < FSR_NUM; i++){
+		fsr_values[i] = 0;
+	}
+ 
 	int16_t encoder_init_value = 0;
 
 	// connect and register the reaction_wheel joint state interface

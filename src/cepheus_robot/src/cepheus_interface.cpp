@@ -99,7 +99,7 @@ void fixJointPos()
 
 				robot.setJointTorque(0,0);
 				robot.writeMotors();
-				robot.disable();
+				//robot.disable();
 			}
 		} else if (c == 'e') {
 			for(;;) {
@@ -127,7 +127,7 @@ void fixJointPos()
 
 				robot.setJointTorque(0,0);
 				robot.writeMotors();
-				robot.disable();
+				//robot.disable();
 			}
 		} else if (c == 'q') {
 			break;
@@ -202,10 +202,13 @@ void ctrl_C_Handler(int sig)
 }
 
 
-void fsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
+void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 {
-        ROS_WARN("fsr val : %d",cmd->data);
+        //ROS_WARN("fsr val : %d",cmd->data);
+	robot.set_left_fsr_value(cmd->data);
 }
+
+
 
 
 int main(int argc, char** argv) 
@@ -266,7 +269,7 @@ int main(int argc, char** argv)
 	ros::Subscriber torque_sub =  nh.subscribe("cmd_torque", 1, torqueCallback);
 
 	//For reading the fsr from the gripper
-	ros::Subscriber fsr_sub =  nh.subscribe("fsr", 1, fsrCallback);
+	ros::Subscriber fsr_sub =  nh.subscribe("left_fsr", 1, leftFsrCallback);
 
 
 	// ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
@@ -283,18 +286,22 @@ int main(int argc, char** argv)
 	robot.setHomePos(4, l1_limit_pos); 
 	robot.setHomePos(5, l2_limit_pos);
 
-	/*
-	   int err = readErr();
-	   if (err) {
+	
+	   //int err = readErr();
+	   //if (err) {
 	   fixJointPos();
 	   ROS_INFO("Fixed, now init...\n");
-	   }
-	 */
+	   //}
+	 
 
 
-	//INITIALIZE THE
-//	robot.init();
+	//INITIALIZE THE SHOUDER AND ELBOW
+	//robot.init();
 	//robot.init_2();
+
+	//Initialize the left finger and the wrist
+	robot.init_left_finger();
+	robot.init_left_wrist();
 
 
 	//--------PANOS NKWSTAS effort to load/start controllers with topic----------------------

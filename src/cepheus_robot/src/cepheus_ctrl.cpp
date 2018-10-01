@@ -128,7 +128,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 				for (it = cs.begin() ; it != cs.end(); ++it){
 
-					ROS_INFO("%s",(it->state).c_str());
+					//ROS_INFO("%s",(it->state).c_str());
 					if((it->state).compare("running") == 0){
 						count_started_ctrls++;
 					}

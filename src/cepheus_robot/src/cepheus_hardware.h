@@ -39,6 +39,9 @@
 
 //-----Panagiotis Mavridis 18/09/2018--------
 
+//The number of force sensors used (left and right gripper)
+#define FSR_NUM 2
+
 //--Model: TO DO put website
 
 //A servo motor expects to be updated every 20 ms
@@ -48,6 +51,9 @@
 //The servo used here expects the duration of the pulse to be from 0.9 ms to 2.1 ms
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
+
+#define LEFT_FINGER_INIT_ANGLE 0
+#define LEFT_FINGER_MAX_ANGLE 120
 
 //PWM_FINGER_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_FINGER_SERVO_MIN_DT 2250 
@@ -64,6 +70,9 @@
 //The servo used here expects the duration of the pulse to be from 0.9 ms to 2.1 ms
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
+
+#define LEFT_WRIST_INIT_ANGLE 75 //max_angle/2
+#define LEFT_WRIST_MAX_ANGLE 150
 
 //PWM_WRIST_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_WRIST_SERVO_MIN_DT 2250 
@@ -96,7 +105,11 @@ class CepheusHW : public hardware_interface::RobotHW
 		double getVel(int);
 		void safeClose(); 
 		CepheusHW();
-		void testGripperFinger(); 
+
+		//Panagiotis mavridis
+		void init_left_finger();
+		void init_left_wrist();
+		void set_left_fsr_value(uint8_t);
 
 	private:
 		bool homing(int, float);
@@ -113,6 +126,9 @@ class CepheusHW : public hardware_interface::RobotHW
 		double max_thrust;
 		/*****SERVOS parameters*********/
 		double force[4];
+
+		//Panagiotis Mavridis
+		uint8_t fsr_values[FSR_NUM];
 
 		/******motors********/
 		int limit[8];
