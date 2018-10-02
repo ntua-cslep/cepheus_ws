@@ -101,6 +101,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 			} while(space != NULL);
 			num_of_ctrls++;
+			
 
 			//Check if the number of started controllers is the same with the number you expected
 			//if yes then send "OK" to "cepheus interface"
@@ -137,16 +138,17 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 				sleep(1);
 
 			} while(count_started_ctrls < num_of_ctrls);
+			//ROS_WARN("vgikaaa");
 
 			//send OK response to interface
-			ros::Rate loop_rate(500);
+			ros::Rate loop_rate(200);
 			int count = 0;
 			std_msgs::String res_msg;
 			res_msg.data = "OK";
 			while (count < MSG_NUM) {
 
 				ctl_pub.publish(res_msg);
-
+				
 				loop_rate.sleep();
 				++count;
 			}

@@ -117,6 +117,14 @@ class CepheusHW : public hardware_interface::RobotHW
 		uint8_t get_left_fsr_val(){
 			return fsr_values[0];
 		}
+
+		void set_manipulator_width(int manipulator, uint16_t width_val){
+			
+			if(manipulator >=0 && manipulator <=12)
+				width[manipulator] = width_val;
+			else
+				ROS_WARN("Cannot set width!. Manipulator %d does not exist!", manipulator);
+		}
 		
 
 	private:

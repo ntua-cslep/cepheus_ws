@@ -40,9 +40,12 @@ FILE *latency_fp;
 
 //Panagiotis Mavridis
 //---Constants for fsr force controller
-#define F_DES 5
+#define F_DES 4
 #define KP 1
 #define KI 1
+#define F_HIGH 5
+#define F_LOW 3
+
 
 //------------------------------------
 
@@ -151,6 +154,7 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
 	if(!controllers_started && (msg->data).compare("OK") == 0){
 		controllers_started = true;
+		ROS_WARN("STARTEEEEDD");
 	}
 
 }
@@ -213,7 +217,7 @@ void ctrl_C_Handler(int sig)
 
 void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 {
-        //ROS_WARN("fsr val : %d",cmd->data);
+	//ROS_WARN("fsr val : %d",cmd->data);
 	robot.set_left_fsr_value(cmd->data);
 }
 
@@ -226,12 +230,30 @@ void left_fsr_update(){
 	static uint8_t error_sum = 0;
 	
 	uint8_t fsr_val = robot.get_left_fsr_val();
-	uint8_t error = (uint8_t)F_DES - fsr_val;
+	uint8_t error = (uint8_t)F_HIGH - fsr_val;
+	ROS_WARN("FSR: %d, error: %d", fsr_val, error);
 
-	//PI out (Kp * error + Ki * sum(error))
-	error_sum += error;
-	uint8_t pi_out = KP * error + KI * error_sum;
+	if(error > 1){
 
+		//PI out (Kp * error + Ki * sum(error))
+		error_sum += error;
+		uint8_t pi_out = KP * error + KI * error_sum;
+		ROS_WARN("pi_out %d",pi_out);
+		//tranpose force to width in order to give the command
+		
+		//d_theta = 8.51 * ln(force) + 18.5 (from experiments)
+		uint16_t width_val = 0;
+		double d_theta = 8.51 * log((double)pi_out) + 18.5;
+		
+		double div = (double)d_theta/(double)LEFT_FINGER_MAX_ANGLE;
+                width_val = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+		
+		//left gripper has number 10
+		robot.set_manipulator_width(10, width_val);
+	}
+	else{
+		ROS_INFO_STREAM("Gripper is holding the object!");
+	}
 }
 
 //-------------------------------------------
@@ -316,8 +338,8 @@ int main(int argc, char** argv)
 	
 	   //int err = readErr();
 	   //if (err) {
-	   //fixJointPos();
-	   //ROS_INFO("Fixed, now init...\n");
+	   fixJointPos();
+	   ROS_INFO("Fixed, now init...\n");
 	   //}
 	 
 
@@ -390,7 +412,7 @@ int main(int argc, char** argv)
 		ros::Duration time_step = curr_time - prev_time;
 		prev_time = curr_time;
 
-		ros::spinOnce();
+		//ros::spinOnce();
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
@@ -418,9 +440,10 @@ int main(int argc, char** argv)
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
-
-
-		//robot.testGripperFinger();
+		ROS_WARN("edw");
+		//Panagiotis Mavridis
+		left_fsr_update();
+		ROS_WARN("edw 2");
 		robot.writeMotors();
 
 		robot.heartbeat();

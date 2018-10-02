@@ -215,11 +215,11 @@ uint8_t CepheusHW::init()
 			if(i==7 || i==5) {
 				cmd[i] = 0.001;
 				//cmd[i] = 0.01;
-				cmd[i-1] = -0.0015;
+				cmd[i-1] = -0.003;
 				//cmd[i-1] = -0.01;
 			}
 			else{
-				cmd[i] = 0.0020;
+				cmd[i] = 0.0030;
                                 //cmd[i] = 0.01;
 
 			}
@@ -343,27 +343,9 @@ void CepheusHW::writeMotors()
 	{
 		//Left Finger(0-120 deg)
 		if(i==10){
-
-			
-			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
-
-
-       				double div = (double)cmd[i]/(double)LEFT_FINGER_MAX_ANGLE;
-			
-			       	//ROS_WARN("div %f",div);                   
-			 
-                               	width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
                         
-                               	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
-                               	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-			}
-			else {
-                        	width[i] = width[i];
-                        	//ROS_WARN("Servo commanded out of rande. Command Ignored");
-                	
-			}
-                                
-			
+                        	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
+                        	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
                 }
 
 		//Left Wrist (0-150 deg)
