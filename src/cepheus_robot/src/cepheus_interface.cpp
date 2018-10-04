@@ -40,11 +40,11 @@ FILE *latency_fp;
 
 //Panagiotis Mavridis
 //---Constants for fsr force controller
-#define F_DES 4
-#define KP 1
+#define F_DES 3
+#define KP 0.01
 #define KI 1
-#define F_HIGH 5
-#define F_LOW 3
+#define F_HIGH 4
+#define F_LOW 2
 
 
 //------------------------------------
@@ -221,38 +221,70 @@ void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 	robot.set_left_fsr_value(cmd->data);
 }
 
+//Trend line transforming force to d_theta for gripper
+double fsr_trend_line(bool positive ,double pi_out){
+
+	double rv = 0;
+	rv = 0.25 * (double)pow(pi_out,3) - (double)4 * (double)pow(pi_out,2) + 20.4 * pi_out + 0.04;
+	
+	if(positive)
+		return rv;
+	else
+		return -rv;
+}
 
 //Pnagiotis Mavridis
 //PI controller for left gripper (force controll)
 void left_fsr_update(){
 	
 
-	static uint8_t error_sum = 0;
-	
-	uint8_t fsr_val = robot.get_left_fsr_val();
-	uint8_t error = (uint8_t)F_HIGH - fsr_val;
-	ROS_WARN("FSR: %d, error: %d", fsr_val, error);
+	static int8_t error_sum = 0;
+	static bool gripper_first_time = true;
+	static long double gripper_last_angle = 0.0;
+	static long double new_angle = 0.0;
+	long double d_theta = 0.0;
+	uint16_t width_val = 0;	
+	long double div = 0.0;
+	long double pi_out = 0.0;
 
-	if(error > 1){
+	if(gripper_first_time){
+		gripper_last_angle = (double)LEFT_FINGER_MAX_ANGLE;
+		gripper_first_time = false;
+	}
+	
+
+	int8_t fsr_val = robot.get_left_fsr_val();
+	int8_t error = fsr_val - (int8_t)F_HIGH ;
+
+	if(error < -1 || error > 1){
 
 		//PI out (Kp * error + Ki * sum(error))
-		error_sum += error;
-		uint8_t pi_out = KP * error + KI * error_sum;
-		ROS_WARN("pi_out %d",pi_out);
+		//error_sum += error;
+		//uint8_t pi_out = KP * error + KI * error_sum;
+		pi_out = (double)KP * (double)error;
+			
 		//tranpose force to width in order to give the command
-		
-		//d_theta = 8.51 * ln(force) + 18.5 (from experiments)
-		uint16_t width_val = 0;
-		double d_theta = 8.51 * log((double)pi_out) + 18.5;
-		
-		double div = (double)d_theta/(double)LEFT_FINGER_MAX_ANGLE;
-                width_val = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
-		
+		if(fsr_val == 0){
+			d_theta = 1;
+		}
+		else if(fsr_val > 0 && fsr_val < F_DES){
+			d_theta = fsr_trend_line(true, abs(pi_out));
+		}	
+		else if(fsr_val >= F_DES){
+			d_theta = fsr_trend_line(false, abs(pi_out));
+		}
+
+	       	//holding the last position of the gripper
+               	gripper_last_angle -= d_theta;
+		new_angle = gripper_last_angle;
+
+		div = new_angle/(double)LEFT_FINGER_MAX_ANGLE;
+          	width_val = (uint16_t)(div*(double)PWM_FINGER_SERVO_RANGE + (double)PWM_FINGER_SERVO_MIN_DT);
+
 		//left gripper has number 10
-		robot.set_manipulator_width(10, width_val);
-	}
-	else{
-		ROS_INFO_STREAM("Gripper is holding the object!");
+                robot.set_manipulator_width(10, width_val);
+
+		ROS_WARN("FSR: %d, error: %d, PI_OUT: %Lf, d_theta: %Lf, new_angle: %Lf", fsr_val, error, pi_out, d_theta, new_angle);
 	}
 }
 
@@ -440,10 +472,9 @@ int main(int argc, char** argv)
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
-		ROS_WARN("edw");
 		//Panagiotis Mavridis
 		left_fsr_update();
-		ROS_WARN("edw 2");
+		
 		robot.writeMotors();
 
 		robot.heartbeat();
