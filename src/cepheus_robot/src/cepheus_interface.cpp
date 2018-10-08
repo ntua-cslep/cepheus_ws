@@ -28,8 +28,10 @@ FILE *latency_fp;
 
 
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 #include <std_msgs/UInt8.h>
+
 
 #include "cepheus_hardware.h"
 
@@ -154,7 +156,7 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
 	if(!controllers_started && (msg->data).compare("OK") == 0){
 		controllers_started = true;
-		ROS_WARN("STARTEEEEDD");
+		//ROS_WARN("STARTEEEEDD");
 	}
 
 }
@@ -220,6 +222,28 @@ void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 	//ROS_WARN("fsr val : %d",cmd->data);
 	robot.set_left_fsr_value(cmd->data);
 }
+
+
+void leftWristCallback(const std_msgs::Float64::ConstPtr& cmd)
+{
+	//ROS_WARN("CMD WRIST %lf",cmd->data);
+	if(cmd->data >=0 && cmd->data <= LEFT_WRIST_MAX_ANGLE){
+		robot.setCmd(8, (double)cmd->data);
+	}
+	else
+		ROS_WARN("Cmd to left wrist out of bounds!");
+}
+
+void leftGripperCallback(const std_msgs::Float64::ConstPtr& cmd)
+{
+	//ROS_WARN("CMD GRIP %lf",cmd->data);
+	if(cmd->data >=0 && cmd->data <= LEFT_FINGER_MAX_ANGLE)
+        	robot.setCmd(10, (double)cmd->data);
+	 else
+                ROS_WARN("Cmd to left gripper out of bounds!");
+
+}
+
 
 //Trend line transforming force to d_theta for gripper
 double fsr_trend_line(bool positive ,double pi_out){
@@ -332,6 +356,8 @@ int main(int argc, char** argv)
 
 	//------------------------------------------------------ 
 
+	//Panagiotis Mavridis
+	bool ready_to_grip = false;
 
 
 	double max_cur[8];
@@ -346,12 +372,19 @@ int main(int argc, char** argv)
 
 	robot.setParam(max_cur, max_thrust);
 
+
+
 	ros::Subscriber thrust_sub =  nh.subscribe("cmd_thrust", 1, thrusterCallback);
 	ros::Subscriber torque_sub =  nh.subscribe("cmd_torque", 1, torqueCallback);
 
 	//For reading the fsr from the gripper
 	ros::Subscriber fsr_sub =  nh.subscribe("left_fsr", 1, leftFsrCallback);
-
+	
+	//For giving cmdsto the left wrist and gripper if nesessary
+	ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
+	ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
+	
+	
 
 	// ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);
@@ -435,7 +468,7 @@ int main(int argc, char** argv)
 		cmd.data = 0;
 		left_elbow_pub.publish(cmd);
 	 */
-	ros::AsyncSpinner init_spinner(2);
+	ros::AsyncSpinner init_spinner(1);
 	init_spinner.start();
 
 	while(!controllers_started)
@@ -459,8 +492,8 @@ int main(int argc, char** argv)
 
 	ROS_WARN("About to enter normal spinning...");
 
-	ros::AsyncSpinner spinner(1);
-	spinner.start();
+	//ros::AsyncSpinner spinner(1);
+	//spinner.start();
 
 	while(!g_request_shutdown)
 	{
@@ -470,11 +503,16 @@ int main(int argc, char** argv)
 
 		ros::spinOnce();
 
+		//ROS_WARN("cmd[%d] is= %lf",LEFT_WRIST,robot.getCmd(LEFT_WRIST));
+
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
 		//Panagiotis Mavridis
-		left_fsr_update();
 		
+		if(ready_to_grip){
+			left_fsr_update();
+		}
+
 		robot.writeMotors();
 
 		robot.heartbeat();

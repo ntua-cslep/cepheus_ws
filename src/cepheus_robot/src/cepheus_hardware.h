@@ -14,6 +14,8 @@
 #include <hardware_interface/robot_hw.h>
 #include <dm7820_library.h>
 
+
+
 #define LIMIT_L1 1 // limits switch pin in port 0
 #define LIMIT_L2 3 // limits switch pin in port 0
 
@@ -85,6 +87,23 @@
 //-------------------------------
 
 
+enum ManipulatorMapping{
+		
+	REACTION_WHEEL, //0
+	unknown1,	//1
+	unknown2,	//2
+	unknown3,	//3
+	LEFT_SHOULDER,	//4
+	LEFT_ELBOW,	//5
+	RIGHT_SHOULDER,	//6
+	RIGHT_ELBOW,	//7
+	LEFT_WRIST,	//8
+	RIGHT_WRIST,	//9
+	LEFT_GRIPPER,	//10
+	RIGHT_GRIPPER	//11
+};
+
+
 class CepheusHW : public hardware_interface::RobotHW
 {
 	public:
@@ -124,6 +143,10 @@ class CepheusHW : public hardware_interface::RobotHW
 				width[manipulator] = width_val;
 			else
 				ROS_WARN("Cannot set width!. Manipulator %d does not exist!", manipulator);
+		}
+	
+		double getCmd(int i){
+			return cmd[i];
 		}
 		
 

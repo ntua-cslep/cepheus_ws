@@ -34,7 +34,7 @@ left_wrist_position_controller:
 
 # Trajectory controller ------------------------------
 left_wrist_trajectory_controller:
-  type: "position_controllers/JointTrajectoryController"
+  type: position_controllers/JointTrajectoryController
   joints:
       - left_wrist
   gains: 

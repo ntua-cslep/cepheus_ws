@@ -259,8 +259,8 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-1.570796327"
-      upper="1.570796327"
+      lower="20"
+      upper="150"
       effort="1"
       velocity="10" />
     <!--calibration

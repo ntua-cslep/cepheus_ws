@@ -179,13 +179,13 @@ void CepheusHW::init_left_finger(){
 
 	//for(int i = LEFT_FINGER_INIT_ANGLE; i <= LEFT_FINGER_MAX_ANGLE; i++){
 
-		cmd[10] = LEFT_FINGER_MAX_ANGLE;
-		double div = (double)cmd[10]/(double)LEFT_FINGER_MAX_ANGLE;
-		width[10] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+		cmd[LEFT_GRIPPER] = LEFT_FINGER_MAX_ANGLE;
+		double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
+		width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 	
-		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
+		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[LEFT_GRIPPER]);
 		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-		sleep(0.5);
+		
 	//}
 }
 
@@ -195,11 +195,11 @@ void CepheusHW::init_left_wrist(){
 	//for(int i = LEFT_WRIST_MAX_ANGLE; i >= LEFT_WRIST_INIT_ANGLE; i--){
 
 	        //cmd[8] = i;
-		cmd[8] = LEFT_WRIST_INIT_ANGLE;
-	        double div = (double)cmd[8]/(double)LEFT_WRIST_MAX_ANGLE;
-	        width[8] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+		cmd[LEFT_WRIST] = (double)LEFT_WRIST_INIT_ANGLE;
+	        double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
+	        width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
-	        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]);
+	        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[LEFT_WRIST]);
 	        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 	//}
 }
@@ -342,36 +342,48 @@ void CepheusHW::writeMotors()
 	for (int i=8; i<12; i++)
 	{
 		//Left Finger(0-120 deg)
+
 		if(i==10){
+			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
+
+                                double div = (double)cmd[i]/(double)LEFT_FINGER_MAX_ANGLE;
+
+                                //ROS_WARN("div %f",div);
+				//ROS_WARN("cmd %lf",cmd[10]);
+	                        width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+
                         
                         	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[i]);
                         	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+			}
+			else{
+				width[i] = width[i];
+                	        ROS_WARN("Servo commanded out of range. Command Ignored");
+			}
                 }
 
 		//Left Wrist (0-150 deg)
                 if(i==8){
 
 
-                        //uint16_t p = 0;
-
-                        //while(std::scanf("%d",&p) != 360){
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_WRIST_MAX_ANGLE ){
+			
+		                double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
 
-                                double div = (double)cmd[i]/(double)LEFT_WRIST_MAX_ANGLE;
+				
+				//ROS_WARN("cmd %lf",cmd[LEFT_WRIST]);
+        		        width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
-                                //ROS_WARN("div %f",div);
-                                 
-                                width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
-                           
-                                dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[i]);
-                                DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+                		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[LEFT_WRIST]);
+                		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+
                            
                         }
 			else {
                         	width[i] = width[i];
-                        	//ROS_WARN("Servo commanded out of rande. Command Ignored");
-                	} 
-                        //}
+                        	ROS_WARN("Servo commanded out of range. Command Ignored");
+                	}
+                        
                 }
 
 
@@ -831,11 +843,13 @@ CepheusHW::CepheusHW()
 	hardware_interface::JointStateHandle state_handle_left_elbow("left_elbow", &pos[5], &vel[5], &eff[5]);
 	jnt_state_interface.registerHandle(state_handle_left_elbow);
 	// connect and register right_wrist the joint state interface
-	hardware_interface::JointStateHandle state_handle_left_wrist("left_wrist", &cmd[8], &force[0], &force[0]);
+
+	/*hardware_interface::JointStateHandle state_handle_left_wrist("left_wrist", &cmd[8], &force[0], &force[0]);
 	jnt_state_interface.registerHandle(state_handle_left_wrist);
 
 	hardware_interface::JointStateHandle state_handle_left_finger_joint("left_finger_joint", &cmd[10], &force[0], &force[0]);
 	jnt_state_interface.registerHandle(state_handle_left_finger_joint);
+	*/
 
 	// // connect and register the right_shoulder joint state interface
 	// hardware_interface::JointStateHandle state_handle_right_shoulder("right_shoulder", &pos[6], &vel[6], &eff[6]);
@@ -862,11 +876,13 @@ CepheusHW::CepheusHW()
 	hardware_interface::JointHandle effort_handle_left_elbow(jnt_state_interface.getHandle("left_elbow"), &cmd[5]);
 	jnt_eff_interface.registerHandle(effort_handle_left_elbow);
 	// connect and register the left_wrist joint effort interface
-	hardware_interface::JointHandle position_handle_left_wrist(jnt_state_interface.getHandle("left_wrist"), &cmd[8]);
+	
+	/*hardware_interface::JointHandle position_handle_left_wrist(jnt_state_interface.getHandle("left_wrist"), &cmd[8]);
 	jnt_pos_interface.registerHandle(position_handle_left_wrist);
 	// connect and register the left_grip joint effort interface
 	hardware_interface::JointHandle position_handle_left_finger_joint(jnt_state_interface.getHandle("left_finger_joint"), &cmd[10]);
 	jnt_pos_interface.registerHandle(position_handle_left_finger_joint);
+	*/
 	// // connect and register the right_shoulder joint effort interface
 	// hardware_interface::JointHandle effort_handle_right_shoulder(jnt_state_interface.getHandle("right_shoulder"), &cmd[6]);
 	// jnt_eff_interface.registerHandle(effort_handle_right_shoulder);
