@@ -263,6 +263,7 @@ void left_fsr_update(){
 	
 
 	static int8_t error_sum = 0;
+	static int8_t count = 0;
 	static bool gripper_first_time = true;
 	static long double gripper_last_angle = 0.0;
 	static long double new_angle = 0.0;
@@ -270,6 +271,8 @@ void left_fsr_update(){
 	uint16_t width_val = 0;	
 	long double div = 0.0;
 	long double pi_out = 0.0;
+	static ros::Time init_time = ros::Time::now();
+	static ros::Duration dur;
 
 	if(gripper_first_time){
 		gripper_last_angle = (double)LEFT_FINGER_MAX_ANGLE;
@@ -283,7 +286,22 @@ void left_fsr_update(){
 	if(error < -1 || error > 1){
 
 		//PI out (Kp * error + Ki * sum(error))
-		//error_sum += error;
+		error_sum += error;
+		count ++;
+		double avg = (double)error_sum/(double)count; 
+		
+		//For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
+		dur =  ros::Time::now() - init_time;
+		if(dur.toSec() >= 10 && avg >= 2.0){
+			//open and try again
+			robot.init_left_finger();
+			sleep(2);
+			init_time = ros::Time::now();
+			error_sum = 0;
+			count = 0;
+		}
+		
+
 		//uint8_t pi_out = KP * error + KI * error_sum;
 		pi_out = (double)KP * (double)error;
 			
