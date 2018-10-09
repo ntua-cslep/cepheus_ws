@@ -73,8 +73,8 @@
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
 
-#define LEFT_WRIST_INIT_ANGLE 75 //max_angle/2
-#define LEFT_WRIST_MAX_ANGLE 150
+#define LEFT_WRIST_INIT_ANGLE 60 //max_angle/2
+#define LEFT_WRIST_MAX_ANGLE 120
 
 //PWM_WRIST_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_WRIST_SERVO_MIN_DT 2250 
@@ -118,6 +118,7 @@ class CepheusHW : public hardware_interface::RobotHW
 		void readLimitSwitches();
 		uint8_t init();
 		uint8_t init_2();
+		uint8_t init_3();
 		void readEncoders(ros::Duration);
 		void setParam(double*, double);
 		void setCmd(int,double);
@@ -128,6 +129,9 @@ class CepheusHW : public hardware_interface::RobotHW
 		//Panagiotis mavridis
 		void init_left_finger();
 		void init_left_wrist();
+
+		void update_shoulder(double, double, double, double&);
+		void update_elbow(double, double, double, double&);
 
 		void set_left_fsr_value(uint8_t val){
 			fsr_values[0] = val;

@@ -432,6 +432,7 @@ int main(int argc, char** argv)
 	//INITIALIZE THE SHOUDER AND ELBOW
 	//robot.init();
 	//robot.init_2();
+	robot.init_3();
 
 	//Initialize the left finger and the wrist
 	robot.init_left_finger();
@@ -529,9 +530,9 @@ int main(int argc, char** argv)
 		cm.update(curr_time, time_step);
 		//Panagiotis Mavridis
 		
-		//if(ready_to_grip){
+		if(ready_to_grip){
 			left_fsr_update();
-		//}
+		}
 
 		robot.writeMotors();
 
