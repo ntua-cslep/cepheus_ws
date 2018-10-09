@@ -263,14 +263,14 @@ void left_fsr_update(){
 	
 
 	static int8_t error_sum = 0;
-	static int8_t count = 0;
+	static uint16_t count = 0;
 	static bool gripper_first_time = true;
-	static long double gripper_last_angle = 0.0;
-	static long double new_angle = 0.0;
-	long double d_theta = 0.0;
+	static double gripper_last_angle = 0.0;
+	static double new_angle = 0.0;
+	double d_theta = 0.0;
 	uint16_t width_val = 0;	
-	long double div = 0.0;
-	long double pi_out = 0.0;
+	double div = 0.0;
+	double pi_out = 0.0;
 	static ros::Time init_time = ros::Time::now();
 	static ros::Duration dur;
 
@@ -281,7 +281,7 @@ void left_fsr_update(){
 	
 
 	int8_t fsr_val = robot.get_left_fsr_val();
-	int8_t error = fsr_val - (int8_t)F_HIGH ;
+	int8_t error = fsr_val - (int8_t)F_DES ;
 
 	if(error < -1 || error > 1){
 
@@ -289,19 +289,20 @@ void left_fsr_update(){
 		error_sum += error;
 		count ++;
 		double avg = (double)error_sum/(double)count; 
-		
+		ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);	
 		//For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
 		dur =  ros::Time::now() - init_time;
-		if(dur.toSec() >= 10 && avg >= 2.0){
+		if(dur.toSec() >= 10 && avg <= -2.0 ){
 			//open and try again
 			robot.init_left_finger();
 			sleep(2);
 			init_time = ros::Time::now();
 			error_sum = 0;
 			count = 0;
+			gripper_first_time = true;
 		}
 		
-
+		
 		//uint8_t pi_out = KP * error + KI * error_sum;
 		pi_out = (double)KP * (double)error;
 			
@@ -320,13 +321,14 @@ void left_fsr_update(){
                	gripper_last_angle -= d_theta;
 		new_angle = gripper_last_angle;
 
-		div = new_angle/(double)LEFT_FINGER_MAX_ANGLE;
+		robot.setCmd(LEFT_GRIPPER, new_angle);
+		/*div = new_angle/(double)LEFT_FINGER_MAX_ANGLE;
           	width_val = (uint16_t)(div*(double)PWM_FINGER_SERVO_RANGE + (double)PWM_FINGER_SERVO_MIN_DT);
 
 		//left gripper has number 10
                 robot.set_manipulator_width(10, width_val);
-
-		ROS_WARN("FSR: %d, error: %d, PI_OUT: %Lf, d_theta: %Lf, new_angle: %Lf", fsr_val, error, pi_out, d_theta, new_angle);
+		*/
+		ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
 	}
 }
 
@@ -527,9 +529,9 @@ int main(int argc, char** argv)
 		cm.update(curr_time, time_step);
 		//Panagiotis Mavridis
 		
-		if(ready_to_grip){
+		//if(ready_to_grip){
 			left_fsr_update();
-		}
+		//}
 
 		robot.writeMotors();
 
