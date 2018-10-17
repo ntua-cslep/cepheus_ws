@@ -89,18 +89,18 @@
 
 enum ManipulatorMapping{
 		
-	REACTION_WHEEL, //0
-	unknown1,	//1
-	unknown2,	//2
-	unknown3,	//3
-	LEFT_SHOULDER,	//4
-	LEFT_ELBOW,	//5
-	RIGHT_SHOULDER,	//6
-	RIGHT_ELBOW,	//7
-	LEFT_WRIST,	//8
-	RIGHT_WRIST,	//9
-	LEFT_GRIPPER,	//10
-	RIGHT_GRIPPER	//11
+	REACTION_WHEEL = 0,	//0
+	unknown1,		//1
+	unknown2,		//2
+	unknown3,		//3
+	LEFT_SHOULDER,		//4
+	LEFT_ELBOW,		//5
+	RIGHT_SHOULDER,		//6
+	RIGHT_ELBOW,		//7
+	LEFT_WRIST,		//8
+	RIGHT_WRIST,		//9
+	LEFT_GRIPPER,		//10
+	RIGHT_GRIPPER		//11
 };
 
 
@@ -130,8 +130,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		void init_left_finger();
 		void init_left_wrist();
 
-		void update_shoulder(double, double, double, double&);
-		void update_elbow(double, double, double, double&);
+		void update_shoulder(double, double, double&);
+		void update_elbow(double, double, double&);
 
 		void set_left_fsr_value(uint8_t val){
 			fsr_values[0] = val;

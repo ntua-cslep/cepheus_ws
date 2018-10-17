@@ -136,21 +136,15 @@ void CepheusHW::setJointTorque(int sh,  int elb)
 
 //------------ For new init -------------------------
 
-void CepheusHW::update_shoulder(double dt, double shoulder_rate, double des, double &shoulder_torque)
+void CepheusHW::update_shoulder(double shoulder_rate, double des, double &shoulder_torque)
 {
 	double kp = 0.0258;
-
-	if (des > 0) {
-		if (!shoulder_rate) des = des + 0.01;
-	} else {
-		if (!shoulder_rate) des = des - 0.7;
-	}
 
 	double e(des-shoulder_rate);
 	shoulder_torque=kp*e;
 }
 
-void CepheusHW::update_elbow(double dt, double elbow_rate, double des, double &elbow_torque)
+void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque)
 {
 	double kp = 0.01;
 
@@ -183,192 +177,113 @@ bool CepheusHW::homing(int i, float torque)
 
 
 //----New init with velocity controll
+
+//		   	                ______	
+//		   	               /	
+//the velocity function is like this: /
+//t2 is the duration of the accelaration, then the velocity is steady
+double velocity_for_joint_init(double t2, double t, bool positive){
+
+	//7 degrees per second	
+	double vel_max_pos = (double)5/(double)180 * (double)M_PI;
+	double vel_max_neg = (double)4/(double)180 * (double)M_PI;
+	double vel_max = 0.0;
+
+	if(positive)
+		vel_max = vel_max_pos;
+	else
+		vel_max = vel_max_neg;
+
+	double vel_des = 0.0;
+
+	if(t <= t2){
+		
+		vel_des = vel_max/t2 * t;
+	}
+	else{
+		vel_des = vel_max;
+	}
+
+	if(positive)
+		return vel_des;
+	else
+		return -vel_des;
+}
+
+
 uint8_t CepheusHW::init_3()
 {
 
 
-    /*ROS_WARN("STARTED FRICTION DEBUGGING!");
-
-      cmd[5] = 0.0;
-
-      char c;
-
-      double step = -0.0005; 
-      ros::Time init_time = ros::Time::now();
-      ros::Duration timer;
-
-      while((c = getchar()) != 'q'){
-
-
-      if(c == 'i'){
-      cmd[5] = cmd[5] + step;
-      ROS_WARN("TORQUE : %f\n",cmd[5]);
-
-      }
-
-      ROS_WARN("TORQUE : %f\n",cmd[5]);
-
-      writeMotors();
-
-      ros::Time init_time = ros::Time::now();
-      ros::Duration timer;
-
-      while(timer.toSec()<1.5){
-      heartbeat();
-      readEncoders(timer);
-      timer = ros::Time::now() - init_time;
-      }
-
-
-      ROS_WARN("GIVE INPUT");
-
-      }*/
-//Initialize robot hardware 
-    /*  for (int i=7; i>3; i--)
-        {
-        ROS_INFO_STREAM("homing "<< i << " joint");
-        if(home_pos[i]>0) {
-        if(i==7 || i==5) {
-    //cmd[i] = 0.0007;
-    //cmd[i] = 0.0068;
-    cmd[i] = 0.0;
-    //cmd[i-1] = -0.005;
-    //cmd[i-1] = -0.0063;
-    cmd[i-1] = 0.0;
-    }
-    else{
-    //cmd[i] = 0.01;
-
-    ros::Time init_time = ros::Time::now();
-    ros::Duration timer;
-
-    while(timer.toSec()<1.5){
-    heartbeat();
-    readEncoders(timer);
-    timer = ros::Time::now() - init_time;
-    }
-
-
-    ROS_WARN("GIVE INPUT");
-
-    }
-     */
-	double elbow_out, shoulder_out;
-	        //double des_shoulder = 0.3, des_elbow = 0.19;
-	double des_shoulder = 0.33, des_elbow = 0.19;
+	double shoulder_out, elbow_out;
+	double des_shoulder, des_elbow;
 
 	        //Initialize robot hardware 
 	for (int i=4; i<8; i++)
 	{
+
 		ROS_INFO_STREAM("homing "<< i << " joint");
 
 		if(home_pos[i]>0) {
 
-            /*
-               if(i==7 || i==5) {//elbow
-
-               ros::Time init_time = ros::Time::now();
-               ros::Duration timer;
-
-            //while(timer.toSec()<10.0) {
-            int count = 0;
-            while(!isLimitReached(i)){
-
-            update_elbow(0.1, vel[5], des_elbow, elbow_out);
-            cmd[i] = elbow_out;
-
-            if (!vel[5]) {
-            //ROS_WARN("elbow out: %f",elbow_out);
-            count++;
-            }
-
-            writeMotors();
-
-            heartbeat();
-            readLimitSwitches();
-            readEncoders(timer);
-            if(isLimitReached(i)) {
-            ROS_INFO_STREAM("home "<< i << " susccesful");
-            offset_pos[i] = home_pos[i] - pos[i];
-            break;
-            }
-            }
-            ROS_INFO_STREAM("home "<< i << " susccesful");
-            offset_pos[i] = home_pos[i] - pos[i];
-
-            cmd[i] = 0.0;
-            writeMotors();
-
-            }
-             */
-            if (i==4) {//shoulder
-
-                    /*
-                       while(timer.toSec()<1.5) {
-
-                       des_elbow = -0.25;
-                       update_elbow(0.1, vel[5], des_elbow, elbow_out);
-                    //ROS_WARN("vel elbow (fix): %f",vel[5]);
-                    cmd[i+1] = elbow_out;
-                    writeMotors();
-
-                    heartbeat();
-                    readLimitSwitches();
-                    readEncoders(timer);
+            		if (i==4) {//shoulder
 
 
+    	        		ros::Time init_time = ros::Time::now();
+        	    		ros::Duration timer;
 
-                    }
-                     */
+        	    		timer = ros::Time::now() - init_time;
+        	    		while(!isLimitReached(i)){
 
-            	ros::Time init_time = ros::Time::now();
-            	ros::Duration timer;
+					des_shoulder = velocity_for_joint_init(10, timer.toSec(), true);
 
-            	timer = ros::Time::now() - init_time;
-            	while(!isLimitReached(i)){
-            		update_shoulder(0.1, vel[4], des_shoulder, shoulder_out);
-            		cmd[i] = shoulder_out;
+        	    			update_shoulder(vel[4], des_shoulder, shoulder_out);
+        	    			cmd[i] = shoulder_out;
 
-            		writeMotors();
+        	    			writeMotors();
 
-            		heartbeat();
-            		readLimitSwitches();
-            		readEncoders(timer);
-            		timer = ros::Time::now() - init_time;
-            	}
-            	ROS_INFO_STREAM("home "<< i << " susccesful");
-            	offset_pos[i] = home_pos[i] - pos[i];
+        	    			heartbeat();
+        	    			readLimitSwitches();
+        	    			readEncoders(timer);
+        	    			timer = ros::Time::now() - init_time;
+        	    		}
+        	    		ROS_INFO_STREAM("home "<< i << " susccesful");
+        	    		offset_pos[i] = home_pos[i] - pos[i];
 
-            	cmd[i] = 0.0;
-            	cmd[i+1] = 0.0;
-            	writeMotors();
 
-            	sleep(1);
+        	    		sleep(1);
 
-            	des_shoulder = -0.550;
-            	while(!isLimitReached(i+1)){
-            		update_shoulder(0.1, vel[4], des_shoulder, shoulder_out);
 
-            		cmd[i] = shoulder_out;
+				init_time = ros::Time::now();
+				timer = ros::Time::now() - init_time;
 
-            		writeMotors();
+        	    		
+        	    		while(!isLimitReached(i+1)){
 
-            		heartbeat();
-            		readLimitSwitches();
-            		readEncoders(timer);
-            		timer = ros::Time::now() - init_time;
-            	}
-            	ROS_INFO_STREAM("home "<< i+1 << " susccesful");
-            	offset_pos[i+1] = home_pos[i+1] - pos[i+1];
+					des_shoulder = velocity_for_joint_init(15, timer.toSec(), false);
+					des_elbow = velocity_for_joint_init(10, timer.toSec(), true);					        
+	
+		   			update_shoulder(vel[4], des_shoulder, shoulder_out);
+		       	    		cmd[i] = shoulder_out;
+					update_elbow(vel[5], des_elbow, elbow_out);
+                                        cmd[5] = elbow_out;
 
-            	cmd[i] = 0.0;
-            	cmd[i+1] = 0.0;
-            	writeMotors();
+		
+	        	    		writeMotors();
+		
+	        	    		heartbeat();
+	        	    		readLimitSwitches();
+	        	    		readEncoders(timer);
+	        	    		timer = ros::Time::now() - init_time;
+        		    	}
+            		
+				ROS_INFO_STREAM("home "<< i+1 << " susccesful");
+            			offset_pos[i+1] = home_pos[i+1] - pos[i+1];
 
-            }
-        }
-        else ROS_WARN_STREAM("No homing performed for " << i << " because no home position setted");
-    }
+            		}	
+        	}
+        	else ROS_WARN_STREAM("No homing performed for " << i << " because no home position setted");
+    	}
 }
 //------------------------------
 

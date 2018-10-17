@@ -433,11 +433,23 @@ int main(int argc, char** argv)
 	//robot.init();
 	//robot.init_2();
 	robot.init_3();
+	
+	//robot.init_left_shoulder();
+	/*
+	std_msgs::String msg;
+       	msg.data = "START_LEFT_SHOULDER_CTL";
+	ctl_pub.publish(msg);
+
+	//robot.init_left_elbow();
+        msg.data = "START_LEFT_ELBOW";
+        ctl_pub.publish(msg);
+	*/
 
 	//Initialize the left finger and the wrist
 	robot.init_left_finger();
 	robot.init_left_wrist();
 
+	sleep(5);
 
 	//--------PANOS NKWSTAS effort to load/start controllers with topic----------------------
 
@@ -494,7 +506,7 @@ int main(int argc, char** argv)
 
 	while(!controllers_started)
 	{
-		ros::Time curr_time = ros::Time::now();
+	/*	ros::Time curr_time = ros::Time::now();
 		ros::Duration time_step = curr_time - prev_time;
 		prev_time = curr_time;
 
@@ -507,7 +519,7 @@ int main(int argc, char** argv)
 		robot.writeMotors();
 		robot.heartbeat();
 
-		loop_rate.sleep();
+		loop_rate.sleep();*/
 	}
 	init_spinner.stop();
 
@@ -525,6 +537,8 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 
 		//ROS_WARN("cmd[%d] is= %lf",LEFT_WRIST,robot.getCmd(LEFT_WRIST));
+		
+
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
@@ -553,9 +567,6 @@ int main(int argc, char** argv)
 		//     rw_torque = rw_available_torque;
 		// }
 		// else if (rw_torque < -rw_available_torque) {
-		//     rw_torque = -rw_available_torque;
-		// }
-		// //calculate velocity cmd for reaction wheel
 		// double rw_cmd_vel;
 		// rw_cmd_vel = (rw_torque/rw_total_inertia) * time_step.toSec() + rw_cur_vel;
 		// if(fabs(rw_cmd_vel) > rw_max_speed)
@@ -591,3 +602,6 @@ int main(int argc, char** argv)
 	//fclose(latency_fp);
 	return 0;
 }
+#include <errno.h>
+#include <error.h>
+#include <getopt.h>
