@@ -116,8 +116,6 @@ class CepheusHW : public hardware_interface::RobotHW
 		void setHomePos(int i, float val);
 		void setJointTorque(int sh, int elb);
 		void readLimitSwitches();
-		uint8_t init();
-		uint8_t init_2();
 		uint8_t init_3();
 		void readEncoders(ros::Duration);
 		void setParam(double*, double);
@@ -127,6 +125,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		CepheusHW();
 
 		//Panagiotis mavridis
+		void init_left_shoulder();
+		void init_left_elbow();
 		void init_left_finger();
 		void init_left_wrist();
 
@@ -152,7 +152,11 @@ class CepheusHW : public hardware_interface::RobotHW
 		double getCmd(int i){
 			return cmd[i];
 		}
-		
+	
+		double getPos(int i){
+			return pos[i];
+		}
+
 
 	private:
 		bool homing(int, float);

@@ -21,7 +21,6 @@ find_package(catkin REQUIRED COMPONENTS
   controller_interface
   controller_manager
   angles
-  ecl_ipc  
 )
 
 ## System dependencies are found with CMake's conventions

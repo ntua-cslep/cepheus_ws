@@ -34,34 +34,90 @@
 
 #define MSG_NUM 100
 
-bool started_ctrls = false;
+bool standard_ctrls_started = false;
+bool left_shoulder_ctrl_started = false;
+bool left_elbow_ctrl_started = false;
 int num_of_ctrls = 0;
 pid_t pid;
+std::vector<std::string>controllers_to_start;
+
+std::vector<std::string> split(std::string strToSplit, char delimeter)
+{
+	std::stringstream ss(strToSplit);
+	std::string item;
+	std::vector<std::string> splittedStrings;
+	while (std::getline(ss, item, delimeter))
+	{
+		splittedStrings.push_back(item);
+	}
+	return splittedStrings;
+}
+
+bool reloadControllerLibraries(ros::NodeHandle &n){
+
+	ros::service::waitForService("/controller_manager/reload_controller_libraries", -1);
+	ros::ServiceClient reload_controller = n.serviceClient<controller_manager_msgs::ReloadControllerLibraries>(
+			"/controller_manager/reload_controller_libraries");
+
+	controller_manager_msgs::ReloadControllerLibraries reload_controllers_libraries_msg;
+	reload_controllers_libraries_msg.request.force_kill = true;
+	reload_controller.call(reload_controllers_libraries_msg);
+	return reload_controllers_libraries_msg.response.ok;
+
+}
+
+
+bool loadController(ros::NodeHandle &n, std::string c_name){
+
+	ROS_WARN(c_name.c_str());
+
+	ros::service::waitForService("/controller_manager/load_controller", -1);
+	ros::ServiceClient load_controller = n.serviceClient<controller_manager_msgs::LoadController>(
+			"/controller_manager/load_controller");
+
+	controller_manager_msgs::LoadController load_controller_msg;
+	load_controller_msg.request.name = c_name;
+	load_controller.call(load_controller_msg);
+	return load_controller_msg.response.ok;
+}
+
+bool startControllers(ros::NodeHandle &n, std::vector<std::string>& controllers_to_start){
+
+	ros::service::waitForService("/controller_manager/switch_controller", -1);
+	ros::ServiceClient switch_controller = n.serviceClient<controller_manager_msgs::SwitchController>(
+			"/controller_manager/switch_controller");
+
+	controller_manager_msgs::SwitchController switch_controller_msg;
+	switch_controller_msg.request.start_controllers = controllers_to_start;
+	switch_controller_msg.request.strictness =  switch_controller_msg.request.STRICT;
+
+	switch_controller.call(switch_controller_msg);
+
+	return switch_controller_msg.response.ok;
+}
+
 
 // res: nothing to return because failure stops 'ctrl' and interface hangs
 void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Publisher &ctl_pub)
 {
-	if (started_ctrls) return;
-	else started_ctrls = true;
 
-	if(((msg->data).compare("START_CTL") == 0)){
-		//reload controllers libraries
-		ros::service::waitForService("/controller_manager/reload_controller_libraries", -1);
-		ros::ServiceClient reload_controller = n.serviceClient<controller_manager_msgs::ReloadControllerLibraries>(
-				"/controller_manager/reload_controller_libraries");
 
-		controller_manager_msgs::ReloadControllerLibraries reload_controllers_libraries_msg;
-		reload_controllers_libraries_msg.request.force_kill = true;
-		reload_controller.call(reload_controllers_libraries_msg);
-		assert(reload_controllers_libraries_msg.response.ok);
+	if(standard_ctrls_started && left_shoulder_ctrl_started && left_elbow_ctrl_started)
+		return;
 
-		ROS_INFO("SUCCEDED_TO_RELOAD_CONTROLLERS_LIBRARIES");
-
+	if(!standard_ctrls_started && ((msg->data).compare("START_STANDARD_CTRLS")== 0)){
 
 
 		std::string cnames;
 		ros::param::get("~controllers_to_spawn",cnames);
 		ROS_WARN(cnames.c_str());
+
+		controllers_to_start = split(cnames, ' ');
+
+		//reload controllers libraries
+		assert(reloadControllerLibraries(n));
+		ROS_INFO_STREAM("RELOADED CONTROLLERS LIBRARIES");
+
 
 		pid = fork();
 
@@ -76,43 +132,15 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 			execl("/opt/ros/kinetic/bin/roslaunch", "/opt/ros/kinetic/bin/roslaunch", "cepheus_robot","spawner.launch", command, (char *)0);	
 		}
 		//PARENT 
-		else {
-			// loop through list of controllers
-			// check if controllers_to_spawn started
-			// if all send message
+		else {		
+			int num_of_ctrls = controllers_to_start.size();
 
-
-			//Calculate how many controllers are expected to start
-			char ctrl_names[248];
-
-			sprintf(ctrl_names, "%s",cnames.c_str());
-
-			char *space = NULL;
-
-			space = strchr(ctrl_names, ' ');
-
-			do{
-				num_of_ctrls++;
-				if(space != NULL){
-
-					space ++;
-					space = strchr(space, ' ');
-				}
-
-			} while(space != NULL);
-			num_of_ctrls++;
-			
-
-			//Check if the number of started controllers is the same with the number you expected
-			//if yes then send "OK" to "cepheus interface"
 			int count_started_ctrls;
 			//sleep for 2 seconds
 			sleep(2);
 
-
 			ros::ServiceClient ctrls_list = n.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
 			controller_manager_msgs::ListControllers msg;
-
 
 			std::vector<controller_manager_msgs::ControllerState> cs;
 			std::vector<controller_manager_msgs::ControllerState>::iterator it;
@@ -126,8 +154,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 				}	
 
 				count_started_ctrls = 0;
-				
-
 				for (it = cs.begin() ; it != cs.end(); ++it){
 
 					ROS_INFO("%s",(it->name).c_str());
@@ -139,23 +165,101 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 				sleep(1);
 
 			} while(count_started_ctrls < num_of_ctrls);
-			//ROS_WARN("vgikaaa");
 
 			//send OK response to interface
 			ros::Rate loop_rate(200);
 			int count = 0;
 			std_msgs::String res_msg;
-			res_msg.data = "OK";
+			res_msg.data = "STANDARD_CTRLS_OK";
 			while (count < MSG_NUM) {
 
 				ctl_pub.publish(res_msg);
-				
+
 				loop_rate.sleep();
 				++count;
 			}
 
+			standard_ctrls_started = true;
 		}
-	}	
+
+	}
+	else if(!left_shoulder_ctrl_started && ((msg->data).compare("START_LEFT_SHOULDER_CTRL")== 0)){	
+
+
+		bool rv;
+
+		rv = loadController(n, std::string("left_shoulder_position_controller"));
+		if(rv)		
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		std::vector<std::string> v;
+		v.push_back(std::string("left_shoulder_position_controller"));
+
+		rv = startControllers(n, v);
+		if(rv)
+                        ROS_WARN("STARTED");
+                else
+                        ROS_WARN("could not start");
+
+		//send OK response to interface
+		ros::Rate loop_rate(200);
+		int count = 0;
+		std_msgs::String res_msg;
+		res_msg.data = "LEFT_SHOULDER_CTRL_OK";
+		while (count < MSG_NUM) {
+
+			ctl_pub.publish(res_msg);
+
+			loop_rate.sleep();
+			++count;
+		}
+
+		left_shoulder_ctrl_started = true;
+
+
+
+	}
+	else if(!left_elbow_ctrl_started && ((msg->data).compare("START_LEFT_ELBOW_CTRL")== 0)){
+
+		bool rv;
+
+                rv = loadController(n, std::string("left_elbow_position_controller"));
+		if(rv)
+                        ROS_WARN("LOADED");
+                else
+                        ROS_WARN("could not load");
+
+
+                std::vector<std::string> v;
+                v.push_back(std::string("left_elbow_position_controller"));
+
+		
+                rv = startControllers(n, v);
+		if(rv)
+                        ROS_WARN("STARTED");
+                else
+                        ROS_WARN("could not start");
+
+
+                //send OK response to interface
+                ros::Rate loop_rate(200);
+                int count = 0;
+                std_msgs::String res_msg;
+                res_msg.data = "LEFT_ELBOW_CTRL_OK";
+                while (count < MSG_NUM) {
+
+                        ctl_pub.publish(res_msg);
+
+                        loop_rate.sleep();
+                        ++count;
+                }
+
+                left_elbow_ctrl_started = true;
+
+        }
+
 }
 
 int main(int argc, char **argv)
@@ -172,46 +276,6 @@ int main(int argc, char **argv)
 	 *  either through a call to ros::shutdown() or a Ctrl-C. 
 	 */
 	ros::spin();
-
-	/*
-	   int count_stopped_ctrls;
-	   sleep(2);
-	   ros::ServiceClient ctrls_list = n.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
-	   controller_manager_msgs::ListControllers msg;
-
-
-	   std::vector<controller_manager_msgs::ControllerState> cs;
-	   std::vector<controller_manager_msgs::ControllerState>::iterator it;
-
-	   do{
-	   if (ctrls_list.call(msg)){
-	   cs = msg.response.controller;
-	   }
-	   else{
-	   ROS_ERROR("Failed to call service");
-	   }	
-
-	   sleep(1);
-	   } while(!cs.empty());
-	 */
-
-	int status = 0;
-	while (wait(&status) > 0) ;
-	ROS_WARN("Just picked up my dead offspring");
-
-
-	/*
-	   ros::Rate loop_rate(500);
-	   int count = 0;
-	   std_msgs::String res_msg;
-	   res_msg.data = "END";
-	   while (count < MSG_NUM) {
-	   ctl_pub.publish(res_msg);
-
-	   loop_rate.sleep();
-	   ++count;
-	   }
-	 */
 
 	return 0;
 }
