@@ -194,7 +194,7 @@
       xyz="0 0 1" />
     <limit
       lower="-3.14"
-      upper="1.5"
+      upper="1.75"
       effort="2"
       velocity="20" />
     <!--calibration

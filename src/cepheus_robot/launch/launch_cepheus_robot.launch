@@ -12,7 +12,7 @@
                 <param name="rw_max_power" value="30"/>
                 <param name="loop_rate" value="200.0"/>
                 <param name="left_shoulder_limit_pos" value="2.59" />
-                <param name="left_elbow_limit_pos" value="1.5" />
+                <param name="left_elbow_limit_pos" value="1.75" />
                 
         </node>
 

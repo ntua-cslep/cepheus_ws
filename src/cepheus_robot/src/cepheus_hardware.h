@@ -56,6 +56,7 @@
 
 #define LEFT_FINGER_INIT_ANGLE 0
 #define LEFT_FINGER_MAX_ANGLE 120
+#define LEFT_FINGER_MIN_ANGLE 0
 
 //PWM_FINGER_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_FINGER_SERVO_MIN_DT 2250 
@@ -73,9 +74,9 @@
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
 
-#define LEFT_WRIST_INIT_ANGLE 60 //max_angle/2
+#define LEFT_WRIST_INIT_ANGLE 46 //max_angle/2
 #define LEFT_WRIST_MAX_ANGLE 120
-
+#define LEFT_WRIST_MIN_ANGLE 0
 //PWM_WRIST_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_WRIST_SERVO_MIN_DT 2250 
 
