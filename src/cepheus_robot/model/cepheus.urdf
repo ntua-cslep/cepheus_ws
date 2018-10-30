@@ -27,7 +27,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://cepheus_robot/meshes/cepheus.STL" />
+          filename="file://cepheus_robot/meshes/cepheus.STL" />
       </geometry>
       <material name="LightGrey"/>
     </visual>
@@ -46,7 +46,7 @@
       <material name="silver"> <color rgba="0.5 0.5 0.5 1"/> </material>
 		<geometry>
         <mesh
-          filename="package://cepheus_robot/meshes/reaction_wheel.STL" />
+          filename="file://cepheus_robot/meshes/reaction_wheel.STL" />
       </geometry>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </visual>

@@ -31,7 +31,7 @@
   	</node-->
 
         <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
-                <!--param name="tf_prefix" value="servicer" /-->
+                <param name="tf_prefix" value="servicer" />
                 <param name="publish_frequency" value="100"/>
         </node>  
 
@@ -53,6 +53,9 @@
                 <param name="probe_offset" value="0.523"/>
         </node>  
 
+	<node name="gripper_target_broadcaster" pkg="cepheus_robot" type="gripper_target_broadcaster" output="screen">
+	</node>
+
         <!--node name="cepheus_mouse_odom_publisher" pkg="cepheus_robot" type="mouse_odom_node" output="screen">
                 <param name="left_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.3:1.0-event-mouse"/>
                 <param name="right_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.4:1.0-event-mouse"/>
@@ -67,10 +70,10 @@
         <!--include file="$(find botasys_force_torque_sensor)/launch/driver.launch">
         </include-->
 
-        <!--include file="$(find phase_space)/launch/track_two_objects.launch">
+        <include file="$(find phase_space)/launch/track_object.launch">
             <arg name="turn_rviz_on" value="false" />
             <arg name="turn_phase_space_on" value="true" />
-        </include-->
+        </include>
 
         <!--node name="assist_board" pkg="marker" type="assist_board" output="screen">
             <param name="board" value="/home/cepheus/catkin_ws/src/marker/markers/assist_board_meters_scaled.txt"/>

@@ -34,6 +34,8 @@ FILE *latency_fp;
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
 
+#include <tf/transform_listener.h>
+
 #include "cepheus_hardware.h"
 
 #define MSG_NUM 100
@@ -64,6 +66,7 @@ bool left_shoulder_ctrl_started = false;
 bool left_elbow_ctrl_started = false;
 
 bool ready_to_grip_left = false;
+bool left_gripper_first_time = true;
 
 //In order to be used from callbacks
 ros::Publisher  left_shoulder_pub, left_elbow_pub;
@@ -265,13 +268,16 @@ void leftGripperCallback(const std_msgs::Float64::ConstPtr& cmd)
 
 void leftGripperActionCallback(const std_msgs::Bool::ConstPtr& cmd)
 {
-        if(cmd->data){
-                ROS_WARN("ORDERED TO CLOSE LEFT_GRIPPER");
+	if(cmd->data){
+		ROS_WARN("ORDERED TO CLOSE LEFT_GRIPPER");
 		ready_to_grip_left = true;
 	}
-        else{
-                ROS_WARN("ORDERED TO OPEN LEFT_GRIPPER");
+	else{
+		ROS_WARN("ORDERED TO OPEN LEFT_GRIPPER");
 		ready_to_grip_left = false;
+		left_gripper_first_time = true;
+
+		robot.init_left_finger();
 	}
 
 }
@@ -296,19 +302,21 @@ void left_fsr_update(){
 
 	static int8_t error_sum = 0;
 	static uint16_t count = 0;
-	static bool gripper_first_time = true;
 	static double gripper_last_angle = 0.0;
 	static double new_angle = 0.0;
 	double d_theta = 0.0;
 	uint16_t width_val = 0;	
 	double div = 0.0;
 	double pi_out = 0.0;
-	static ros::Time init_time = ros::Time::now();
+	static ros::Time init_time;
 	static ros::Duration dur;
 
-	if(gripper_first_time){
+	if(left_gripper_first_time){
 		gripper_last_angle = (double)LEFT_FINGER_MAX_ANGLE;
-		gripper_first_time = false;
+		error_sum = 0;
+		count = 0;
+		init_time = ros::Time::now();
+		left_gripper_first_time = false;
 	}
 
 
@@ -331,7 +339,7 @@ void left_fsr_update(){
 			init_time = ros::Time::now();
 			error_sum = 0;
 			count = 0;
-			gripper_first_time = true;
+			left_gripper_first_time = true;
 		}
 
 
@@ -354,12 +362,6 @@ void left_fsr_update(){
 		new_angle = gripper_last_angle;
 
 		robot.setCmd(LEFT_GRIPPER, new_angle);
-		/*div = new_angle/(double)LEFT_FINGER_MAX_ANGLE;
-		  width_val = (uint16_t)(div*(double)PWM_FINGER_SERVO_RANGE + (double)PWM_FINGER_SERVO_MIN_DT);
-
-		//left gripper has number 10
-		robot.set_manipulator_width(10, width_val);
-		 */
 		ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
 	}
 }
@@ -455,6 +457,276 @@ void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array)
 }
 //---------------------------------------------------------------
 
+void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager::ControllerManager& cm, ros::Rate& loop_rate){
+
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+	//IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
+	int count = 0 ;
+	std_msgs::String msg;
+	msg.data = "START_STANDARD_CTRLS";
+	while (count < MSG_NUM) {
+
+		ctl_pub.publish(msg);
+
+		loop_rate.sleep();
+		++count;
+	}
+
+
+	ROS_WARN("ORDER TO START STANDARD CTLS!");
+
+	ros::AsyncSpinner init_spinner(2);
+	init_spinner.start();
+
+
+	ros::Time update_time = ros::Time::now();
+	ros::Time prev_time = update_time;
+
+	while(!standard_controllers_started)
+	{
+		ros::Duration time_step = update_time - prev_time;
+		prev_time = update_time;
+
+		cm.update(update_time, time_step);
+
+		loop_rate.sleep();
+	}
+	init_spinner.stop();
+
+	ROS_WARN("STANDARD CONTROLLERS HAVE STARTED!");
+
+	/*
+	//INITIALIZE THE LEFT ELBOW
+	robot.init_left_elbow();
+
+	msg.data = "START_LEFT_ELBOW_CTRL";
+	ctl_pub.publish(msg);
+
+	init_spinner.start();
+
+	while(!left_elbow_ctrl_started)
+	{
+	//ros::Time curr_time = ros::Time::now();
+	ros::Duration time_step = update_time - prev_time;
+	prev_time = update_time;
+
+	robot.readEncoders(time_step);
+	cm.update(update_time, time_step);
+
+	loop_rate.sleep();
+	}
+	init_spinner.stop();
+
+	//INITIALIZE THE LEFT SHOULDER
+	robot.init_left_shoulder();
+	msg.data = "START_LEFT_SHOULDER_CTRL";
+
+	count = 0;
+	while (count < MSG_NUM) {
+
+	ctl_pub.publish(msg);
+
+	loop_rate.sleep();
+	++count;
+	}
+
+
+
+	init_spinner.start();
+
+	std_msgs::Float64 set_point_msg;
+
+
+	while(!left_shoulder_ctrl_started)
+	{
+	//ros::Time curr_time = ros::Time::now();
+
+	set_point_msg.data = robot.getPos(LEFT_ELBOW);
+
+	left_elbow_pub.publish(set_point_msg);
+
+	ros::Duration time_step = update_time - prev_time;
+	prev_time = update_time;
+
+	robot.readEncoders(time_step);
+	cm.update(update_time, time_step);
+
+	loop_rate.sleep();
+	}
+
+	init_spinner.stop();
+	 */
+
+	//Initialize the left finger and the wrist
+	robot.init_left_finger();
+	robot.init_left_wrist();
+
+
+}
+
+double produce_sin_trajectory(double width, double period, double t){
+
+	double rv = width * sin((2.0 * M_PI) / period * t);
+	return rv;
+}
+
+double produce_sin_trajectory_wrist(double width, double period, double t){
+
+	double rv = 60 + width * sin((2.0 * M_PI) / period * t);
+	return rv;
+}
+
+
+void moveLeftArmSin(controller_manager::ControllerManager& cm){
+
+	double movement_duration = 12;
+
+	ros::Time init_time = ros::Time::now();
+	ros::Duration timer;
+	timer = ros::Time::now() - init_time;
+
+	robot.readEncoders(timer);
+
+	double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
+	double init_pos_shoulder = robot.getPos(LEFT_SHOULDER);
+	double init_pos_elbow = robot.getPos(LEFT_ELBOW);
+	double init_pos_wrist = robot.getCmd(LEFT_WRIST);
+
+	ros::Rate loop_rate(200);
+
+	std_msgs::Float64 cmd_pos;
+	double wrist_cmd;
+
+	while(timer.toSec() <= movement_duration){
+
+		robot.readEncoders(timer);
+
+		curr_pos_shoulder = robot.getPos(LEFT_SHOULDER);
+		curr_pos_elbow = robot.getPos(LEFT_ELBOW);
+		curr_pos_wrist = robot.getCmd(LEFT_WRIST);
+
+		cmd_pos.data = produce_sin_trajectory(0.78, movement_duration, timer.toSec());
+		left_shoulder_pub.publish(cmd_pos);
+
+		cmd_pos.data = produce_sin_trajectory(-1.22, movement_duration, timer.toSec());
+		left_elbow_pub.publish(cmd_pos);
+
+		wrist_cmd = produce_sin_trajectory_wrist(-30, movement_duration, timer.toSec());
+		robot.setCmd(LEFT_WRIST, wrist_cmd);
+
+		robot.readEncoders(timer);
+		cm.update(ros::Time::now(), timer);
+		robot.writeMotors();
+		robot.heartbeat();
+
+		ros::spinOnce();
+
+		timer = ros::Time::now() - init_time;
+		loop_rate.sleep();
+	}
+
+}
+
+
+void move_left_arm(double set_point_shoulder,
+		double set_point_elbow,
+		double set_point_wrist,
+		double movement_duration,
+		controller_manager::ControllerManager& cm){
+
+
+
+	ros::Time init_time = ros::Time::now();
+	ros::Duration timer;
+	timer = ros::Time::now() - init_time;
+
+	robot.readEncoders(timer);
+
+	double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
+	double init_pos_shoulder = robot.getPos(LEFT_SHOULDER);
+	double init_pos_elbow = robot.getPos(LEFT_ELBOW);
+	double init_pos_wrist = robot.getCmd(LEFT_WRIST);
+
+	ros::Rate loop_rate(200);
+
+	std_msgs::Float64 cmd_pos;
+	double wrist_cmd;
+
+	while(timer.toSec() <= movement_duration){
+
+		robot.readEncoders(timer);
+
+		curr_pos_shoulder = robot.getPos(LEFT_SHOULDER);
+		curr_pos_elbow = robot.getPos(LEFT_ELBOW);
+		curr_pos_wrist = robot.getCmd(LEFT_WRIST);
+
+		cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
+		//ROS_WARN("pos : %lf",cmd_pos.data);
+		left_shoulder_pub.publish(cmd_pos);
+
+		cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
+		left_elbow_pub.publish(cmd_pos);
+
+		wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
+		robot.setCmd(LEFT_WRIST, wrist_cmd);
+
+		robot.readEncoders(timer);
+		cm.update(ros::Time::now(), timer);
+		robot.writeMotors();
+		robot.heartbeat();
+
+		ros::spinOnce();
+
+
+		timer = ros::Time::now() - init_time;
+		loop_rate.sleep();
+	}
+
+}
+
+
+// Inverse kinematics...calculate the set points of the joints of the left arm given an angle that you want ot catch a target
+void catchObjectCallback(const std_msgs::Float64& cmd_angle_to_catch){
+
+	//theta2 needs to be from -90 deg to 0 deg
+
+
+        //TO DO...ADD COMMMEEEEENTS
+        double l1 = 0.181;
+        double l2 = 0.161;
+        double l3 = 0.05;
+
+	//Used in order to track the frame of the target
+	tf::TransformListener target_listener;
+	tf::StampedTransform transform;
+	
+	try{
+		target_listener.lookupTransform("cepheus","gripper_target",
+				ros::Time(0), transform);
+	}
+	catch (tf::TransformException &ex) {
+		ROS_ERROR("%s",ex.what());
+	}
+
+	//position of target
+	double x = transform.getOrigin().x();
+	double y = transform.getOrigin().y();
+
+	double X = x - 0.173 - l3;
+	double Y = y - 0.0914;
+
+	double cos_theta2 = (pow(X - 0.173 - l3, 2) + pow(Y - 0.0914, 2) - pow(l1, 2) - pow(l2, 2)) / (2 * l1 * l2);
+
+	double k1 = l1 + l2 * cos_theta2;
+	double k2 = l2 * cos_theta2;
+
+	double cos_theta1 = (k1 * X + k2 * Y)/(pow(k1, 2) + pow(k2, 2));
+	double sin_theta1 = (k1 * Y - k2 * X)/(pow(k1, 2) + pow(k2, 2));
+
+}
+
 
 int main(int argc, char** argv) 
 {
@@ -517,6 +789,7 @@ int main(int argc, char** argv)
 
 	ros::Subscriber move_left_arm_sub =  nh.subscribe("move_left_arm", 1, moveLeftArmCallback);
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
+	ros::Subscriber catch_object_sub =  nh.subscribe("catch_object", 1, catchObjectCallback);	
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);
@@ -538,125 +811,19 @@ int main(int argc, char** argv)
 	//fixJointPos();
 	//ROS_INFO("Fixed, now init...\n");
 	//}
-	//-------- effort to load/start controllers with topic----------------------
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	//Initialize the left arm and start the ros controllers
+	//init_left_arm_and_start_controllers(nh, cm, loop_rate);
 
-	//IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
-	int count = 0 ;
-	std_msgs::String msg;
-	msg.data = "START_STANDARD_CTRLS";
-	while (count < MSG_NUM) {
-
-		ctl_pub.publish(msg);
-
-		loop_rate.sleep();
-		++count;
-	}
+	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
 
 
-	ROS_WARN("ORDER TO START STANDARD CTLS!");
-
-	ros::AsyncSpinner init_spinner(2);
-	init_spinner.start();
-
-
-	ros::Time update_time = ros::Time::now();
-
-	while(!standard_controllers_started)
-	{
-		ros::Duration time_step = update_time - prev_time;
-		prev_time = update_time;
-
-		cm.update(update_time, time_step);
-
-		loop_rate.sleep();
-	}
-	init_spinner.stop();
-
-	ROS_WARN("STANDARD CONTROLLERS HAVE STARTED!");
-	
-/*
-	//INITIALIZE THE LEFT ELBOW
-	robot.init_left_elbow();
-
-	msg.data = "START_LEFT_ELBOW_CTRL";
-	ctl_pub.publish(msg);
-
-	init_spinner.start();
-
-	while(!left_elbow_ctrl_started)
-	{
-	//ros::Time curr_time = ros::Time::now();
-	ros::Duration time_step = update_time - prev_time;
-	prev_time = update_time;
-
-	robot.readEncoders(time_step);
-	cm.update(update_time, time_step);
-
-	loop_rate.sleep();
-	}
-	init_spinner.stop();
-
-	//INITIALIZE THE LEFT SHOULDER
-	robot.init_left_shoulder();
-	msg.data = "START_LEFT_SHOULDER_CTRL";
-
-	count = 0;
-	while (count < MSG_NUM) {
-
-	ctl_pub.publish(msg);
-
-	loop_rate.sleep();
-	++count;
-	}
-
-
-
-	init_spinner.start();
-
-	std_msgs::Float64 set_point_msg;
-
-
-	while(!left_shoulder_ctrl_started)
-	{
-	//ros::Time curr_time = ros::Time::now();
-
-	set_point_msg.data = robot.getPos(LEFT_ELBOW);
-
-	left_elbow_pub.publish(set_point_msg);
-
-	ros::Duration time_step = update_time - prev_time;
-	prev_time = update_time;
-
-	robot.readEncoders(time_step);
-	cm.update(update_time, time_step);
-
-	loop_rate.sleep();
-	}
-
-	init_spinner.stop();
-*/
-	 
-
-	//Initialize the left finger and the wrist
-	robot.init_left_finger();
-	robot.init_left_wrist();
-
-	/*
-	   sleep(5);
-	   ROS_WARN("STARTING MOVING LEFT ARM TO 0 POSITIONS");
-	   move_left_arm(cm, 0.0, 0.0, 100.0, 12.0);
-
-	   sleep(3);
-	//move the left arm to final position
-	ROS_WARN("STARTING MOVING LEFT ARM TO FINAL POSITIONS");
-	move_left_arm(cm, 2.0, 0.0, 12.0, left_shoulder_pub, left_elbow_pub);
+	/*ROS_WARN("STARTING SIN...");
+	  moveLeftArmSin(cm);	
+	  sleep(3);
+	  moveLeftArmSin(cm);
 	 */
-
 	ROS_WARN("About to enter normal spinning...");
-
 	ros::AsyncSpinner spinner(3);
 	spinner.start();
 
@@ -678,7 +845,6 @@ int main(int argc, char** argv)
 		time_step = curr_time - prev_time;
 		prev_time = curr_time;
 
-		//ROS_WARN("cmd[%d] is= %lf",LEFT_WRIST,robot.getCmd(LEFT_WRIST));
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);

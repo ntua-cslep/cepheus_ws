@@ -108,7 +108,7 @@ namespace phase_space {
 			//----Panagiotis Mavridis 03/05/2018-------
 
 			// Enable Timestamps
-			owlSetInteger(OWL_TIMESTAMP, OWL_ENABLE) ;
+			//owlSetInteger(OWL_TIMESTAMP, OWL_ENABLE) ;
 			//----------------------------------------
 
 
@@ -197,7 +197,7 @@ namespace phase_space {
 		if(n > 0)
 		{
 			//---Panagiotis Mavridis--------
-			grabTime(time);	
+			//grabTime(time);	
 			//------------------------------
 
 			for (int id = 0; id<n; id++)
@@ -220,17 +220,17 @@ namespace phase_space {
 
 			//----Panagiotis Mavridis 2/05/2018---------------
 			//-In order to calculate phase space path latency
-
+			/*
 			struct timespec ts;
 			clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 			phase_space_markers_.header.stamp.sec = ts.tv_sec;
 			phase_space_markers_.header.stamp.nsec = ts.tv_nsec;
-
+			*/
 
 			//------------------------------------------------
 
 			//---Original Code---replace with above-------
-			//phase_space_markers_.header.stamp = ros::Time::now();
+			phase_space_markers_.header.stamp = ros::Time::now();
 
 			phase_space_markers_.header.frame_id = "/phase_space_world";
 			pub_phase_space_markers_.publish(phase_space_markers_);

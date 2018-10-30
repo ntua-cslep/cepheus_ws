@@ -148,6 +148,7 @@ add_executable(base_controller_node src/base_controller.cpp)
 add_executable(base_planner_node src/base_planner.cpp)
 add_executable(cepheus_ctrl src/cepheus_ctrl.cpp)
 add_executable(cepheus_force_sensor src/bota_FTS.cpp)
+add_executable(gripper_target_broadcaster src/gripper_target_broadcaster.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(cepheus_robot_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -164,6 +165,7 @@ target_link_libraries(thrusters_interface_node  ${catkin_LIBRARIES} librtd_dm782
 target_link_libraries(base_controller_node  ${catkin_LIBRARIES} )
 target_link_libraries(base_planner_node  ${catkin_LIBRARIES} )
 target_link_libraries(cepheus_force_sensor ${catkin_LIBRARIES})
+target_link_libraries(gripper_target_broadcaster ${catkin_LIBRARIES})
 
 #############
 ## Install ##
