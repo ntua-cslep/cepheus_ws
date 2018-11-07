@@ -56,6 +56,8 @@ FILE *latency_fp;
 
 
 CepheusHW robot;
+controller_manager::ControllerManager cm(&robot);
+
 
 double rw_torque = 0.0;
 double rw_cur_vel = 0.0;
@@ -563,7 +565,6 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	robot.init_left_finger();
 	robot.init_left_wrist();
 
-
 }
 
 double produce_sin_trajectory(double width, double period, double t){
@@ -693,15 +694,17 @@ void catchObjectCallback(const std_msgs::Float64& cmd_angle_to_catch){
 	//theta2 needs to be from -90 deg to 0 deg
 
 
-        //TO DO...ADD COMMMEEEEENTS
-        double l1 = 0.181;
-        double l2 = 0.161;
-        double l3 = 0.05;
+	//TO DO...ADD COMMMEEEEENTS
+
+	//The lengths of the joint of the left arm
+	double l1 = 0.181004;	//shoulder
+	double l2 = 0.16005;	//elbow
+	double l3 = 0.0499;	//wrist
 
 	//Used in order to track the frame of the target
 	tf::TransformListener target_listener;
 	tf::StampedTransform transform;
-	
+
 	try{
 		target_listener.lookupTransform("cepheus","gripper_target",
 				ros::Time(0), transform);
@@ -711,19 +714,80 @@ void catchObjectCallback(const std_msgs::Float64& cmd_angle_to_catch){
 	}
 
 	//position of target
-	double x = transform.getOrigin().x();
-	double y = transform.getOrigin().y();
+	/*
+	   double x = transform.getOrigin().x();
+	   double y = transform.getOrigin().y();
+	 */
+	double x = 0.1;
+	double y = 0.21;
 
-	double X = x - 0.173 - l3;
-	double Y = y - 0.0914;
+	//the desired angle of the wrist translated to cepheus coordinates
+	double phi = (90.0/180.0) * M_PI;
 
-	double cos_theta2 = (pow(X - 0.173 - l3, 2) + pow(Y - 0.0914, 2) - pow(l1, 2) - pow(l2, 2)) / (2 * l1 * l2);
+	double xn = x - l3  * cos(phi);
+	double yn = y - l3 * sin(phi);
 
-	double k1 = l1 + l2 * cos_theta2;
-	double k2 = l2 * cos_theta2;
+	//calculating 2 results for each angle
 
-	double cos_theta1 = (k1 * X + k2 * Y)/(pow(k1, 2) + pow(k2, 2));
-	double sin_theta1 = (k1 * Y - k2 * X)/(pow(k1, 2) + pow(k2, 2));
+	//For q2
+	double q21 = acos(pow(xn, 2) + pow(yn, 2) - pow(l2, 2) - pow(l1, 2) / (2 * l1 * l2));
+	double q22 = -q21;
+
+	//For q1
+
+	//q11
+	double a = -l1 - l2 * cos(q21); 
+	double b = -l2 * sin(q21);
+	double c = -xn;
+	double d = -l2 * sin(q21);
+	double e = l1 + l2 * cos(q21);
+	double f = -yn;
+
+	double s11 = ((c/a) - (f/d)) / ((e/d) - (b/a));
+	double c11 = (b*s11/a)+ (c/a);
+
+	double q11 = atan2(s11, c11);
+
+	//q12
+	a = -l1 - l2 * cos(q22);
+	b = -l2 * sin(q22);
+	c = -xn;
+	d = -l2 * sin(q22);
+	e = l1 + l2 * cos(q22);
+	f = -yn;
+
+	double s12 = ((c/a) - (f/d))/((e/d) - (b/a));
+	double c12 = (b * s12/a) + (c/a);
+
+	double q12 = atan2(s12, c12);
+
+	double q31 = phi - q11 - q21;
+	double q32 = phi - q12 - q22;	
+
+	double tuple1[3];
+	double tuple2[3];
+
+	tuple1[0] = q11;
+	tuple1[1] = q21;
+	tuple1[2] = q31;
+
+	tuple2[0] = q12;
+        tuple2[1] = q22;
+        tuple2[2] = q32;
+
+	//TO DO>>>>qs to degereees
+
+	//checking the results in order to discard odd angles
+	if( (-60.0 <= q31 && q31 <= 60.0) && (-90.0 <= q21 && q21 <= 120.0) && (90.0 <= q11 && q11 <= 180.0) ){
+		//solution is tuple1
+	}
+	else if((-60.0 <= q32 && q32 <= 60.0) && (-90.0 <= q22 && q22 <= 120.0) && (90.0 <= q12 && q12 <= 180.0)){
+		//solution is tuple2
+	}
+	else{
+		//we see.....
+	}
+
 
 }
 
@@ -799,7 +863,6 @@ int main(int argc, char** argv)
 	left_elbow_pub =  nh.advertise<std_msgs::Float64>("left_elbow_position_controller/command", 1000);
 
 
-	controller_manager::ControllerManager cm(&robot);
 	ros::Time prev_time = ros::Time::now();
 
 	robot.setHomePos(4, l1_limit_pos); 
@@ -813,7 +876,7 @@ int main(int argc, char** argv)
 	//}
 
 	//Initialize the left arm and start the ros controllers
-	//init_left_arm_and_start_controllers(nh, cm, loop_rate);
+	init_left_arm_and_start_controllers(nh, cm, loop_rate);
 
 	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
 

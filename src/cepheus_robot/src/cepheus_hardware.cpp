@@ -378,6 +378,21 @@ uint8_t CepheusHW::init_3()
 }
 //------------------------------
 
+void CepheusHW::write_left_wrist(double width){
+	
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width);
+        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+
+}
+
+void CepheusHW::write_left_finger(double width){
+	
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width);
+        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+}
+
+
+
 //The gripper opens full  
 void CepheusHW::init_left_finger(){
 
@@ -389,8 +404,7 @@ void CepheusHW::init_left_finger(){
 		double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
 		width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
-		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[LEFT_GRIPPER]);
-		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+		write_left_finger(width[LEFT_GRIPPER]);		
 
 		loop_rate.sleep();
 	}
@@ -407,9 +421,7 @@ void CepheusHW::init_left_wrist(){
 		double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
 		width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
-		dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[LEFT_WRIST]);
-		DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-
+		write_left_wrist(width[LEFT_WRIST]);
 	//	loop_rate.sleep();
 	//}
 }
@@ -488,7 +500,6 @@ void CepheusHW::writeMotors()
 	for (int i=8; i<12; i++)
 	{
 		//Left Finger(0-120 deg)
-
 		if(i==10){
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
 
@@ -497,10 +508,8 @@ void CepheusHW::writeMotors()
 				//ROS_WARN("div %f",div);
 				//ROS_WARN("cmd %lf",cmd[10]);
 				width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+				write_left_finger(width[i]);
 
-
-				dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[i]);
-				DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 			}
 			else{
 				width[i] = width[i];
@@ -508,21 +517,16 @@ void CepheusHW::writeMotors()
 			}
 		}
 
-		//Left Wrist (0-150 deg)
+		//Left Wrist (0-120 deg)
 		if(i==8){
-
 
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_WRIST_MAX_ANGLE ){
 
 				double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
 
-
 				//ROS_WARN("cmd %lf",cmd[LEFT_WRIST]);
 				width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
-
-				dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[LEFT_WRIST]);
-				DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-
+				write_left_wrist(width[LEFT_WRIST]);
 
 			}
 			else {
@@ -571,17 +575,18 @@ void CepheusHW::writeMotors()
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
 	*/
 	//Left wrist and gripper
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
+	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
         DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
         dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[10]);
         DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
+	*/
 
-
-	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]); //0.5ms
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]); //0.5ms
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	*/
+	
+
 	//right shoulder - elbow
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[6]); //0.5ms
         DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");

@@ -131,6 +131,9 @@ class CepheusHW : public hardware_interface::RobotHW
 		void init_left_finger();
 		void init_left_wrist();
 
+		void write_left_wrist(double);
+		void write_left_finger(double);
+
 		void update_shoulder(double, double, double&);
 		void update_elbow(double, double, double&);
 
