@@ -20,10 +20,6 @@
 		<param name="controllers_to_spawn" value="joint_state_publisher reaction_wheel_effort_controller"/>
 	</node>
 
-
-        <!--node name="cepheus_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" args="joint_state_publisher reaction_wheel_effort_controller left_shoulder_position_controller left_elbow_position_controller" output="screen">
-        </node-->
-
 	
 	<!--node pkg="rosserial_python" type="serial_node.py" name="serial_node">
     			<param name="port" value="/dev/ttyACM0"/>
@@ -31,7 +27,6 @@
   	</node-->
 
         <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
-                <param name="tf_prefix" value="servicer" />
                 <param name="publish_frequency" value="100"/>
         </node>  
 
@@ -53,41 +48,12 @@
                 <param name="probe_offset" value="0.523"/>
         </node>  
 
-	<node name="gripper_target_broadcaster" pkg="cepheus_robot" type="gripper_target_broadcaster" output="screen">
-	</node>
 
-        <!--node name="cepheus_mouse_odom_publisher" pkg="cepheus_robot" type="mouse_odom_node" output="screen">
-                <param name="left_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.3:1.0-event-mouse"/>
-                <param name="right_dev_event" value="/dev/input/by-path/pci-0000:00:1d.7-usb-0:1.4:1.0-event-mouse"/>
-                <param name="frame_id" value="cepheus" />
-        </node-->
-
-        <!--node name="camera_odom_publisher_11" pkg="cepheus_robot" type="camera_odom_node" output="screen">
-                <param name="robot_id" value="11" />
-                <param name="frame_id" value="cepheus_link" />
-        </node-->
-        
-        <!--include file="$(find botasys_force_torque_sensor)/launch/driver.launch">
-        </include-->
-
-        <include file="$(find phase_space)/launch/track_object.launch">
+        <include file="$(find phase_space)/launch/track_two_objects.launch">
             <arg name="turn_rviz_on" value="false" />
             <arg name="turn_phase_space_on" value="true" />
         </include>
 
-        <!--node name="assist_board" pkg="marker" type="assist_board" output="screen">
-            <param name="board" value="/home/cepheus/catkin_ws/src/marker/markers/assist_board_meters_scaled.txt"/>
-            <param name="dictionary" value="/home/cepheus/catkin_ws/src/marker/markers/assist_dictionary.yml"/>
-            <param name="camera" value="/home/cepheus/catkin_ws/src/marker/calib/xs_1280_720_noAF.yml"/>
-            <param name="th0" value="25"/>
-            <param name="th1" value="23"/>
-            <param name="marker_max_size" value="0.35"/>
-            <param name="marker_min_size" value="0.006"/>
-            <param name="image" value="/camera/image_raw/"/>
-            <param name="~camera_frame" value="camera"/>
-            <param name="~target_frame" value="marker_drogue"/>
-        </node-->
-
-        <!--include file="$(find ueye_cam)/launch/xs_1280x720_noAF_scaled.launch">
-        </include-->
+	<node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.2575 -0.2575 0 0 0 0 assist_robot gripper_target" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" />
 </launch>

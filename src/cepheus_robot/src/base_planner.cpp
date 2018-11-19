@@ -108,12 +108,20 @@ void moveBaseSimpleCallback(const geometry_msgs::PoseStamped::ConstPtr& cmd_p)
 	double y0 = yf + probe_offset*sin(thf); //ps_transform_in_drogue.transform.translation.y;
 	double heading = atan2(yf-y0 , xf-x0);
 
+	 ROS_INFO_STREAM("thf: "<<thf);
+	ROS_INFO_STREAM("xf: "<<xf);
+	ROS_INFO_STREAM("yf: "<<yf);
+	ROS_INFO_STREAM("x0: "<<x0);
+	ROS_INFO_STREAM("y0: "<<y0);
+	ROS_INFO_STREAM("heading: "<<heading);	
+		
+
 	double t_total = (xf - x0) / (target_speed*cos(heading));
 
-	ROS_INFO_STREAM("t_total: " << t_total);
+	//ROS_INFO_STREAM("t_total: " << t_total);
 
 	int n = (int)(t_total/path_t_step) + 1;
-	ROS_INFO_STREAM("Number of position: " << n);
+	//ROS_INFO_STREAM("Number of position: " << n);
 
 	path_matrix.resize(9, n);
 
@@ -392,7 +400,7 @@ int main(int argc, char** argv)
 			clock_gettime(CLOCK_MONOTONIC_RAW, &ts_vel);
 			cmd_vel.header.stamp.sec = ts_vel.tv_sec;
 			cmd_vel.header.stamp.nsec = ts_vel.tv_nsec;
-			std::cout<<"TO PUBLISH"<<std::endl;
+			//std::cout<<"TO PUBLISH"<<std::endl;
 			//-----------------------------------------
 			pos_pub.publish(cmd_pos);
 			vel_pub.publish(cmd_vel);
