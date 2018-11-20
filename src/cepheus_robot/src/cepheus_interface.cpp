@@ -72,6 +72,8 @@ bool left_gripper_first_time = true;
 //In order to be used from callbacks
 ros::Publisher  left_shoulder_pub, left_elbow_pub;
 
+
+
 int readErr()
 {
 	FILE *f;
@@ -695,10 +697,147 @@ void move_left_arm(double set_point_shoulder,
 
 }
 
+bool one_time = true;
 
 // Inverse kinematics...calculate the set points of the joints of the left arm given an angle that you want ot catch a target
 void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, controller_manager::ControllerManager& cm){
 
+	if(one_time){
+		one_time = false;
+
+		//theta2 needs to be from -90 deg to 0 deg
+
+
+		//TO DO...ADD COMMMEEEEENTS
+
+		//The lengths of the joint of the left arm
+		double l1 = 0.181004;	//shoulder
+		double l2 = 0.1605;	//elbow
+		double l3 = 0.0499;	//wrist
+
+		//Used in order to track the frame of the target
+
+		tf::TransformListener listener;
+		tf::StampedTransform transform;
+		try{
+			listener.waitForTransform("/left_hand_base", "/gripper_target", ros::Time(0), ros::Duration(10.0) );
+			listener.lookupTransform("/left_hand_base", "/gripper_target", ros::Time(0), transform);
+
+		}
+		catch (tf::TransformException &ex) {
+			ROS_ERROR("%s",ex.what());
+			ros::Duration(1.0).sleep();
+		}
+
+
+		//Coordinates of target based on cepheus origin
+		//double x = 0.21;
+		//double y = -0.1;
+
+		//some cm before the target
+		double x = transform.getOrigin().x() - 0.03;
+		double y = transform.getOrigin().y();
+
+
+		//the desired angle of the wrist translated to cepheus coordinates
+		double roll, pitch, yaw;
+		tf::Quaternion q(transform.getRotation());
+		tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
+		double yaw_to_deg = yaw*180.0/M_PI;
+		ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
+
+		//to rad
+		double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
+
+
+		//Need to transform the above coordinates to the base of the left arm
+		/*x = x - 0.17268;
+		  y = y + 0.091404;
+		 */
+
+		double yn = y - l3  * cos(phi);
+		double xn = x - l3 * sin(phi);
+
+		//calculating 2 results for each angle
+
+		//For q2
+		double q21 = acos( ((double)pow(yn, 2) + (double)pow(xn, 2) - (double)pow(l2, 2) - (double)pow(l1, 2)) / (2.0 * l1 * l2));
+		double q22 = -q21;
+
+		//For q1
+
+		//q11
+		double a = -l1 - l2 * cos(q21); 
+		double b = -l2 * sin(q21);
+		double c = -yn;
+		double d = -l2 * sin(q21);
+		double e = l1 + l2 * cos(q21);
+		double f = -xn;
+
+		double s11 = ((c/a) - (f/d)) / ((e/d) - (b/a));
+		double c11 = (b*s11/a)+ (c/a);
+
+		double q11 = atan2(s11, c11);
+
+		//q12
+		a = -l1 - l2 * cos(q22);
+		b = -l2 * sin(q22);
+		c = -yn;
+		d = -l2 * sin(q22);
+		e = l1 + l2 * cos(q22);
+		f = -xn;
+
+		double s12 = ((c/a) - (f/d))/((e/d) - (b/a));
+		double c12 = (b * s12/a) + (c/a);
+
+		double q12 = atan2(s12, c12);
+
+		double q31 = phi - q11 - q21;
+		double q32 = phi - q12 - q22;	
+
+		double tuple1[3];
+		double tuple2[3];
+
+		tuple1[0] = q11;
+		tuple1[1] = q21;
+		tuple1[2] = q31;
+
+		tuple2[0] = q12;
+		tuple2[1] = q22;
+		tuple2[2] = q32;
+
+
+		ROS_WARN("q11= %lf,  q21= %lf,  q31= %lf",q11,q21,q31);
+		  ROS_WARN("q12= %lf,  q22= %lf,  q32= %lf",q12,q22,q32);
+		 
+		//checking the results in order to discard odd angles
+		if( (-M_PI/3 <= q31 && q31 <= M_PI/3.0) && (-2.0*M_PI/3.0 <= q21 && q21 <= 2.0*M_PI/3.0) && (M_PI/2.0 <= q11 && q11 <= M_PI) ){
+			//solution is tuple1
+			//translate wrist cmd (-60 to 60) to (0 to 120)
+			q31 = abs((q31 * 180.0 / M_PI) - 60.0);
+			q11 = q11 - M_PI/2.0;
+
+			ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
+			move_left_arm(q11, q21, q31, 12.0, cm);
+		}
+		else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (M_PI/2.0  <= q12 && q12 <= M_PI)){
+			//solution is tuple2
+			q32 = abs((q32 * 180.0 / M_PI) - 60.0);
+			q12 = q12 - M_PI/2.0;
+
+			ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
+			move_left_arm(q12, q22, q32, 12.0, cm);
+		}
+		else{
+			//we see.....
+			ROS_WARN("Out of left arm workspace");
+		}
+
+	}
+}
+
+
+void test_catch_object(double cmd_angle_to_catch, controller_manager::ControllerManager& cm, double xt, double yt){
 
 	//theta2 needs to be from -90 deg to 0 deg
 
@@ -706,9 +845,9 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 	//TO DO...ADD COMMMEEEEENTS
 
 	//The lengths of the joint of the left arm
-	double l1 = 0.181004;	//shoulder
-	double l2 = 0.1605;	//elbow
-	double l3 = 0.0499;	//wrist
+	double l1 = 0.181004;   //shoulder
+	double l2 = 0.1605;     //elbow
+	double l3 = 0.0499;     //wrist
 
 	//Used in order to track the frame of the target
 	/*tf::TransformListener target_listener;
@@ -729,9 +868,10 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 	 */
 
 	//Coordinates of target based on cepheus origin
-	double x = 0.21;
-	double y = -0.1;
-
+	//double x = 0.21;
+	//double y = -0.1;
+	double x = xt;
+	double y = yt;
 
 
 	//the desired angle of the wrist translated to cepheus coordinates
@@ -751,11 +891,10 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 	//For q2
 	double q21 = acos( ((double)pow(yn, 2) + (double)pow(xn, 2) - (double)pow(l2, 2) - (double)pow(l1, 2)) / (2.0 * l1 * l2));
 	double q22 = -q21;
-
 	//For q1
 
 	//q11
-	double a = -l1 - l2 * cos(q21); 
+	double a = -l1 - l2 * cos(q21);
 	double b = -l2 * sin(q21);
 	double c = -yn;
 	double d = -l2 * sin(q21);
@@ -781,7 +920,7 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 	double q12 = atan2(s12, c12);
 
 	double q31 = phi - q11 - q21;
-	double q32 = phi - q12 - q22;	
+	double q32 = phi - q12 - q22;
 
 	double tuple1[3];
 	double tuple2[3];
@@ -820,133 +959,6 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 		//we see.....
 		ROS_WARN("Out of left arm workspace");
 	}
-
-
-}
-
-
-void test_catch_object(double cmd_angle_to_catch, controller_manager::ControllerManager& cm, double xt, double yt){
-
-        //theta2 needs to be from -90 deg to 0 deg
-
-
-        //TO DO...ADD COMMMEEEEENTS
-
-        //The lengths of the joint of the left arm
-        double l1 = 0.181004;   //shoulder
-        double l2 = 0.1605;     //elbow
-        double l3 = 0.0499;     //wrist
-
-        //Used in order to track the frame of the target
-        /*tf::TransformListener target_listener;
-          tf::StampedTransform transform;
-
-          try{
-          target_listener.lookupTransform("cepheus","gripper_target",
-          ros::Time(0), transform);
-          }
-          catch (tf::TransformException &ex) {
-          ROS_ERROR("%s",ex.what());
-          }
-         */
-        //position of target
-        /*
-           double x = transform.getOrigin().x();
-           double y = transform.getOrigin().y();
-         */
-
-        //Coordinates of target based on cepheus origin
-        //double x = 0.21;
-        //double y = -0.1;
-	double x = xt;
-	double y = yt;
-
-
-        //the desired angle of the wrist translated to cepheus coordinates
-        double phi = (90.0/180.0) * M_PI;
-
-
-        //Need to transform the above coordinates to the base of the left arm
-        /*x = x - 0.17268;
-          y = y + 0.091404;
-         */
-
-        double yn = y - l3  * cos(phi);
-        double xn = x - l3 * sin(phi);
-
-        //calculating 2 results for each angle
-
-        //For q2
-        double q21 = acos( ((double)pow(yn, 2) + (double)pow(xn, 2) - (double)pow(l2, 2) - (double)pow(l1, 2)) / (2.0 * l1 * l2));
-        double q22 = -q21;
-        //For q1
-
-        //q11
-        double a = -l1 - l2 * cos(q21);
-        double b = -l2 * sin(q21);
-        double c = -yn;
-        double d = -l2 * sin(q21);
-        double e = l1 + l2 * cos(q21);
-        double f = -xn;
-
-        double s11 = ((c/a) - (f/d)) / ((e/d) - (b/a));
-        double c11 = (b*s11/a)+ (c/a);
-
-        double q11 = atan2(s11, c11);
-
-        //q12
-        a = -l1 - l2 * cos(q22);
-        b = -l2 * sin(q22);
-        c = -yn;
-        d = -l2 * sin(q22);
-        e = l1 + l2 * cos(q22);
-        f = -xn;
-
-        double s12 = ((c/a) - (f/d))/((e/d) - (b/a));
-        double c12 = (b * s12/a) + (c/a);
-
-        double q12 = atan2(s12, c12);
-
-        double q31 = phi - q11 - q21;
-        double q32 = phi - q12 - q22;
-
-        double tuple1[3];
-        double tuple2[3];
-
-        tuple1[0] = q11;
-        tuple1[1] = q21;
-        tuple1[2] = q31;
-
-        tuple2[0] = q12;
-        tuple2[1] = q22;
-        tuple2[2] = q32;
-
-
-        /*ROS_WARN("q11= %lf,  q21= %lf,  q31= %lf",q11,q21,q31);
-          ROS_WARN("q12= %lf,  q22= %lf,  q32= %lf",q12,q22,q32);
-         */
-        //checking the results in order to discard odd angles
-        if( (-M_PI/3 <= q31 && q31 <= M_PI/3.0) && (-2.0*M_PI/3.0 <= q21 && q21 <= 2.0*M_PI/3.0) && (M_PI/2.0 <= q11 && q11 <= M_PI) ){
-                //solution is tuple1
-                //translate wrist cmd (-60 to 60) to (0 to 120)
-                q31 = abs((q31 * 180.0 / M_PI) - 60.0);
-                q11 = q11 - M_PI/2.0;
-
-                ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-                move_left_arm(q11, q21, q31, 12.0, cm);
-        }
-        else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (M_PI/2.0  <= q12 && q12 <= M_PI)){
-                //solution is tuple2
-                q32 = abs((q32 * 180.0 / M_PI) - 60.0);
-                q12 = q12 - M_PI/2.0;
-
-                ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
-                move_left_arm(q12, q22, q32, 12.0, cm);
-        }
-        else{
-                //we see.....
-                ROS_WARN("Out of left arm workspace");
-        }
 
 
 }
@@ -1014,7 +1026,9 @@ int main(int argc, char** argv)
 
 	ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
+
 	ros::Subscriber catch_object_sub =  nh.subscribe<std_msgs::Float64>("catch_object", 1, boost::bind(&catchObjectCallback, _1, boost::ref(cm)));	
+	//ros::ServiceServer service = n.advertiseService("catch_object", boost::bind(&catchObijectCallback, _1, boost::ref(cm)));
 
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
@@ -1038,10 +1052,11 @@ int main(int argc, char** argv)
 	//}
 
 	//Initialize the left arm and start the ros controllers
-	/*init_left_arm_and_start_controllers(nh, cm, loop_rate);
+	init_left_arm_and_start_controllers(nh, cm, loop_rate);
 
-	  sleep(5);
-	  move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
+	/*
+	   sleep(5);
+	   move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
 	 */
 
 	/*ROS_WARN("STARTING SIN...");
@@ -1050,7 +1065,6 @@ int main(int argc, char** argv)
 	  moveLeftArmSin(cm);
 	 */
 
-	tf::TransformListener listener;
 
 	ROS_WARN("About to enter normal spinning...");
 	ros::AsyncSpinner spinner(3);
@@ -1073,20 +1087,6 @@ int main(int argc, char** argv)
 
 		time_step = curr_time - prev_time;
 		prev_time = curr_time;
-
-
-		tf::StampedTransform transform;
-		try{
-			listener.waitForTransform("/left_hand_base", "/gripper_target", ros::Time(0), ros::Duration(10.0) );
-			listener.lookupTransform("/left_hand_base", "/gripper_target", ros::Time(0), transform);
-			test_catch_object(30, cm, transform.getOrigin().x(), transform.getOrigin().y());		
-			
-		}
-		catch (tf::TransformException &ex) {
-			ROS_ERROR("%s",ex.what());
-			ros::Duration(1.0).sleep();
-			continue;
-		}
 
 
 		robot.readEncoders(time_step);
