@@ -379,16 +379,16 @@ uint8_t CepheusHW::init_3()
 //------------------------------
 
 void CepheusHW::write_left_wrist(double width){
-	
+
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width);
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 
 }
 
 void CepheusHW::write_left_finger(double width){
-	
+
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width);
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 }
 
 
@@ -417,11 +417,11 @@ void CepheusHW::init_left_wrist(){
 
 	//for(int i = LEFT_WRIST_MIN_ANGLE; i <= LEFT_WRIST_INIT_ANGLE; i++){
 
-		cmd[LEFT_WRIST] = (double)LEFT_WRIST_INIT_ANGLE;
-		double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
-		width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+	cmd[LEFT_WRIST] = (double)LEFT_WRIST_INIT_ANGLE;
+	double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
+	width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
-		write_left_wrist(width[LEFT_WRIST]);
+	write_left_wrist(width[LEFT_WRIST]);
 	//	loop_rate.sleep();
 	//}
 }
@@ -569,29 +569,29 @@ void CepheusHW::writeMotors()
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[5]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[5]");
 	/*
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[6]);
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[7]);
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
-	*/
+	   dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[6]);
+	   DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
+	   dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[7]);
+	   DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
+	 */
 	//Left wrist and gripper
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
-        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[10]);
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
-	*/
+	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
+	  dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[10]);
+	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
+	 */
 
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]); //0.5ms
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	
+
 
 	//right shoulder - elbow
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[6]); //0.5ms
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-        dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[7]);
-        DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[7]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_C,  width[9]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
@@ -823,97 +823,123 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	// Channel 0A Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 0A");
-	if (encoder_status) 
+
+	if (encoder_status){ 
+
 		encoder_5_ovf++;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0A");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 0A positive overflow status not cleared");
+
+	}
 
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 0A");
-	if (encoder_status) 
+	if (encoder_status){ 
+
 		encoder_5_ovf--;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0A");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 0A negative overflow status not cleared");
+	}
 
 	encoder_5 = (int64_t)encoder_5_val + UINT16_MAX*encoder_5_ovf;
 
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0A");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 0A positive overflow status not cleared");
-
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0A");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 0A negative overflow status not cleared");
 
 
 	// Channel 0B Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 0B");
-	if (encoder_status) 
+	if (encoder_status){
+
 		encoder_6_ovf++;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0B");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 0B positive overflow status not cleared");
+
+	}
 
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 0B");
-	if (encoder_status) 
+	if (encoder_status){
 		encoder_6_ovf--;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0B");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 0B negative overflow status not cleared");
+
+	}
 
 	encoder_6 = (int64_t)encoder_6_val + UINT16_MAX*encoder_6_ovf;
 
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0B");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 0B positive overflow status not cleared");
 
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0B");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 0B negative overflow status not cleared");
 
 
 	// Channel 1A Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 1A");
-	if (encoder_status) 
+	if (encoder_status){
+
 		encoder_7_ovf++;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1A");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 1A positive overflow status not cleared");
+	}
 
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 1A");
-	if (encoder_status) 
+	if (encoder_status) {
+
 		encoder_7_ovf--;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1A");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 1A negative overflow status not cleared");
+	}
 
 	encoder_7 = (int64_t)encoder_7_val + UINT16_MAX*encoder_7_ovf;
 
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1A");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 1A positive overflow status not cleared");
-
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1A");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 1A negative overflow status not cleared");
 
 
 	// Channel 1B Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 1B");
-	if (encoder_status) 
+	if (encoder_status){ 
+
 		encoder_8_ovf++;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1B");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 1B positive overflow status not cleared");
+
+	}
 
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 1B");
-	if (encoder_status) 
+	if (encoder_status){
+
 		encoder_8_ovf--;
+
+		dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
+		DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1B");
+		if (encoder_status)
+			error(EXIT_FAILURE, 0, "ERROR: Channel 1B negative overflow status not cleared");
+
+	}
 
 	encoder_8 = (int64_t)encoder_8_val + UINT16_MAX*encoder_8_ovf;
 
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1B");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 1B positive overflow status not cleared");
-
-	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
-	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1B");
-	if (encoder_status)  
-		error(EXIT_FAILURE, 0, "ERROR: Channel 1B negative overflow status not cleared");
 
 
 
