@@ -697,6 +697,41 @@ void move_left_arm(double set_point_shoulder,
 
 }
 
+//The Rmin, Rmax for the workspace are calculated in the "workspace.py" file in the beggining of the directory
+//Returns true if the target is in the workspace of the left arm
+//If so the robot can catch the target
+//We assume that the planning of the base will be created knowing the orientation that we want to catch the target from the beginning
+bool in_left_arm_workspace(const char *target_frame){
+
+	//The Rmin and Rmax are calculated from the left_hand_base
+	double Rmin = 0.022;
+	double Rmax = 0.34;
+
+	//Used in order to track the frame of the target
+	tf::TransformListener listener;
+	tf::StampedTransform transform;
+	try{
+		listener.waitForTransform("/left_hand_base", target_frame, ros::Time(0), ros::Duration(1.0) );
+		listener.lookupTransform("/left_hand_base", target_frame, ros::Time(0), transform);
+
+	}
+	catch (tf::TransformException &ex) {
+		ROS_ERROR("%s",ex.what());
+		ros::Duration(1.0).sleep();
+	}
+
+	double eucl_dist = sqrt( pow(transform.getOrigin().x(), 2) + pow(transform.getOrigin().y(), 2) );
+
+	if( (eucl_dist > Rmin) && (eucl_dist < Rmax) )
+		return true;
+	else
+		return false;
+		
+	
+}
+
+
+
 bool one_time = true;
 
 // Inverse kinematics...calculate the set points of the joints of the left arm given an angle that you want ot catch a target
@@ -808,8 +843,8 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 
 
 		ROS_WARN("q11= %lf,  q21= %lf,  q31= %lf",q11,q21,q31);
-		  ROS_WARN("q12= %lf,  q22= %lf,  q32= %lf",q12,q22,q32);
-		 
+		ROS_WARN("q12= %lf,  q22= %lf,  q32= %lf",q12,q22,q32);
+
 		//checking the results in order to discard odd angles
 		if( (-M_PI/3 <= q31 && q31 <= M_PI/3.0) && (-2.0*M_PI/3.0 <= q21 && q21 <= 2.0*M_PI/3.0) && (M_PI/2.0 <= q11 && q11 <= M_PI) ){
 			//solution is tuple1

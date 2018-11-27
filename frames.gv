@@ -1,8 +1,0 @@
-digraph G {
-"map" -> "cepheus"[label="Broadcaster: /track_cepheus\nAverage rate: 480.643 Hz\nMost recent transform: 1540911146.782 ( 0.119 sec old)\nBuffer length: 2.536 sec\n"];
-"cepheus" -> "gripper_target"[label="Broadcaster: /gripper_target_broadcaster\nAverage rate: 200.382 Hz\nMost recent transform: 1540911146.794 ( 0.107 sec old)\nBuffer length: 2.545 sec\n"];
-edge [style=invis];
- subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
-"Recorded at time: 1540911146.901"[ shape=plaintext ] ;
- }->"map";
-}
