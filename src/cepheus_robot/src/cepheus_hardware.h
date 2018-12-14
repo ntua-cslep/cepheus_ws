@@ -54,9 +54,13 @@
 //The minimum duty cycle is 0.9/20 = 4.5%
 //The maximum duty cycle is 2.1/20 = 10.5%
 
-#define LEFT_FINGER_INIT_ANGLE 0
+#define LEFT_FINGER_INIT_ANGLE 60
 #define LEFT_FINGER_MAX_ANGLE 120
 #define LEFT_FINGER_MIN_ANGLE 0
+
+#define RIGHT_FINGER_INIT_ANGLE 60
+#define RIGHT_FINGER_MAX_ANGLE 120
+#define RIGHT_FINGER_MIN_ANGLE 0
 
 //PWM_FINGER_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_FINGER_SERVO_MIN_DT 2250 
@@ -77,6 +81,10 @@
 #define LEFT_WRIST_INIT_ANGLE 60 //max_angle/2
 #define LEFT_WRIST_MAX_ANGLE 120
 #define LEFT_WRIST_MIN_ANGLE 0
+
+#define RIGHT_WRIST_INIT_ANGLE 60 //max_angle/2
+#define RIGHT_WRIST_MAX_ANGLE 120
+#define RIGHT_WRIST_MIN_ANGLE 0
 //PWM_WRIST_SERVO_MIN_DT = min duty cycle *  PWM_HOBBY_SERVO_PERIOD_COUNTS 
 #define PWM_WRIST_SERVO_MIN_DT 2250 
 
@@ -130,9 +138,21 @@ class CepheusHW : public hardware_interface::RobotHW
 		void init_left_elbow();
 		void init_left_finger();
 		void init_left_wrist();
+		void init_right_finger();
+                void init_right_wrist();
+		
+		void command_right_wrist();
+
+		void set_left_finger(double);
+		void set_left_wrist(double);
+		void set_right_finger(double);
+                void set_right_wrist(double);
+
 
 		void write_left_wrist(double);
 		void write_left_finger(double);
+		void write_right_wrist(double);
+                void write_right_finger(double);
 
 		void update_shoulder(double, double, double&);
 		void update_elbow(double, double, double&);

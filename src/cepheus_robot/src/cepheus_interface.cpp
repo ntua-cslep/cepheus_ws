@@ -45,11 +45,11 @@ FILE *latency_fp;
 
 //Panagiotis Mavridis
 //---Constants for fsr force controller
-#define F_DES 3
+#define F_DES 15
 #define KP 0.01
 #define KI 1
-#define F_HIGH 4
-#define F_LOW 2
+#define F_HIGH 20
+#define F_LOW 13
 
 
 //------------------------------------
@@ -261,9 +261,12 @@ void leftWristCallback(const std_msgs::Float64::ConstPtr& cmd)
 
 void leftGripperCallback(const std_msgs::Float64::ConstPtr& cmd)
 {
-	//ROS_WARN("CMD GRIP %lf",cmd->data);
-	if(cmd->data >=0 && cmd->data <= LEFT_FINGER_MAX_ANGLE)
+	ROS_WARN("CMD GRIP %lf",cmd->data);
+	if(cmd->data >=0 && cmd->data <= LEFT_FINGER_MAX_ANGLE){
 		robot.setCmd(10, (double)cmd->data);
+		//robot.writeMotors();
+		//robot.heartbeat();
+	}
 	else
 		ROS_WARN("Cmd to left gripper out of bounds!");
 
@@ -365,6 +368,8 @@ void left_fsr_update(){
 		new_angle = gripper_last_angle;
 
 		robot.setCmd(LEFT_GRIPPER, new_angle);
+		//sleep(1);
+
 		ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
 	}
 }
@@ -508,7 +513,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	init_spinner.stop();
 
 	ROS_WARN("STANDARD CONTROLLERS HAVE STARTED!");
-
+/*
 
 	//INITIALIZE THE LEFT ELBOW
 	robot.init_left_elbow();
@@ -569,12 +574,26 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	}
 
 	init_spinner.stop();
-
+*/
 
 	//Initialize the left finger and the wrist
-	robot.init_left_finger();
-	robot.init_left_wrist();
+	//robot.command_right_wrist();
 
+	robot.init_left_finger();
+	//robot.init_left_wrist();
+	robot.init_right_finger();
+        //robot.init_right_wrist();
+
+/*
+	sleep(1);
+	robot.set_left_finger(60);
+	sleep(1);
+	robot.set_left_wrist(120);
+	sleep(1);
+	robot.set_right_finger(50);
+	sleep(1);
+	robot.set_right_wrist(100);
+*/
 }
 
 double produce_sin_trajectory(double width, double period, double t){
@@ -1056,8 +1075,8 @@ int main(int argc, char** argv)
 	ros::Subscriber fsr_sub =  nh.subscribe("left_fsr", 1, leftFsrCallback);
 
 	//For giving cmdsto the left wrist and gripper if nesessary
-	//ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
-	//ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
+	ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
+	ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
 
 	ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
@@ -1089,10 +1108,10 @@ int main(int argc, char** argv)
 	//Initialize the left arm and start the ros controllers
 	init_left_arm_and_start_controllers(nh, cm, loop_rate);
 
-	/*
-	   sleep(5);
-	   move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
-	 */
+	
+	  // sleep(5);
+	   //move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
+	 
 
 	/*ROS_WARN("STARTING SIN...");
 	  moveLeftArmSin(cm);	
@@ -1100,10 +1119,11 @@ int main(int argc, char** argv)
 	  moveLeftArmSin(cm);
 	 */
 
+	//ready_to_grip_left = true;
 
 	ROS_WARN("About to enter normal spinning...");
-	ros::AsyncSpinner spinner(3);
-	spinner.start();
+	//ros::AsyncSpinner spinner(3);
+	//spinner.start();
 
 	ros::Time curr_time;
 	ros::Duration time_step;	
@@ -1112,7 +1132,6 @@ int main(int argc, char** argv)
 
 	while(!g_request_shutdown)
 	{
-
 		curr_time = ros::Time::now();
 
 		if(first_time){
@@ -1124,6 +1143,8 @@ int main(int argc, char** argv)
 		prev_time = curr_time;
 
 
+		ros::spinOnce();
+
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
 
@@ -1134,7 +1155,6 @@ int main(int argc, char** argv)
 		robot.writeMotors();
 		robot.heartbeat();
 
-		//ros::spinOnce();
 
 		if(rw_torque!=0.0) {
 			std_msgs::Float64 cmd;
