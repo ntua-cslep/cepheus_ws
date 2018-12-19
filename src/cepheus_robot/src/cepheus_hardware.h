@@ -19,6 +19,10 @@
 #define LIMIT_L1 1 // limits switch pin in port 0
 #define LIMIT_L2 3 // limits switch pin in port 0
 
+#define LIMIT_R1 5 // limits switch pin in port 0
+#define LIMIT_R2 7 // limits switch pin in port 0
+
+
 #define FIR_LENGTH 2 
 #define PWM_MOTOR_FREQ 5000
 #define PWM_HOBBY_SERVO_FREQ 50 //Period is usually 20ms
@@ -138,6 +142,9 @@ class CepheusHW : public hardware_interface::RobotHW
 		void init_left_elbow();
 		void init_left_finger();
 		void init_left_wrist();
+
+		void init_right_shoulder();
+		void init_right_elbow();
 		void init_right_finger();
                 void init_right_wrist();
 		
@@ -161,9 +168,19 @@ class CepheusHW : public hardware_interface::RobotHW
 			fsr_values[0] = val;
 		}
 
+		void set_right_fsr_value(uint8_t val){
+                        fsr_values[1] = val;
+                }
+
+
 		uint8_t get_left_fsr_val(){
 			return fsr_values[0];
 		}
+
+		uint8_t get_rigth_fsr_val(){
+                        return fsr_values[1];
+                }
+
 
 		void set_manipulator_width(int manipulator, uint16_t width_val){
 			

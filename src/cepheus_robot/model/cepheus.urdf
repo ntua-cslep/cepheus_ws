@@ -126,6 +126,71 @@
       k_velocity="2" />
   </joint>
 
+  <link
+    name="right_arm">
+    <inertial>
+      <origin
+        xyz="0.10516 -0.00268 0.00996"
+        rpy="0 0 0" />
+      <mass
+        value="0.07974" />
+      <inertia
+        ixx="0.0971318625270812"
+        ixy="0.00469370636895255"
+        ixz="-0.000908920687249813"
+        iyy="0.0755866683160163"
+        iyz="0.000665178045940108"
+        izz="0.0871046527712426" />
+    </inertial>
+    <!--visual>
+      <origin
+        xyz="0 0.0085 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/left_arm.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual-->
+    <collision>
+      <origin
+        xyz="0.08 0.0 0.01"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.13 0.02 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="right_shoulder"
+    type="revolute">
+    <origin
+      xyz="0.17271 -0.091404 0.05875"
+      rpy="0 0 0" />
+    <parent
+      link="cepheus" />
+    <child
+      link="right_arm" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0.86"
+      upper="-2.54"
+      effort="20"
+      velocity="20" />
+    <calibration
+      rising="5"/>
+    <dynamics
+      damping="1"
+      friction="1" />
+    <safety_controller
+      soft_upper="5"
+      soft_lower="-5"
+      k_position="1"
+      k_velocity="2" />
+  </joint>
+
 	<!--transmission name="left_hand_four_link_trans">
 	  <type>transmission_interface/FourBarLinkageTransmission</type>
 	  <joint name="left_shoulder">
@@ -209,6 +274,74 @@
       k_position="1"
       k_velocity="1" /-->
   </joint>
+
+  <link
+    name="right_forearm">
+    <inertial>
+      <origin
+        xyz="0.06831 -0.00878 0.01558"
+        rpy="0 0 0" />
+      <mass
+        value="0.06392" />
+      <inertia
+        ixx="0.0899469386204598"
+        ixy="0.00233152849604969"
+        ixz="-0.00460952756399212"
+        iyy="0.0755866683160163"
+        iyz="0.00412762839689509"
+        izz="0.0942895766778639" />
+    </inertial>
+    <!--visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://cepheus_robot/meshes/left_forearm.STL" />
+      </geometry>
+      <material name="LightGrey"/>
+    </visual-->
+    <collision>
+      <origin
+        xyz="0.105 0.0115 0.0125"
+        rpy="0 0 0" />
+      <geometry>
+        <box size="0.13 0.025 0.025"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="right_elbow"
+    type="revolute">
+    <origin
+      xyz="0.18120 0.01176 -0.002"
+      rpy="0 0 0" />
+    <parent
+      link="right_arm" />
+    <child
+      link="right_forearm" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="3.14"
+      upper="-1.75"
+      effort="2"
+      velocity="20" />
+    <!--calibration
+      rising="5"
+      falling="-5" />
+    <dynamics
+      damping="1"
+      friction="1" />
+    <safety_controller
+      soft_upper="5"
+      soft_lower="-5"
+      k_position="1"
+      k_velocity="1" /-->
+  </joint>
+
+
 
   <link
     name="left_grip">

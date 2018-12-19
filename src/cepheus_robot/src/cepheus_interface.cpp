@@ -45,11 +45,11 @@ FILE *latency_fp;
 
 //Panagiotis Mavridis
 //---Constants for fsr force controller
-#define F_DES 15
+#define F_DES 3
 #define KP 0.01
 #define KI 1
-#define F_HIGH 20
-#define F_LOW 13
+#define F_HIGH 4
+#define F_LOW 2
 
 
 //------------------------------------
@@ -65,12 +65,15 @@ double rw_last_vel = 0.0;
 bool standard_controllers_started = false;
 bool left_shoulder_ctrl_started = false;
 bool left_elbow_ctrl_started = false;
+bool right_shoulder_ctrl_started = false;
+bool right_elbow_ctrl_started = false;
+
 
 bool ready_to_grip_left = false;
 bool left_gripper_first_time = true;
 
 //In order to be used from callbacks
-ros::Publisher  left_shoulder_pub, left_elbow_pub;
+ros::Publisher  left_shoulder_pub, left_elbow_pub, right_shoulder_pub, right_elbow_pub;
 
 
 
@@ -244,8 +247,15 @@ void ctrl_C_Handler(int sig)
 
 void leftFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
 {
-	//ROS_WARN("fsr val : %d",cmd->data);
+	//ROS_WARN("left fsr val : %d",cmd->data);
 	robot.set_left_fsr_value(cmd->data);
+}
+
+
+void rightFsrCallback(const std_msgs::UInt8::ConstPtr& cmd)
+{
+	//ROS_WARN("right fsr val : %d",cmd->data);
+	robot.set_right_fsr_value(cmd->data);
 }
 
 
@@ -367,8 +377,15 @@ void left_fsr_update(){
 		gripper_last_angle -= d_theta;
 		new_angle = gripper_last_angle;
 
-		robot.setCmd(LEFT_GRIPPER, new_angle);
-		//sleep(1);
+		double div = new_angle/(double)LEFT_FINGER_MAX_ANGLE;
+
+		double width_val = (uint16_t)(div*(double)PWM_FINGER_SERVO_RANGE + (double)PWM_FINGER_SERVO_MIN_DT);
+		robot.write_left_finger(width_val);
+
+		//left gripper has number 10
+
+		//robot.set_manipulator_width(10, width_val);
+		//robot.setCmd(LEFT_GRIPPER, new_angle);
 
 		ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
 	}
@@ -479,6 +496,9 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
 	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
 
+
+	std_msgs::Float64 set_point_msg;
+
 	//IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
 	int count = 0 ;
 	std_msgs::String msg;
@@ -549,12 +569,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 		++count;
 	}
 
-
-
 	init_spinner.start();
-
-	std_msgs::Float64 set_point_msg;
-
 
 	while(!left_shoulder_ctrl_started)
 	{
@@ -574,26 +589,86 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	}
 
 	init_spinner.stop();
-*/
+
 
 	//Initialize the left finger and the wrist
 	//robot.command_right_wrist();
 
 	robot.init_left_finger();
-	//robot.init_left_wrist();
-	robot.init_right_finger();
-        //robot.init_right_wrist();
+	robot.init_left_wrist();
 
-/*
-	sleep(1);
-	robot.set_left_finger(60);
-	sleep(1);
-	robot.set_left_wrist(120);
-	sleep(1);
-	robot.set_right_finger(50);
-	sleep(1);
-	robot.set_right_wrist(100);
+
+
+	//INITIALIZE THE RIGHT ELBOW
+	robot.init_right_elbow();
+
+	msg.data = "START_RIGHT_ELBOW_CTRL";
+	ctl_pub.publish(msg);
+
+	init_spinner.start();
+
+	while(!right_elbow_ctrl_started)
+	{
+		//ros::Time curr_time = ros::Time::now();
+		ros::Duration time_step = update_time - prev_time;
+		prev_time = update_time;
+
+		robot.readEncoders(time_step);
+		cm.update(update_time, time_step);
+
+		loop_rate.sleep();
+	}
+	init_spinner.stop();
 */
+	//INITIALIZE THE RIGHT SHOULDER
+	robot.init_right_shoulder();
+	msg.data = "START_RIGHT_SHOULDER_CTRL";
+
+	count = 0;
+	while (count < MSG_NUM) {
+
+		ctl_pub.publish(msg);
+
+		loop_rate.sleep();
+		++count;
+	}
+
+	init_spinner.start();
+
+
+	while(!right_shoulder_ctrl_started)
+	{
+		//ros::Time curr_time = ros::Time::now();
+
+		set_point_msg.data = robot.getPos(RIGHT_ELBOW);
+
+		right_elbow_pub.publish(set_point_msg);
+
+		ros::Duration time_step = update_time - prev_time;
+		prev_time = update_time;
+
+		robot.readEncoders(time_step);
+		cm.update(update_time, time_step);
+
+		loop_rate.sleep();
+	}
+
+	init_spinner.stop();
+
+
+	robot.init_right_finger();
+	robot.init_right_wrist();
+
+	/*
+	   sleep(1);
+	   robot.set_left_finger(60);
+	   sleep(1);
+	   robot.set_left_wrist(120);
+	   sleep(1);
+	   robot.set_right_finger(50);
+	   sleep(1);
+	   robot.set_right_wrist(100);
+	 */
 }
 
 double produce_sin_trajectory(double width, double period, double t){
@@ -745,8 +820,8 @@ bool in_left_arm_workspace(const char *target_frame){
 		return true;
 	else
 		return false;
-		
-	
+
+
 }
 
 
@@ -1032,7 +1107,7 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~loop_rate", rate, 500); 
 	ros::Rate loop_rate(rate);
 
-	double l1_limit_pos, l2_limit_pos;
+	double l1_limit_pos, l2_limit_pos, r1_limit_pos, r2_limit_pos;
 	double max_thrust;
 	double rw_max_torque, rw_max_speed, rw_max_power, rw_total_inertia;
 	ros::param::param<double>("~thruster_force", max_thrust, 1.5); //the thrust of an open thruster in Newtons
@@ -1040,9 +1115,13 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~rw_max_torque", rw_max_torque, 0.5); 
 	ros::param::param<double>("~rw_max_speed",  rw_max_speed, 100); 
 	ros::param::param<double>("~rw_max_power",  rw_max_power, 60); 
-	ros::param::param<double>("~rw_total_inertia", rw_total_inertia, 0.00197265); 
+	ros::param::param<double>("~rw_total_inertia", rw_total_inertia, 0.00197265);
+
 	ros::param::param<double>("~left_shoulder_limit_pos", l1_limit_pos, 2.4); 
 	ros::param::param<double>("~left_elbow_limit_pos", l2_limit_pos, 1.4); 
+	ros::param::param<double>("~right_shoulder_limit_pos", r1_limit_pos, -2.4);
+	ros::param::param<double>("~right_elbow_limit_pos", r2_limit_pos, -1.4);
+
 
 	//--------Panagiotis Mavridis 25/04/2018----------------
 
@@ -1071,8 +1150,10 @@ int main(int argc, char** argv)
 	ros::Subscriber thrust_sub =  nh.subscribe("cmd_thrust", 1, thrusterCallback);
 	ros::Subscriber torque_sub =  nh.subscribe("cmd_torque", 1, torqueCallback);
 
-	//For reading the fsr from the gripper
-	ros::Subscriber fsr_sub =  nh.subscribe("left_fsr", 1, leftFsrCallback);
+	//For reading the fsrs from the grippers
+	ros::Subscriber left_fsr_sub =  nh.subscribe("left_fsr", 1, leftFsrCallback);
+	ros::Subscriber right_fsr_sub =  nh.subscribe("right_fsr", 1, rightFsrCallback);
+
 
 	//For giving cmdsto the left wrist and gripper if nesessary
 	ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
@@ -1091,12 +1172,16 @@ int main(int argc, char** argv)
 	//Puplishers to ROS-contol topics
 	left_shoulder_pub =  nh.advertise<std_msgs::Float64>("left_shoulder_position_controller/command", 1000);
 	left_elbow_pub =  nh.advertise<std_msgs::Float64>("left_elbow_position_controller/command", 1000);
+	right_shoulder_pub =  nh.advertise<std_msgs::Float64>("right_shoulder_position_controller/command", 1000);
+        right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
 
 
 	ros::Time prev_time = ros::Time::now();
 
 	robot.setHomePos(4, l1_limit_pos); 
 	robot.setHomePos(5, l2_limit_pos);
+	robot.setHomePos(6, r1_limit_pos);
+        robot.setHomePos(7, r2_limit_pos);
 
 
 	//int err = readErr();
@@ -1108,10 +1193,10 @@ int main(int argc, char** argv)
 	//Initialize the left arm and start the ros controllers
 	init_left_arm_and_start_controllers(nh, cm, loop_rate);
 
-	
-	  // sleep(5);
-	   //move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
-	 
+
+	// sleep(5);
+	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
+
 
 	/*ROS_WARN("STARTING SIN...");
 	  moveLeftArmSin(cm);	
@@ -1122,16 +1207,19 @@ int main(int argc, char** argv)
 	//ready_to_grip_left = true;
 
 	ROS_WARN("About to enter normal spinning...");
-	//ros::AsyncSpinner spinner(3);
-	//spinner.start();
+	ros::AsyncSpinner spinner(3);
+	spinner.start();
 
 	ros::Time curr_time;
 	ros::Duration time_step;	
 
 	bool first_time = true;
 
+	int a = 120;
+
 	while(!g_request_shutdown)
 	{
+
 		curr_time = ros::Time::now();
 
 		if(first_time){
@@ -1143,7 +1231,7 @@ int main(int argc, char** argv)
 		prev_time = curr_time;
 
 
-		ros::spinOnce();
+		//ros::spinOnce();
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);

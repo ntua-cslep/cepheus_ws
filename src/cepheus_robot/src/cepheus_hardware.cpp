@@ -250,10 +250,49 @@ void CepheusHW::init_left_shoulder(){
 		ROS_INFO_STREAM("homing of LEFT SHOULDER  succesful");
 		offset_pos[LEFT_SHOULDER] = home_pos[LEFT_SHOULDER] - pos[LEFT_SHOULDER];
 	}
-	else ROS_WARN_STREAM("No homing performed for LEFT_SHOULDER because no home position setted");
+	else ROS_WARN_STREAM("No homing performed for LEFT SHOULDER because no home position setted");
 
 
 }
+
+void CepheusHW::init_right_shoulder(){
+
+        double shoulder_out;
+        double des_shoulder;
+
+	if(home_pos[RIGHT_SHOULDER]<0) {
+
+
+                ROS_INFO_STREAM("homing RIGHT SHOULDER................");
+
+                ros::Time init_time = ros::Time::now();
+                ros::Duration timer;
+
+                timer = ros::Time::now() - init_time;
+                while(1){
+
+                        //des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+
+                        //update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+                        //cmd[RIGHT_SHOULDER] = shoulder_out;
+
+                        writeMotors();
+		
+                        heartbeat();
+                        readLimitSwitches();
+                        readEncoders(timer);
+                        timer = ros::Time::now() - init_time;
+			sleep(1);
+                }
+                ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
+                offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
+        }
+        else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
+
+
+}
+
+
 
 void CepheusHW::init_left_elbow(){
 	//Homing left elbow moving left shoulder
@@ -285,6 +324,7 @@ void CepheusHW::init_left_elbow(){
 			writeMotors();
 
 			heartbeat();
+			
 			readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
@@ -294,10 +334,56 @@ void CepheusHW::init_left_elbow(){
 
 	}
 	else
-		ROS_WARN_STREAM("No homing performed for LEFT_ELBOW because no home position setted");
+		ROS_WARN_STREAM("No homing performed for LEFT ELBOW because no home position setted");
 
 
 }
+
+
+void CepheusHW::init_right_elbow(){
+        //Homing right elbow moving left shoulder
+        //and takina advantage of the movement transmission of the right arm
+
+        double shoulder_out,elbow_out;
+        double des_shoulder, des_elbow;
+
+        if(home_pos[RIGHT_ELBOW]<0) {
+
+                ROS_INFO_STREAM("homing RIGHT ELBOW..............");
+
+
+                ros::Time init_time = ros::Time::now();
+                ros::Duration timer = ros::Time::now() - init_time;
+
+                //e_sum = 0.0;
+                while(!isLimitReached(RIGHT_ELBOW)){
+
+                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
+                        des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), true);
+
+                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+                        cmd[RIGHT_SHOULDER] = shoulder_out;
+                        update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
+                        cmd[RIGHT_ELBOW] = elbow_out;
+
+                        //ROS_WARN("cmd4 : %lf" , cmd[4]);              
+                        writeMotors();
+
+                        heartbeat();
+                        readLimitSwitches();
+                        readEncoders(timer);
+                        timer = ros::Time::now() - init_time;
+                }
+                ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
+                offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
+
+        }
+        else
+                ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
+
+
+}
+
 
 uint8_t CepheusHW::init_3()
 {
@@ -615,8 +701,8 @@ void CepheusHW::writeMotors()
 	for (int i=4; i<8; i++)
 	{
 
-		//if(i==4)
-		//	ROS_WARN("cmd[4] = %lf",cmd[4]);
+		//if(i==6)
+		//	ROS_WARN("cmd[6] = %lf",cmd[6]);
 		// K = 0.0439, current -> torque
 		current[i] = (cmd[i]/0.0439 );//cmd is in Nm
 		eff[i] = cmd[i];	// torque
@@ -655,23 +741,24 @@ void CepheusHW::writeMotors()
 	{
 		//Left Finger(0-120 deg)
 		if(i==LEFT_GRIPPER){
-			if(cmd[LEFT_GRIPPER] >= 0 && cmd[LEFT_GRIPPER] <= LEFT_FINGER_MAX_ANGLE ){
-
+		/*	if(cmd[LEFT_GRIPPER] >= 0 && cmd[LEFT_GRIPPER] <= LEFT_FINGER_MAX_ANGLE ){
 
 
 
 				//ROS_WARN("div %f",div);
-				//ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
+				ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
 
 				double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
 				width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
-
+		
 				write_left_finger(width[LEFT_GRIPPER]);
+				
 			}
 			else{
 				width[i] = width[i];
 				ROS_WARN("Servo commanded out of range. Command Ignored");
 			}
+		*/
 		}
 
 		//Left Wrist (0-120 deg)
@@ -715,22 +802,24 @@ void CepheusHW::writeMotors()
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[0]");   
 	dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[1]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[1]");
-	/*dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[2]);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[2]");
-	  dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[3]);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[3]");*/
+	/*
+	dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[2]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[2]");
+	dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[3]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[3]");
+	*/
 
 	// Set output PWM width
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_A,  width[4]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[4]");  
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[5]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[5]");
-	/*
-	   dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[6]);
-	   DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
-	   dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[7]);
-	   DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
-	 */
+	
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[6]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[7]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
+	 
 	//Left wrist and gripper
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
 	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
@@ -743,12 +832,6 @@ void CepheusHW::writeMotors()
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 
-
-	//right shoulder - elbow
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[6]); //0.5ms
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[7]);
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_C,  width[9]);
 	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
@@ -793,7 +876,7 @@ void CepheusHW::readLimitSwitches()
 	uint16_t input;
 	dm7820_status = DM7820_StdIO_Get_Input (manipulator_board, DM7820_STDIO_PORT_0, &input);
 	DM7820_Return_Status(dm7820_status, "DM7820_StdIO_Get_Input()");
-	//	printf("%d\n",input);
+		//printf("%d\n",input);
 	//	ROS_INFO("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
 
@@ -801,8 +884,8 @@ void CepheusHW::readLimitSwitches()
 	//print_binary(input);
 	//printf("masked1:");
 	//print_binary(input&(1<<LIMIT_L1));
-	if (prev != (input&(1<<LIMIT_L1))) ROS_WARN("DIFF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	prev = input&(1<<LIMIT_L1);
+	//if (prev != (input&(1<<LIMIT_L1))) ROS_WARN("DIFF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+	//prev = input&(1<<LIMIT_L1);
 	//printf("masked2:");
 	//print_binary(input&(1<<LIMIT_L2));
 
@@ -821,6 +904,23 @@ void CepheusHW::readLimitSwitches()
 		//ROS_WARN("limit 5 pressed");
 	}
 	else limit[5] = 0;
+/*	
+	if(!(input&(1<<LIMIT_R1)))
+        {
+                //printf("%d\n",input&(1<<LIMIT_L2));
+                limit[6]=1;
+                ROS_WARN("limit 6 pressed");
+        }
+        else limit[6] = 0;
+
+	if(!(input&(1<<LIMIT_R2)))
+        {
+                //printf("%d\n",input&(1<<LIMIT_L2));
+                limit[7]=1;
+                ROS_WARN("limit 7 pressed");
+        }
+        else limit[7] = 0;
+*/
 }
 
 void CepheusHW::readEncoders(ros::Duration dt)
@@ -1129,11 +1229,15 @@ void CepheusHW::readEncoders(ros::Duration dt)
 		vel_new[i]= ((pos[i] - prev_pos[i])) / dt.toSec();
 		prev_pos[i] = pos[i];
 
+		limit[i] = 0;
+
 		vel[0] = vel_new[0];  // reaction wheel
 
-		vel[4] = vel_new[4];  // shoulder
-		vel[5] = vel_new[5];  // elbow
+		vel[4] = vel_new[4];  //left shoulder
+		vel[5] = vel_new[5];  //left elbow
 
+	        vel[6] = vel_new[6];  //right shoulder
+                vel[7] = vel_new[7];  //right elbow
 
 
 
@@ -1200,12 +1304,12 @@ CepheusHW::CepheusHW()
 	  jnt_state_interface.registerHandle(state_handle_left_finger_joint);
 	 */
 
-	// // connect and register the right_shoulder joint state interface
-	// hardware_interface::JointStateHandle state_handle_right_shoulder("right_shoulder", &pos[6], &vel[6], &eff[6]);
-	// jnt_state_interface.registerHandle(state_handle_right_shoulder);
-	// // connect and register right_elbow the joint state interface
-	// hardware_interface::JointStateHandle state_handle_right_elbow("right_elbow", &pos[7], &vel[7], &eff[7]);
-	// jnt_state_interface.registerHandle(state_handle_right_elbow);
+	// connect and register the right_shoulder joint state interface
+	hardware_interface::JointStateHandle state_handle_right_shoulder("right_shoulder", &pos[6], &vel[6], &eff[6]);
+	jnt_state_interface.registerHandle(state_handle_right_shoulder);
+	// connect and register right_elbow the joint state interface
+	hardware_interface::JointStateHandle state_handle_right_elbow("right_elbow", &pos[7], &vel[7], &eff[7]);
+	jnt_state_interface.registerHandle(state_handle_right_elbow);
 	// connect and register right_wrist the joint state interface
 	// hardware_interface::JointStateHandle state_handle_right_wrist("right_wrist", &cmd[9], &force[1], &force[1]);
 	// jnt_state_interface.registerHandle(state_handle_right_wrist);
@@ -1232,12 +1336,12 @@ CepheusHW::CepheusHW()
 	hardware_interface::JointHandle position_handle_left_finger_joint(jnt_state_interface.getHandle("left_finger_joint"), &cmd[10]);
 	jnt_pos_interface.registerHandle(position_handle_left_finger_joint);
 	 */
-	// // connect and register the right_shoulder joint effort interface
-	// hardware_interface::JointHandle effort_handle_right_shoulder(jnt_state_interface.getHandle("right_shoulder"), &cmd[6]);
-	// jnt_eff_interface.registerHandle(effort_handle_right_shoulder);
-	// // connect and register the right_elbow joint effort interface
-	// hardware_interface::JointHandle effort_handle_right_elbow(jnt_state_interface.getHandle("right_elbow"), &cmd[7]);
-	// jnt_eff_interface.registerHandle(effort_handle_right_elbow);
+	// connect and register the right_shoulder joint effort interface
+	hardware_interface::JointHandle effort_handle_right_shoulder(jnt_state_interface.getHandle("right_shoulder"), &cmd[6]);
+	jnt_eff_interface.registerHandle(effort_handle_right_shoulder);
+	// connect and register the right_elbow joint effort interface
+	hardware_interface::JointHandle effort_handle_right_elbow(jnt_state_interface.getHandle("right_elbow"), &cmd[7]);
+	jnt_eff_interface.registerHandle(effort_handle_right_elbow);
 	// connect and register the right_wrist joint effort interface
 	// hardware_interface::JointHandle position_handle_right_wrist(jnt_state_interface.getHandle("right_wrist"), &cmd[9]);
 	// jnt_pos_interface.registerHandle(position_handle_right_wrist);

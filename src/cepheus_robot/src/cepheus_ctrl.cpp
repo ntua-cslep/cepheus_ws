@@ -37,6 +37,9 @@
 bool standard_ctrls_started = false;
 bool left_shoulder_ctrl_started = false;
 bool left_elbow_ctrl_started = false;
+bool right_shoulder_ctrl_started = false;
+bool right_elbow_ctrl_started = false;
+
 int num_of_ctrls = 0;
 pid_t pid;
 std::vector<std::string>controllers_to_start;
@@ -102,7 +105,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 {
 
 
-	if(standard_ctrls_started && left_shoulder_ctrl_started && left_elbow_ctrl_started)
+	if(standard_ctrls_started && left_shoulder_ctrl_started && left_elbow_ctrl_started && right_shoulder_ctrl_started && right_elbow_ctrl_started)
 		return;
 
 	if(!standard_ctrls_started && ((msg->data).compare("START_STANDARD_CTRLS")== 0)){
@@ -257,6 +260,80 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 }
 
                 left_elbow_ctrl_started = true;
+
+        }
+	else if(!right_shoulder_ctrl_started && ((msg->data).compare("START_RIGHTT_SHOULDER_CTRL")== 0)){
+
+
+                bool rv;
+
+                rv = loadController(n, std::string("right_shoulder_position_controller"));
+                if(rv)
+                        ROS_WARN("LOADED");
+                else
+                        ROS_WARN("could not load");
+
+                std::vector<std::string> v;
+                v.push_back(std::string("right_shoulder_position_controller"));
+
+                rv = startControllers(n, v);
+                if(rv)
+                        ROS_WARN("STARTED");
+                else
+                        ROS_WARN("could not start");
+
+                //send OK response to interface
+                ros::Rate loop_rate(200);
+                int count = 0;
+                std_msgs::String res_msg;
+                res_msg.data = "RIGHT_SHOULDER_CTRL_OK";
+                while (count < MSG_NUM) {
+
+                        ctl_pub.publish(res_msg);
+
+                        loop_rate.sleep();
+                        ++count;
+                }
+
+                right_shoulder_ctrl_started = true;
+
+        }
+	else if(!right_elbow_ctrl_started && ((msg->data).compare("START_RIGHT_ELBOW_CTRL")== 0)){
+
+                bool rv;
+
+                rv = loadController(n, std::string("right_elbow_position_controller"));
+                if(rv)
+                        ROS_WARN("LOADED");
+                else
+                        ROS_WARN("could not load");
+
+
+                std::vector<std::string> v;
+                v.push_back(std::string("right_elbow_position_controller"));
+
+
+                rv = startControllers(n, v);
+                if(rv)
+                        ROS_WARN("STARTED");
+                else
+                        ROS_WARN("could not start");
+
+
+                //send OK response to interface
+                ros::Rate loop_rate(200);
+                int count = 0;
+                std_msgs::String res_msg;
+                res_msg.data = "RIGHT_ELBOW_CTRL_OK";
+                while (count < MSG_NUM) {
+
+                        ctl_pub.publish(res_msg);
+
+                        loop_rate.sleep();
+                        ++count;
+                }
+
+                right_elbow_ctrl_started = true;
 
         }
 
