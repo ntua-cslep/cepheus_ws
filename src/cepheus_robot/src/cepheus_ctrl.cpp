@@ -262,7 +262,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 left_elbow_ctrl_started = true;
 
         }
-	else if(!right_shoulder_ctrl_started && ((msg->data).compare("START_RIGHTT_SHOULDER_CTRL")== 0)){
+	else if(!right_shoulder_ctrl_started && ((msg->data).compare("START_RIGHT_SHOULDER_CTRL")== 0)){
 
 
                 bool rv;

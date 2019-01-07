@@ -19,7 +19,7 @@
 #define LIMIT_L1 1 // limits switch pin in port 0
 #define LIMIT_L2 3 // limits switch pin in port 0
 
-#define LIMIT_R1 5 // limits switch pin in port 0
+#define LIMIT_R1 6 // limits switch pin in port 0
 #define LIMIT_R2 7 // limits switch pin in port 0
 
 

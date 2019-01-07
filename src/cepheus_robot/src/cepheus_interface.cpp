@@ -602,6 +602,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	//INITIALIZE THE RIGHT ELBOW
 	robot.init_right_elbow();
 
+
 	msg.data = "START_RIGHT_ELBOW_CTRL";
 	ctl_pub.publish(msg);
 
@@ -620,6 +621,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	}
 	init_spinner.stop();
 */
+
 	//INITIALIZE THE RIGHT SHOULDER
 	robot.init_right_shoulder();
 	msg.data = "START_RIGHT_SHOULDER_CTRL";

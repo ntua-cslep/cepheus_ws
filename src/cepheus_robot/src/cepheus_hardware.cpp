@@ -233,7 +233,7 @@ void CepheusHW::init_left_shoulder(){
 		ros::Duration timer;
 
 		timer = ros::Time::now() - init_time;
-		while(!isLimitReached(LEFT_SHOULDER)){
+		do{
 
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
 
@@ -247,6 +247,9 @@ void CepheusHW::init_left_shoulder(){
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
 		}
+		while(!isLimitReached(LEFT_SHOULDER));
+
+		
 		ROS_INFO_STREAM("homing of LEFT SHOULDER  succesful");
 		offset_pos[LEFT_SHOULDER] = home_pos[LEFT_SHOULDER] - pos[LEFT_SHOULDER];
 	}
@@ -269,12 +272,12 @@ void CepheusHW::init_right_shoulder(){
                 ros::Duration timer;
 
                 timer = ros::Time::now() - init_time;
-                while(1){
+                do{
 
-                        //des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+                        des_shoulder = velocity_for_joint_init(30, (double)timer.toSec(), false);
 
-                        //update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
-                        //cmd[RIGHT_SHOULDER] = shoulder_out;
+                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+                        cmd[RIGHT_SHOULDER] = shoulder_out;
 
                         writeMotors();
 		
@@ -282,8 +285,8 @@ void CepheusHW::init_right_shoulder(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-			sleep(1);
-                }
+                }while(!isLimitReached(RIGHT_SHOULDER));
+
                 ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
                 offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
         }
@@ -310,7 +313,7 @@ void CepheusHW::init_left_elbow(){
 		ros::Duration timer = ros::Time::now() - init_time;
 
 		//e_sum = 0.0;
-		while(!isLimitReached(LEFT_ELBOW)){
+		do{
 
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
 			des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), true);
@@ -328,7 +331,9 @@ void CepheusHW::init_left_elbow(){
 			readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
-		}
+		
+		}while(!isLimitReached(LEFT_ELBOW));
+		
 		ROS_INFO_STREAM("homing of LEFT ELBOW  succesful");
 		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW];
 
@@ -356,10 +361,10 @@ void CepheusHW::init_right_elbow(){
                 ros::Duration timer = ros::Time::now() - init_time;
 
                 //e_sum = 0.0;
-                while(!isLimitReached(RIGHT_ELBOW)){
+                do{
 
-                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
-                        des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), true);
+                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+                        des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
                         update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
                         cmd[RIGHT_SHOULDER] = shoulder_out;
@@ -373,8 +378,10 @@ void CepheusHW::init_right_elbow(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-                }
-                ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
+
+                }while(!isLimitReached(RIGHT_ELBOW));
+                
+		ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
                 offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
 
         }
@@ -701,8 +708,8 @@ void CepheusHW::writeMotors()
 	for (int i=4; i<8; i++)
 	{
 
-		//if(i==6)
-		//	ROS_WARN("cmd[6] = %lf",cmd[6]);
+		if(i==4)
+			ROS_WARN("cmd[4] = %lf",cmd[4]);
 		// K = 0.0439, current -> torque
 		current[i] = (cmd[i]/0.0439 );//cmd is in Nm
 		eff[i] = cmd[i];	// torque
@@ -892,7 +899,7 @@ void CepheusHW::readLimitSwitches()
 	if(!(input&(1<<LIMIT_L1))) 
 	{
 		//printf("%d\n",input&(1<<LIMIT_L1));
-		limit[4]=1;
+		limit[LEFT_SHOULDER] = 1;
 		//ROS_WARN("limit 4 pressed");
 	}
 	else limit[4] = 0;
@@ -900,27 +907,27 @@ void CepheusHW::readLimitSwitches()
 	if(!(input&(1<<LIMIT_L2))) 
 	{
 		//printf("%d\n",input&(1<<LIMIT_L2));
-		limit[5]=1;
+		limit[LEFT_ELBOW] = 1;
 		//ROS_WARN("limit 5 pressed");
 	}
 	else limit[5] = 0;
-/*	
+	
 	if(!(input&(1<<LIMIT_R1)))
         {
                 //printf("%d\n",input&(1<<LIMIT_L2));
-                limit[6]=1;
-                ROS_WARN("limit 6 pressed");
+                limit[RIGHT_SHOULDER] = 1;
+                //ROS_WARN("limit 6 pressed");
         }
         else limit[6] = 0;
 
 	if(!(input&(1<<LIMIT_R2)))
         {
                 //printf("%d\n",input&(1<<LIMIT_L2));
-                limit[7]=1;
-                ROS_WARN("limit 7 pressed");
+                limit[RIGHT_ELBOW] = 1;
+                //ROS_WARN("limit 7 pressed");
         }
         else limit[7] = 0;
-*/
+
 }
 
 void CepheusHW::readEncoders(ros::Duration dt)
@@ -1229,7 +1236,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 		vel_new[i]= ((pos[i] - prev_pos[i])) / dt.toSec();
 		prev_pos[i] = pos[i];
 
-		limit[i] = 0;
+		//limit[i] = 0;
 
 		vel[0] = vel_new[0];  // reaction wheel
 
