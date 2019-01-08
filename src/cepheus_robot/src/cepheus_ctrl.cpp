@@ -40,6 +40,7 @@ bool left_elbow_ctrl_started = false;
 bool right_shoulder_ctrl_started = false;
 bool right_elbow_ctrl_started = false;
 
+
 int num_of_ctrls = 0;
 pid_t pid;
 std::vector<std::string>controllers_to_start;
@@ -186,19 +187,19 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		}
 
 	}
-	else if(!left_shoulder_ctrl_started && ((msg->data).compare("START_LEFT_SHOULDER_CTRL")== 0)){	
+	else if(!left_shoulder_ctrl_started && ((msg->data).compare(CMD_START_LEFT_SHOULDER)== 0)){	
 
 
 		bool rv;
 
-		rv = loadController(n, std::string("left_shoulder_position_controller"));
+		rv = loadController(n, std::string(LEFT_SHOULDER_CONTROLLER));
 		if(rv)		
 			ROS_WARN("LOADED");
 		else
 			ROS_WARN("could not load");
 
 		std::vector<std::string> v;
-		v.push_back(std::string("left_shoulder_position_controller"));
+		v.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -210,7 +211,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		ros::Rate loop_rate(200);
 		int count = 0;
 		std_msgs::String res_msg;
-		res_msg.data = "LEFT_SHOULDER_CTRL_OK";
+		res_msg.data = std::string(RESPONSE_LEFT_SHOULDER);
 		while (count < MSG_NUM) {
 
 			ctl_pub.publish(res_msg);
@@ -224,11 +225,11 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 
 	}
-	else if(!left_elbow_ctrl_started && ((msg->data).compare("START_LEFT_ELBOW_CTRL")== 0)){
+	else if(!left_elbow_ctrl_started && ((msg->data).compare(CMD_START_LEFT_ELBOW)== 0)){
 
 		bool rv;
 
-                rv = loadController(n, std::string("left_elbow_position_controller"));
+                rv = loadController(n, std::string(LEFT_ELBOW_CONTROLLER));
 		if(rv)
                         ROS_WARN("LOADED");
                 else
@@ -236,7 +237,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 
                 std::vector<std::string> v;
-                v.push_back(std::string("left_elbow_position_controller"));
+                v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
 
 		
                 rv = startControllers(n, v);
@@ -250,7 +251,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 ros::Rate loop_rate(200);
                 int count = 0;
                 std_msgs::String res_msg;
-                res_msg.data = "LEFT_ELBOW_CTRL_OK";
+                res_msg.data = std::string(RESPONSE_LEFT_ELBOW);
                 while (count < MSG_NUM) {
 
                         ctl_pub.publish(res_msg);
@@ -262,19 +263,19 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 left_elbow_ctrl_started = true;
 
         }
-	else if(!right_shoulder_ctrl_started && ((msg->data).compare("START_RIGHT_SHOULDER_CTRL")== 0)){
+	else if(!right_shoulder_ctrl_started && ((msg->data).compare(CMD_START_RIGHT_SHOULDER)== 0)){
 
 
                 bool rv;
 
-                rv = loadController(n, std::string("right_shoulder_position_controller"));
+                rv = loadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
                 if(rv)
                         ROS_WARN("LOADED");
                 else
                         ROS_WARN("could not load");
 
                 std::vector<std::string> v;
-                v.push_back(std::string("right_shoulder_position_controller"));
+                v.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
 
                 rv = startControllers(n, v);
                 if(rv)
@@ -286,7 +287,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 ros::Rate loop_rate(200);
                 int count = 0;
                 std_msgs::String res_msg;
-                res_msg.data = "RIGHT_SHOULDER_CTRL_OK";
+                res_msg.data = std::string(RESPONSE_RIGHT_SHOULDER);
                 while (count < MSG_NUM) {
 
                         ctl_pub.publish(res_msg);
@@ -298,11 +299,11 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 right_shoulder_ctrl_started = true;
 
         }
-	else if(!right_elbow_ctrl_started && ((msg->data).compare("START_RIGHT_ELBOW_CTRL")== 0)){
+	else if(!right_elbow_ctrl_started && ((msg->data).compare(CMD_START_RIGHT_ELBOW)== 0)){
 
                 bool rv;
 
-                rv = loadController(n, std::string("right_elbow_position_controller"));
+                rv = loadController(n, std::string(RIGHT_ELBOW_CONTROLLER));
                 if(rv)
                         ROS_WARN("LOADED");
                 else
@@ -310,7 +311,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 
                 std::vector<std::string> v;
-                v.push_back(std::string("right_elbow_position_controller"));
+                v.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
 
 
                 rv = startControllers(n, v);
@@ -324,7 +325,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 ros::Rate loop_rate(200);
                 int count = 0;
                 std_msgs::String res_msg;
-                res_msg.data = "RIGHT_ELBOW_CTRL_OK";
+                res_msg.data = std::string(RESPONSE_RIGHT_ELBOW);
                 while (count < MSG_NUM) {
 
                         ctl_pub.publish(res_msg);

@@ -156,28 +156,6 @@ void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque
 }
 //------------------------------------------
 
-bool CepheusHW::homing(int i, float torque)
-{
-	ROS_INFO_STREAM("homing "<< i << " joint");
-	cmd[i] = torque;
-	writeMotors();
-	ros::Time init_time = ros::Time::now();
-	ros::Duration timer;
-	while(timer.toSec()<20.0) {
-		heartbeat();
-		readLimitSwitches();
-		readEncoders(timer);
-		if(isLimitReached(i)) {
-			ROS_WARN_STREAM("home "<< i << " susccesful");
-			offset_pos[i] = home_pos[i] - pos[i];
-			ROS_WARN_STREAM("positive: offset: "<< offset_pos[i] << ", home: " << home_pos[i] << ", pos: " << pos[i]);
-			break;
-		}
-		timer = ros::Time::now() - init_time;
-	}
-	return isLimitReached(i);
-}
-
 
 //----New init with velocity controll
 
@@ -392,83 +370,6 @@ void CepheusHW::init_right_elbow(){
 }
 
 
-uint8_t CepheusHW::init_3()
-{
-
-
-	double shoulder_out, elbow_out;
-	double des_shoulder, des_elbow;
-
-	//Initialize robot hardware 
-	for (int i=4; i<8; i++)
-	{
-
-
-		if(home_pos[i]>0) {
-
-			if (i==LEFT_SHOULDER) {//shoulder
-
-				ROS_INFO_STREAM("homing LEFT SHOULDER................");
-
-				ros::Time init_time = ros::Time::now();
-				ros::Duration timer;
-
-				timer = ros::Time::now() - init_time;
-				while(!isLimitReached(i)){
-
-					des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
-
-					update_shoulder(vel[i], des_shoulder, shoulder_out);
-					cmd[i] = shoulder_out;
-
-					writeMotors();
-
-					heartbeat();
-					readLimitSwitches();
-					readEncoders(timer);
-					timer = ros::Time::now() - init_time;
-				}
-				ROS_INFO_STREAM("homing of LEFT SHOULDER  succesful");
-				offset_pos[i] = home_pos[i] - pos[i];
-
-
-				//Homing left elbow moving left shoulder
-				//and takina advantage of the movement transmission of the left arm
-				sleep(1);
-				ROS_INFO_STREAM("homing LEFT ELBOW..............");
-
-
-				init_time = ros::Time::now();
-				timer = ros::Time::now() - init_time;
-
-				//e_sum = 0.0;
-				while(!isLimitReached(i+1)){
-
-					des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
-					des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), true);					        
-
-					update_shoulder(vel[i], des_shoulder, shoulder_out);
-					cmd[i] = shoulder_out;
-					update_elbow(vel[i+1], des_elbow, elbow_out);
-					cmd[i+1] = elbow_out;
-
-					//ROS_WARN("cmd4 : %lf" , cmd[4]);		
-					writeMotors();
-
-					heartbeat();
-					readLimitSwitches();
-					readEncoders(timer);
-					timer = ros::Time::now() - init_time;
-				}
-
-				ROS_INFO_STREAM("homing of LEFT ELBOW  succesful");
-				offset_pos[i+1] = home_pos[i+1] - pos[i+1];
-
-			}	
-		}
-		else ROS_WARN_STREAM("No homing performed for " << i << " because no home position setted");
-	}
-}
 //------------------------------
 
 void CepheusHW::write_left_wrist(double width){

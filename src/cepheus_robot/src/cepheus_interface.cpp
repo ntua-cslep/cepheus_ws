@@ -91,83 +91,6 @@ int readErr()
 	return i;
 }
 
-void fixJointPos()
-{
-	int sh=0;
-	int elb=0;
-	char c;
-
-	for (;;) {
-		ROS_WARN("Give arm: s(houlder) or e(lbow) or q(uit)");
-		fflush(stdout);
-
-		c = getchar();
-		getchar();
-
-		if (c == 's') 
-		{
-			for(;;) {
-				ROS_WARN("Give direction (-/+) or q(uit)");
-				fflush(stdout);
-
-				c = getchar();
-				while (getchar() != '\n') ;
-
-				if (c == 'q') break;
-				else if (c == '-') sh = -1;
-				else if (c == '+') sh = 1;
-				else continue;
-
-				robot.setJointTorque(sh,0);
-
-				robot.writeMotors();
-				ros::Time init_time = ros::Time::now();
-				ros::Duration timer;
-				while(timer.toSec()<SH_DUR) {
-					robot.heartbeat();				
-					timer = ros::Time::now() - init_time;
-				}
-
-				robot.setJointTorque(0,0);
-				robot.writeMotors();
-				//robot.disable();
-			}
-		} else if (c == 'e') {
-			for(;;) {
-				ROS_WARN("Give direction (-/+) or q(uit)");
-				fflush(stdout);
-
-				c = getchar();
-				while (getchar() != '\n') ;
-
-				if (c == 'q') break;
-				else if (c == '-') elb = -1;
-				else if (c == '+') elb = 1;
-				else continue;
-
-				robot.setJointTorque(0,elb);
-				robot.writeMotors();
-
-				ros::Time init_time = ros::Time::now();
-				ros::Duration timer;
-				while(timer.toSec()<ELB_DUR) {
-					robot.heartbeat();
-					timer = ros::Time::now() - init_time;
-
-				}
-
-				robot.setJointTorque(0,0);
-				robot.writeMotors();
-				//robot.disable();
-			}
-		} else if (c == 'q') {
-			break;
-		} else {
-			ROS_WARN("Not valid input!");
-		}
-	}
-}
-
 
 void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
@@ -188,21 +111,6 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 	}
 
 }
-
-//--------------------ORIGINAL---------------------------------
-/*
-   void thrusterCallback(const geometry_msgs::Vector3::ConstPtr& cmd)
-   {
-   double thrust[4];
-   thrust[0] = (double)cmd->x;
-   thrust[1] = (double)cmd->y;
-   thrust[2] = (double)cmd->z;
-   thrust[3] = (double)0;
-   robot.setThrustPwm(thrust, 0.001, 0.9);
-   return;
-   }
- */
-//-----------------------------------------------------------------
 
 
 //----------TO MEASURE LATENCY-REPLACE WITH ORIGINAL IF  NEEDED AND IN PLANNER AND CONTROLLER-----
@@ -538,7 +446,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	//INITIALIZE THE LEFT ELBOW
 	robot.init_left_elbow();
 
-	msg.data = "START_LEFT_ELBOW_CTRL";
+	msg.data = std::string(CMD_START_LEFT_ELBOW);
 	ctl_pub.publish(msg);
 
 	init_spinner.start();
@@ -558,7 +466,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 
 	//INITIALIZE THE LEFT SHOULDER
 	robot.init_left_shoulder();
-	msg.data = "START_LEFT_SHOULDER_CTRL";
+	msg.data = std::string(CMD_START_LEFT_SHOULDER);
 
 	count = 0;
 	while (count < MSG_NUM) {
@@ -603,7 +511,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	robot.init_right_elbow();
 
 
-	msg.data = "START_RIGHT_ELBOW_CTRL";
+	msg.data = std::string(CMD_START_RIGHT_ELBOW);
 	ctl_pub.publish(msg);
 
 	init_spinner.start();
@@ -624,7 +532,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 
 	//INITIALIZE THE RIGHT SHOULDER
 	robot.init_right_shoulder();
-	msg.data = "START_RIGHT_SHOULDER_CTRL";
+	msg.data = std::string(CMD_START_RIGHT_SHOULDER);
 
 	count = 0;
 	while (count < MSG_NUM) {
