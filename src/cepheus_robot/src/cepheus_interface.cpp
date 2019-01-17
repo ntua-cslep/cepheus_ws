@@ -94,7 +94,11 @@ int readErr()
 
 void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
-	if(standard_controllers_started && left_shoulder_ctrl_started && left_elbow_ctrl_started)
+	if(standard_controllers_started && 
+		left_shoulder_ctrl_started && 
+		left_elbow_ctrl_started &&
+		right_elbow_ctrl_started &&
+		right_shoulder_ctrl_started)
 		return;
 
 	if(!standard_controllers_started && (msg->data).compare("STANDARD_CTRLS_OK") == 0){
@@ -102,13 +106,21 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 		//ROS_WARN("STARTEEEEDD");
 	}
 
-	if(standard_controllers_started && (msg->data).compare("LEFT_ELBOW_CTRL_OK")==0){
+	if(standard_controllers_started && (msg->data).compare(std::string(RESPONSE_LEFT_ELBOW))==0){
 		left_elbow_ctrl_started = true;
 	}
 
-	if(standard_controllers_started && left_elbow_ctrl_started && (msg->data).compare("LEFT_SHOULDER_CTRL_OK")==0){
+	if(standard_controllers_started && left_elbow_ctrl_started && (msg->data).compare(std::string(RESPONSE_LEFT_SHOULDER))==0){
 		left_shoulder_ctrl_started = true;
 	}
+
+        if(standard_controllers_started && (msg->data).compare(std::string(RESPONSE_RIGHT_ELBOW))==0){
+                right_elbow_ctrl_started = true;
+        }
+
+        if(standard_controllers_started && right_elbow_ctrl_started && (msg->data).compare(std::string(RESPONSE_RIGHT_SHOULDER))==0){
+                right_shoulder_ctrl_started = true;
+        }
 
 }
 
@@ -399,18 +411,77 @@ void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array,
 }
 //---------------------------------------------------------------
 
+void start_standard_controllers(ros::NodeHandle& nh, controller_manager::ControllerManager& cm, ros::Rate& loop_rate){
+
+        ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+        ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+
+        std_msgs::Float64 set_point_msg;
+
+        //IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
+        int count = 0 ;
+        std_msgs::String msg;
+        msg.data = "START_STANDARD_CTRLS";
+        while (count < MSG_NUM) {
+
+                ctl_pub.publish(msg);
+
+                loop_rate.sleep();
+                ++count;
+        }
+
+
+        ROS_WARN("ORDER TO START STANDARD CTLS!");
+
+        ros::AsyncSpinner init_spinner(2);
+        init_spinner.start();
+
+
+        ros::Time update_time = ros::Time::now();
+        ros::Time prev_time = update_time;
+
+        while(!standard_controllers_started)
+        {
+                ros::Duration time_step = update_time - prev_time;
+                prev_time = update_time;
+
+                cm.update(update_time, time_step);
+
+                loop_rate.sleep();
+        }
+        init_spinner.stop();
+
+        ROS_WARN("STANDARD CONTROLLERS HAVE STARTED!");
+
+}
+
 void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager::ControllerManager& cm, ros::Rate& loop_rate){
 
 	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
 	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
-
 
 	std_msgs::Float64 set_point_msg;
 
 	//IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
 	int count = 0 ;
 	std_msgs::String msg;
-	msg.data = "START_STANDARD_CTRLS";
+
+        ros::AsyncSpinner init_spinner(2);
+        init_spinner.start();
+
+
+        ros::Time update_time = ros::Time::now();
+        ros::Time prev_time = update_time;
+
+
+	//INITIALIZE THE LEFT ELBOW
+	robot.init_left_elbow();
+
+	msg.data = std::string(CMD_START_LEFT_ELBOW);
+	ctl_pub.publish(msg);
+
+	count = 0;
 	while (count < MSG_NUM) {
 
 		ctl_pub.publish(msg);
@@ -419,35 +490,6 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 		++count;
 	}
 
-
-	ROS_WARN("ORDER TO START STANDARD CTLS!");
-
-	ros::AsyncSpinner init_spinner(2);
-	init_spinner.start();
-
-
-	ros::Time update_time = ros::Time::now();
-	ros::Time prev_time = update_time;
-
-	while(!standard_controllers_started)
-	{
-		ros::Duration time_step = update_time - prev_time;
-		prev_time = update_time;
-
-		cm.update(update_time, time_step);
-
-		loop_rate.sleep();
-	}
-	init_spinner.stop();
-
-	ROS_WARN("STANDARD CONTROLLERS HAVE STARTED!");
-/*
-
-	//INITIALIZE THE LEFT ELBOW
-	robot.init_left_elbow();
-
-	msg.data = std::string(CMD_START_LEFT_ELBOW);
-	ctl_pub.publish(msg);
 
 	init_spinner.start();
 
@@ -498,21 +540,40 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 
 	init_spinner.stop();
 
-
 	//Initialize the left finger and the wrist
-	//robot.command_right_wrist();
-
 	robot.init_left_finger();
 	robot.init_left_wrist();
 
+}
 
+void init_right_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager::ControllerManager& cm, ros::Rate& loop_rate){
+
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+	int count = 0 ;
+	std_msgs::Float64 set_point_msg;
+	std_msgs::String msg;
+
+	ros::AsyncSpinner init_spinner(2);
+
+
+	ros::Time update_time = ros::Time::now();
+	ros::Time prev_time = update_time;
 
 	//INITIALIZE THE RIGHT ELBOW
 	robot.init_right_elbow();
-
-
 	msg.data = std::string(CMD_START_RIGHT_ELBOW);
 	ctl_pub.publish(msg);
+
+	count = 0;
+	while (count < MSG_NUM) {
+
+		ctl_pub.publish(msg);
+
+		loop_rate.sleep();
+		++count;
+	}
 
 	init_spinner.start();
 
@@ -528,11 +589,11 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 		loop_rate.sleep();
 	}
 	init_spinner.stop();
-*/
-
+/*
 	//INITIALIZE THE RIGHT SHOULDER
 	robot.init_right_shoulder();
 	msg.data = std::string(CMD_START_RIGHT_SHOULDER);
+	ctl_pub.publish(msg);
 
 	count = 0;
 	while (count < MSG_NUM) {
@@ -544,7 +605,6 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	}
 
 	init_spinner.start();
-
 
 	while(!right_shoulder_ctrl_started)
 	{
@@ -564,22 +624,11 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh, controller_manager
 	}
 
 	init_spinner.stop();
-
-
+*/	
 	robot.init_right_finger();
 	robot.init_right_wrist();
-
-	/*
-	   sleep(1);
-	   robot.set_left_finger(60);
-	   sleep(1);
-	   robot.set_left_wrist(120);
-	   sleep(1);
-	   robot.set_right_finger(50);
-	   sleep(1);
-	   robot.set_right_wrist(100);
-	 */
 }
+
 
 double produce_sin_trajectory(double width, double period, double t){
 
@@ -1083,7 +1132,7 @@ int main(int argc, char** argv)
 	left_shoulder_pub =  nh.advertise<std_msgs::Float64>("left_shoulder_position_controller/command", 1000);
 	left_elbow_pub =  nh.advertise<std_msgs::Float64>("left_elbow_position_controller/command", 1000);
 	right_shoulder_pub =  nh.advertise<std_msgs::Float64>("right_shoulder_position_controller/command", 1000);
-        right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
+	right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
 
 
 	ros::Time prev_time = ros::Time::now();
@@ -1091,7 +1140,7 @@ int main(int argc, char** argv)
 	robot.setHomePos(4, l1_limit_pos); 
 	robot.setHomePos(5, l2_limit_pos);
 	robot.setHomePos(6, r1_limit_pos);
-        robot.setHomePos(7, r2_limit_pos);
+	robot.setHomePos(7, r2_limit_pos);
 
 
 	//int err = readErr();
@@ -1100,9 +1149,11 @@ int main(int argc, char** argv)
 	//ROS_INFO("Fixed, now init...\n");
 	//}
 
-	//Initialize the left arm and start the ros controllers
+	//Initialize the  arms and start the ros controllers
+	
+	start_standard_controllers(nh, cm, loop_rate);
 	init_left_arm_and_start_controllers(nh, cm, loop_rate);
-
+	//init_right_arm_and_start_controllers(nh, cm, loop_rate);
 
 	// sleep(5);
 	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
@@ -1170,6 +1221,7 @@ int main(int argc, char** argv)
 		}
 
 		loop_rate.sleep();
+
 	}
 
 

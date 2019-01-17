@@ -341,15 +341,15 @@ void CepheusHW::init_right_elbow(){
                 //e_sum = 0.0;
                 do{
 
-                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+                        //des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
                         des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
-                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
-                        cmd[RIGHT_SHOULDER] = shoulder_out;
+                        //update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+                        //cmd[RIGHT_SHOULDER] = shoulder_out;
                         update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
                         cmd[RIGHT_ELBOW] = elbow_out;
 
-                        //ROS_WARN("cmd4 : %lf" , cmd[4]);              
+                        //ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);              
                         writeMotors();
 
                         heartbeat();
@@ -609,8 +609,8 @@ void CepheusHW::writeMotors()
 	for (int i=4; i<8; i++)
 	{
 
-		if(i==4)
-			ROS_WARN("cmd[4] = %lf",cmd[4]);
+		//if(i==RIGHT_ELBOW)
+		//	ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
 		// K = 0.0439, current -> torque
 		current[i] = (cmd[i]/0.0439 );//cmd is in Nm
 		eff[i] = cmd[i];	// torque

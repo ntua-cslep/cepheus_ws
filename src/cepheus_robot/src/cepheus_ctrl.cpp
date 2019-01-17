@@ -265,7 +265,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
         }
 	else if(!right_shoulder_ctrl_started && ((msg->data).compare(CMD_START_RIGHT_SHOULDER)== 0)){
 
-
                 bool rv;
 
                 rv = loadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
@@ -335,7 +334,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
                 }
 
                 right_elbow_ctrl_started = true;
-
         }
 
 }
