@@ -45,6 +45,10 @@ the target and move with it
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
+#define VEL_PROF_1 1
+#define VEL_PROF_2 2
+#define VEL_PROF_3 3
+
 //Structs containing the nessesary information for every velocity profile used
 typedef struct Prf1{
 
@@ -120,6 +124,17 @@ typedef struct Prf3{
 
 }Prf3;
 
+//Creating 6 possbilly used profiles
+//2 for each profile (x,y axis)
+//Maybe there is a better solution...
+Prf1 p1_X; Prf1 p1_Y;
+Prf2 p2_X; Prf2 p2_Y;
+Prf3 p3_X; Prf3 p3_Y;
+
+//values {1,2,3}
+//indcates which vel prof be used in each axis
+short velocity_profile_X = 0, velocity_profile_Y = 0;
+
 const double Fmax_thrust = 0.6;//Newton
 const double Chaser_mass = 13.5;//kg
 
@@ -144,8 +159,8 @@ ros::Time target_pos_stamp;
 geometry_msgs::Vector3 chaser_init_pos;
 geometry_msgs::Vector3 chaser_real_pos;
 
-short velocity_profile_X = 0;
-short velocity_profile_Y = 0;
+//The goal pos to move the chaser to
+geometry_msgs::Vector3 des_pos;
 
 bool calculated_velocity_of_target = false;
 
@@ -156,6 +171,9 @@ void ctrl_C_Handler(int sig)
 {
 	g_request_shutdown = 1;
 }
+
+//The path created by the planner stored for any use
+nav_msgs::Path path;
 
 //-------Callbacks---------
 
@@ -281,19 +299,11 @@ void calculate_target_velocity(double& target_vel_X, double& target_vel_Y){
 
 	}
 
-	ROS_WARN("CALCULATED TARGET'S VEOLCITY");
+	ROS_WARN("Target Vel_X = %lf, Vel_Y = %lf", target_vel_X, target_vel_Y);
 }
 
 
-void setup_planning_parameters(const double& Fmax_thrust,
-		const double& Chaser_mass,
-		geometry_msgs::Vector3& target_init_pos,
-		geometry_msgs::Vector3& chaser_init_pos,
-		double& A_MAX,
-		double& A_MAX_X,
-		double& A_MAX_Y,
-		double& L_X,
-		double& L_Y)
+void setup_planning_parameters()
 {
 	double Fmax_X = 2*cos(M_PI/6) * Fmax_thrust;
 	A_MAX = Fmax_X / Chaser_mass;
@@ -516,18 +526,15 @@ void calc_vel_prof_3_params(const double& A_MAX,
 }
 
 
-void decide_plan_of_action(double& target_vel_X, 
-		double& target_vel_Y,
-		geometry_msgs::Vector3& target_init_pos,
-		geometry_msgs::Vector3& chaser_init_pos,
-		double& desired_pos,
-		double& acc)
+void decide_plan_of_action()
 {
 	//-----------FOR X AXIS------------
 
 	//Target is moving away or stands still
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
-
+	
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, target_init_pos.x, des_pos.x, p1_X);
+		velocity_profile_X = (short)VEL_PROF_1; 
 	}
 
 	// 	Target is aproacing the chaser
@@ -545,9 +552,13 @@ void decide_plan_of_action(double& target_vel_X,
 	//Target is moving away or stands still
 	if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
 
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, target_init_pos.y, des_pos.y, p1_Y);
+                velocity_profile_Y = (short)VEL_PROF_1;
 	}
 	//The target stands still so the chaser has to approach
 	else if(false){
+
+
 
 	}
 
@@ -561,29 +572,24 @@ void decide_plan_of_action(double& target_vel_X,
 	}
 
 
-	ROS_WARN("Cepheus decided!");
+	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d", velocity_profile_X, velocity_profile_Y);
 }
 
-void  produce_chaser_trj_points_prof_1 (const double& t,
-		const double& t1,
-		const double& t2,
-		const double& INIT_CH,
-		const double& A_max,
-		const double& xt1,
-		const double& vt1,
-		const double& xdes_chaser,
-		const double& V_DES,
-		double& x_chaser)
+double  produce_chaser_trj_points_prof_1 (const double& t,
+					const double& INIT_CH,
+					const double& A_max,
+					const double& V_DES,
+					const Prf1& prof_params)
 {
 
-	if (t<=t1){
-		x_chaser = INIT_CH+1/2*A_max*pow(t,2);
+	if (t <= prof_params.t1){
+		return(INIT_CH + 1/2 * A_max * pow(t,2));
 	}
-	else if (t>t1 && t<=t2){
-		x_chaser = xt1+vt1*(t-t1)-1/2*A_max*pow(t-t1,2);
+	else if (t > prof_params.t1 && t <= prof_params.t2){
+		return(prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 1/2 * A_max * pow(t - prof_params.t1,2));
 	}
 	else{
-		x_chaser = xdes_chaser+V_DES*(t-t2);
+		return(prof_params.xdes_chaser + V_DES * (t - prof_params.t2));
 	}
 
 }
@@ -672,23 +678,40 @@ int main(int argc, char** argv)
 	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 
+	//Trajectory point
+	double new_x, new_y;
+	geometry_msgs::PoseStamped new_pos;
 
+	ROS_WARN("Planner is starting the observation and decision process...................");
 	calculate_target_velocity(target_vel_X, target_vel_Y);
+	setup_planning_parameters();
+	decide_plan_of_action();
 
-	setup_planning_parameters(Fmax_thrust,
-			Chaser_mass,
-			target_init_pos,
-			chaser_init_pos,
-			A_MAX,
-			A_MAX_X,
-			A_MAX_Y,
-			L_X,
-			L_Y);
+	ros::Rate loop_rate(200);	
+	ros::Duration time;
+	ros::Time init_time = ros::Time::now();
 
+	ROS_WARN("Planner is starting to produce the trajecory");
 	while(!g_request_shutdown){
-
+		
 		ros::spinOnce();
 
+		time = ros::Time::now()- init_time;
+
+		if(velocity_profile_X == (short)VEL_PROF_1){
+			new_x = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
+		}
+		
+		if(velocity_profile_Y == (short)VEL_PROF_1){
+			new_y = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
+		}
+
+		new_pos.pose.position.x = new_x;
+		new_pos.pose.position.y = new_y;
+
+		path.poses.push_back(new_pos);
+
+		loop_rate.sleep();
 	}
 
 }
