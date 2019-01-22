@@ -1,0 +1,117 @@
+... logging to /root/.ros/log/d4ff7680-1e71-11e9-bf0b-ec086b0a6d0b/roslaunch-mrrobot-7286.log
+Checking log directory for disk usage. This may take awhile.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+]2;/home/mrrobot/ilias_ws/src/cepheus_robot/launch/launch_cepheus_robot.launch
+[1mstarted roslaunch server http://192.168.1.103:45257/[0m
+
+SUMMARY
+========
+
+PARAMETERS
+ * /assist_robot_leds: [{'position': [0....
+ * /base_controller/kd_gain_ang: 1.24035
+ * /base_controller/kd_gain_lin: 12.0
+ * /base_controller/kp_gain_ang: 1.0
+ * /base_controller/kp_gain_lin: 1.2
+ * /base_controller/loop_rate: 200.0
+ * /base_controller/use_reaction_wheel: True
+ * /base_controller/use_with_planner: True
+ * /cepheus_ctrl/controllers_to_spawn: joint_state_publi...
+ * /cepheus_interface_node/left_elbow_limit_pos: 1.75
+ * /cepheus_interface_node/left_shoulder_limit_pos: 2.59
+ * /cepheus_interface_node/loop_rate: 200.0
+ * /cepheus_interface_node/max_motor_current: 2.0
+ * /cepheus_interface_node/right_elbow_limit_pos: -1.75
+ * /cepheus_interface_node/right_shoulder_limit_pos: -2.59
+ * /cepheus_interface_node/rw_max_power: 30
+ * /cepheus_interface_node/rw_max_speed: 400
+ * /cepheus_interface_node/rw_max_torque: 0.02
+ * /cepheus_interface_node/rw_total_inertia: 0.00197265
+ * /cepheus_interface_node/thruster_force: 0.5
+ * /cepheus_leds: [{'position': [0....
+ * /cepheus_state_publisher/publish_frequency: 100
+ * /joint_state_publisher/publish_rate: 50.0
+ * /joint_state_publisher/type: joint_state_contr...
+ * /left_elbow_position_controller/joint: left_elbow
+ * /left_elbow_position_controller/pid/d: 0.02
+ * /left_elbow_position_controller/pid/i: 0.0
+ * /left_elbow_position_controller/pid/i_clamp: 0.0
+ * /left_elbow_position_controller/pid/p: 0.1
+ * /left_elbow_position_controller/type: effort_controller...
+ * /left_gripper_position_controller/joint: left_finger_joint
+ * /left_gripper_position_controller/type: position_controll...
+ * /left_shoulder_position_controller/joint: left_shoulder
+ * /left_shoulder_position_controller/pid/d: 0.02
+ * /left_shoulder_position_controller/pid/i: 0.0
+ * /left_shoulder_position_controller/pid/i_clamp: 0.0
+ * /left_shoulder_position_controller/pid/p: 0.1
+ * /left_shoulder_position_controller/type: effort_controller...
+ * /left_wrist_position_controller/joint: left_wrist
+ * /left_wrist_position_controller/type: position_controll...
+ * /left_wrist_trajectory_controller/gains/left_wrist/d: 0.01
+ * /left_wrist_trajectory_controller/gains/left_wrist/i: 0.0
+ * /left_wrist_trajectory_controller/gains/left_wrist/i_clamp: 0.0
+ * /left_wrist_trajectory_controller/gains/left_wrist/p: 0.1
+ * /left_wrist_trajectory_controller/joints: ['left_wrist']
+ * /left_wrist_trajectory_controller/type: position_controll...
+ * /phase_space_node/init_flags: 0
+ * /phase_space_node/ip: 192.168.1.18
+ * /phase_space_node/marker_count: 72
+ * /reaction_wheel_effort_controller/joint: reaction_wheel_joint
+ * /reaction_wheel_effort_controller/pid/d: 0.0
+ * /reaction_wheel_effort_controller/pid/i: 0.0
+ * /reaction_wheel_effort_controller/pid/i_clamp: 0.0
+ * /reaction_wheel_effort_controller/pid/p: 1.0
+ * /reaction_wheel_effort_controller/type: effort_controller...
+ * /reaction_wheel_position_controller/joint: reaction_wheel_joint
+ * /reaction_wheel_position_controller/pid/d: 0.1
+ * /reaction_wheel_position_controller/pid/i: 0.0
+ * /reaction_wheel_position_controller/pid/i_clamp: 0.0
+ * /reaction_wheel_position_controller/pid/p: 1.0
+ * /reaction_wheel_position_controller/type: effort_controller...
+ * /reaction_wheel_velocity_controller/joint: reaction_wheel_joint
+ * /reaction_wheel_velocity_controller/pid/d: 0.0
+ * /reaction_wheel_velocity_controller/pid/i: 0.0
+ * /reaction_wheel_velocity_controller/pid/i_clamp: 0.05
+ * /reaction_wheel_velocity_controller/pid/p: -0.05
+ * /reaction_wheel_velocity_controller/type: effort_controller...
+ * /right_elbow_position_controller/joint: right_elbow
+ * /right_elbow_position_controller/pid/d: 0.02
+ * /right_elbow_position_controller/pid/i: 0.0
+ * /right_elbow_position_controller/pid/i_clamp: 0.0
+ * /right_elbow_position_controller/pid/p: 0.1
+ * /right_elbow_position_controller/type: effort_controller...
+ * /right_shoulder_position_controller/joint: right_shoulder
+ * /right_shoulder_position_controller/pid/d: 0.02
+ * /right_shoulder_position_controller/pid/i: 0.0
+ * /right_shoulder_position_controller/pid/i_clamp: 0.0
+ * /right_shoulder_position_controller/pid/p: 0.1
+ * /right_shoulder_position_controller/type: effort_controller...
+ * /rob2_st_pub/publish_frequency: 100
+ * /robot_description2: <?xml version="1....
+ * /robot_description: <?xml version="1....
+ * /rosdistro: kinetic
+ * /rosversion: 1.12.14
+ * /track_assist_robot/object_frame: assist_robot
+ * /track_assist_robot/reference_frame: /map
+ * /track_cepheus/object_frame: cepheus
+ * /track_cepheus/reference_frame: /map
+
+NODES
+  /
+    base_controller (cepheus_robot/base_controller_node)
+    cepheus_ctrl (cepheus_robot/cepheus_ctrl)
+    cepheus_interface_node (cepheus_robot/cepheus_interface_node)
+    cepheus_state_publisher (robot_state_publisher/robot_state_publisher)
+    gripper_target_broadcaster (tf2_ros/static_transform_publisher)
+    left_hand_base_broadcaster (tf2_ros/static_transform_publisher)
+    new_base_planner (cepheus_robot/new_base_planner_node)
+    phase_space_node (phase_space/phase_space_node)
+    rob2_st_pub (robot_state_publisher/state_publisher)
+    track_assist_robot (phase_space/track_body_node)
+    track_cepheus (phase_space/track_body_node)
+
+auto-starting new master
+[1mprocess[master]: started with pid [7299][0m
+[master] killing on exit

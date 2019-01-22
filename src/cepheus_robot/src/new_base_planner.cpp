@@ -160,7 +160,7 @@ double A_MAX_X, A_MAX_Y;
 double L_X = 1;
 double L_Y = 1;
 
-double target_vel_X, target_vel_Y;
+double target_vel_X = 0.0, target_vel_Y = 0.0;
 
 geometry_msgs::Vector3 target_real_pos;
 geometry_msgs::Vector3 target_init_pos;
@@ -288,28 +288,34 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 		first_time = false;
 	}
 
-	//dt = target_pos_stamp.toSec() - target_prev_pos_stamp.toSec();
-	//dt = 0.005;
 
 	x = x_fir.filter(target_real_pos.x);
 	y = y_fir.filter(target_real_pos.y);
 
+	//ROS_WARN("dt %lf",dt);
+
 	if(dt != 0){
 		target_vel_X = (x - target_prev_pos.x)/dt;
 		target_vel_Y = (y - target_prev_pos.y)/dt;
+		//Real vel
+		//std::cout<<target_pos_stamp.toSec()<<" "<<target_vel_X<<std::endl;
 
 		target_vel_X = xd_fir.filter(target_vel_X);
 		target_vel_Y = yd_fir.filter(target_vel_Y);
-
+		//Filtered vel
+                std::cout<<" "<<target_vel_X<<std::endl;
 	}
 
 	target_prev_pos.x = x;
 	target_prev_pos.y = y;
 	target_prev_pos_stamp = target_pos_stamp; 
 
-	//if(target_vel_X != 0 || target_vel_Y !=0)
-	//ROS_WARN("X = %lf, Y = %lf", x, y);
-	ROS_WARN("Target Vel_X = %lf",target_vel_X);
+	//Real pos
+	//std::cout<<target_pos_stamp.toSec()<<" "<<target_real_pos.x<<std::endl;
+	//Filtered pos
+	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
+	
+
 }
 
 
@@ -544,7 +550,9 @@ void decide_plan_of_action()
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, target_init_pos.x, des_pos.x, p1_X);
-		velocity_profile_X = (short)VEL_PROF_1; 
+		velocity_profile_X = (short)VEL_PROF_1;
+
+		 
 	}
 
 	// 	Target is aproacing the chaser
@@ -566,7 +574,7 @@ void decide_plan_of_action()
 		velocity_profile_Y = (short)VEL_PROF_1;
 	}
 	//The target stands still so the chaser has to approach
-	else if(false){
+	else if(true){
 
 
 
@@ -694,8 +702,8 @@ int main(int argc, char** argv)
 
 	ROS_WARN("Planner is starting the observation and decision process...................");
 	//calculate_target_velocity(target_vel_X, target_vel_Y);
-	//setup_planning_parameters();
-	//decide_plan_of_action();
+	setup_planning_parameters();
+	decide_plan_of_action();
 
 	ros::Rate loop_rate(200);	
 	ros::Duration time;
