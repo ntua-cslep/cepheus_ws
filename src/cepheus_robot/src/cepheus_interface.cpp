@@ -1152,7 +1152,7 @@ int main(int argc, char** argv)
 	//Initialize the  arms and start the ros controllers
 	
 	start_standard_controllers(nh, cm, loop_rate);
-	init_left_arm_and_start_controllers(nh, cm, loop_rate);
+	//init_left_arm_and_start_controllers(nh, cm, loop_rate);
 	//init_right_arm_and_start_controllers(nh, cm, loop_rate);
 
 	// sleep(5);

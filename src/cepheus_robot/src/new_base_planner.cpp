@@ -1,22 +1,22 @@
 /*
 
-About the chaser's movement:
+   About the chaser's movement:
 
-There are 3 velocity profiles depending on the target's position
-and the sign of the target's velocity
-We can have either of the 3 profiles in each axis idependent from each other
+   There are 3 velocity profiles depending on the target's position
+   and the sign of the target's velocity
+   We can have either of the 3 profiles in each axis idependent from each other
 
-Profile 1: (vel_profile = 1) means that the target is moving away form the chaser and that the chaser is going to accelerate
-with full acceleration and the deaccelerate in order to reach the target
+   Profile 1: (vel_profile = 1) means that the target is moving away form the chaser and that the chaser is going to accelerate
+   with full acceleration and the deaccelerate in order to reach the target
 
-Profile 2: (vel_profile = 2) means that the chaser is going to accelerate
-with an acceleration calculated at that time in order to reach the
-target's velocity and then move with target's speed along with the target
+   Profile 2: (vel_profile = 2) means that the chaser is going to accelerate
+   with an acceleration calculated at that time in order to reach the
+   target's velocity and then move with target's speed along with the target
 
-Profile 3: (vel_profile = 3) The chaser moves toward the target and in time it changes it's direction in order to allign with
-the target and move with it
+   Profile 3: (vel_profile = 3) The chaser moves toward the target and in time it changes it's direction in order to allign with
+   the target and move with it
 
-*/
+ */
 
 #include <signal.h>
 #include <stdint.h>
@@ -45,6 +45,16 @@ the target and move with it
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
+
+#include "digital_filter.h"
+
+DigitalFilter x_fir(10, 0.0);
+DigitalFilter y_fir(10, 0.0);
+DigitalFilter xd_fir(10, 0.0);
+DigitalFilter yd_fir(10, 0.0);
+
+
+
 #define VEL_PROF_1 1
 #define VEL_PROF_2 2
 #define VEL_PROF_3 3
@@ -60,11 +70,11 @@ typedef struct Prf1{
 	double xdes_chaser;
 
 	void set_vals(	double t1,
- 		       	double t2,
- 		       	double xdes_target,
- 			double xt1,
- 	      		double vt1,
- 	       		double xdes_chaser)
+			double t2,
+			double xdes_target,
+			double xt1,
+			double vt1,
+			double xdes_chaser)
 	{
 		this->t1 = t1;
 		this->t2 = t2;
@@ -76,16 +86,16 @@ typedef struct Prf1{
 }Prf1;
 
 typedef struct Prf2{
-	
+
 	double t1; 
 	double a_ch;
 
 	void set_vals(  double t1,
-                        double a_ch)
-        {
-                this->t1 = t1;
-                this-> a_ch = a_ch;
-        }
+			double a_ch)
+	{
+		this->t1 = t1;
+		this-> a_ch = a_ch;
+	}
 
 }Prf2;
 
@@ -101,26 +111,26 @@ typedef struct Prf3{
 	double xdes_chaser;
 	double xdes_target;
 
-        void set_vals(  double t1,
-                        double t2,
+	void set_vals(  double t1,
+			double t2,
 			double t3,
 			double a3,
-                        double Vt1,
-                        double Xt1,
+			double Vt1,
+			double Xt1,
 			double Xt2,
-                        double xdes_chaser,
+			double xdes_chaser,
 			double xdes_target)
-        {
-                this->t1 = t1;
-                this->t2 = t2;
+	{
+		this->t1 = t1;
+		this->t2 = t2;
 		this->t3 = t3;
 		this->a3 = a3;
-                this->Xt1 = Xt1;
-                this->Xt2 = Xt2;
+		this->Xt1 = Xt1;
+		this->Xt2 = Xt2;
 		this->Vt1 = Vt1;
-                this-> xdes_chaser =  xdes_chaser;
-                this->xdes_target = xdes_target;
-        }
+		this-> xdes_chaser =  xdes_chaser;
+		this->xdes_target = xdes_target;
+	}
 
 }Prf3;
 
@@ -255,51 +265,51 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 	}
 
 
-	//ROS_INFO("phaseSpace called");
+	//std::cout<<target_pos_stamp.toSec()<<" "<<target_real_pos.x<<std::endl;;
 	return;
 }
 
 //---------------------------
 
 
-void calculate_target_velocity(double& target_vel_X, double& target_vel_Y){
+void calculate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
 
-	bool first_time = true;
-	bool velocity_calculated = false;
-	geometry_msgs::Vector3 target_prev_pos;
-	ros::Time target_prev_pos_stamp;
-	double dt;
-
-
-	for (int i=0; i<=3; i++){
-
-		ros::spinOnce();
+	static bool first_time = true;
+	static geometry_msgs::Vector3 target_prev_pos;
+	static ros::Time target_prev_pos_stamp;
+	double x,y,z;
 
 
-		if(first_time){
+	if(first_time){
 
-			target_prev_pos = target_real_pos;
-			target_prev_pos_stamp = target_pos_stamp; 
-			first_time = false;
-			continue;
-		}
-
-		dt = target_pos_stamp.toSec() - target_prev_pos_stamp.toSec();
-
-		if(dt != 0){
-
-			target_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
-			target_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
-		}
-
-		target_prev_pos = target_real_pos;
+		target_prev_pos.x = x_fir.filter(target_real_pos.x);
+		target_prev_pos.y = y_fir.filter(target_real_pos.y);
 		target_prev_pos_stamp = target_pos_stamp; 
+		first_time = false;
+	}
 
-		sleep(0.5);
+	//dt = target_pos_stamp.toSec() - target_prev_pos_stamp.toSec();
+	//dt = 0.005;
+
+	x = x_fir.filter(target_real_pos.x);
+	y = y_fir.filter(target_real_pos.y);
+
+	if(dt != 0){
+		target_vel_X = (x - target_prev_pos.x)/dt;
+		target_vel_Y = (y - target_prev_pos.y)/dt;
+
+		target_vel_X = xd_fir.filter(target_vel_X);
+		target_vel_Y = yd_fir.filter(target_vel_Y);
 
 	}
 
-	ROS_WARN("Target Vel_X = %lf, Vel_Y = %lf", target_vel_X, target_vel_Y);
+	target_prev_pos.x = x;
+	target_prev_pos.y = y;
+	target_prev_pos_stamp = target_pos_stamp; 
+
+	//if(target_vel_X != 0 || target_vel_Y !=0)
+	//ROS_WARN("X = %lf, Y = %lf", x, y);
+	ROS_WARN("Target Vel_X = %lf",target_vel_X);
 }
 
 
@@ -326,7 +336,7 @@ void setup_planning_parameters()
 	}
 
 	if(target_vel_Y != 0){
-		
+
 		if(target_vel_Y > 0){
 			A_MAX_Y = A_MAX;
 		}
@@ -409,7 +419,7 @@ void calc_vel_prof_1_params(const double& A_max,
 		}
 	}
 
-	
+
 
 	t2 = 2*t1 - V_DES / A_max;
 
@@ -502,7 +512,7 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		}
 	}
 
-	
+
 	t1 = t2/2;
 
 	t3=(L - 1/2 * V_DES * t2)/(-1/2 * V_DES);
@@ -532,7 +542,7 @@ void decide_plan_of_action()
 
 	//Target is moving away or stands still
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
-	
+
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, target_init_pos.x, des_pos.x, p1_X);
 		velocity_profile_X = (short)VEL_PROF_1; 
 	}
@@ -553,7 +563,7 @@ void decide_plan_of_action()
 	if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, target_init_pos.y, des_pos.y, p1_Y);
-                velocity_profile_Y = (short)VEL_PROF_1;
+		velocity_profile_Y = (short)VEL_PROF_1;
 	}
 	//The target stands still so the chaser has to approach
 	else if(false){
@@ -576,10 +586,10 @@ void decide_plan_of_action()
 }
 
 double  produce_chaser_trj_points_prof_1 (const double& t,
-					const double& INIT_CH,
-					const double& A_max,
-					const double& V_DES,
-					const Prf1& prof_params)
+		const double& INIT_CH,
+		const double& A_max,
+		const double& V_DES,
+		const Prf1& prof_params)
 {
 
 	if (t <= prof_params.t1){
@@ -683,34 +693,40 @@ int main(int argc, char** argv)
 	geometry_msgs::PoseStamped new_pos;
 
 	ROS_WARN("Planner is starting the observation and decision process...................");
-	calculate_target_velocity(target_vel_X, target_vel_Y);
-	setup_planning_parameters();
-	decide_plan_of_action();
+	//calculate_target_velocity(target_vel_X, target_vel_Y);
+	//setup_planning_parameters();
+	//decide_plan_of_action();
 
 	ros::Rate loop_rate(200);	
 	ros::Duration time;
-	ros::Time init_time = ros::Time::now();
+	ros::Time prev_time = ros::Time::now();
 
 	ROS_WARN("Planner is starting to produce the trajecory");
 	while(!g_request_shutdown){
-		
+
+		time = ros::Time::now() - prev_time;
+		prev_time = ros::Time::now();
+
 		ros::spinOnce();
+		//ROS_INFO("%lf",target_real_pos.x);
+		calculate_target_velocity(time.toSec(), target_vel_X, target_vel_Y);
 
-		time = ros::Time::now()- init_time;
+		/*
+		   time = ros::Time::now()- init_time;
 
-		if(velocity_profile_X == (short)VEL_PROF_1){
-			new_x = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
-		}
-		
-		if(velocity_profile_Y == (short)VEL_PROF_1){
-			new_y = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
-		}
+		   if(velocity_profile_X == (short)VEL_PROF_1){
+		   new_x = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
+		   }
 
-		new_pos.pose.position.x = new_x;
-		new_pos.pose.position.y = new_y;
+		   if(velocity_profile_Y == (short)VEL_PROF_1){
+		   new_y = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
+		   }
 
-		path.poses.push_back(new_pos);
+		   new_pos.pose.position.x = new_x;
+		   new_pos.pose.position.y = new_y;
 
+		   path.poses.push_back(new_pos);
+		 */
 		loop_rate.sleep();
 	}
 
