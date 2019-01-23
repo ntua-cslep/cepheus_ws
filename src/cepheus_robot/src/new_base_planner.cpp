@@ -44,7 +44,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-
+#include <std_msgs/Bool.h>
 
 #include "digital_filter.h"
 
@@ -83,6 +83,17 @@ typedef struct Prf1{
 		this->vt1 = vt1;
 		this-> xdes_chaser =  xdes_chaser;
 	}
+
+	void print(){
+
+		ROS_INFO("Profile 1 Params:");
+		std::cout<<"\t t1: "<<t1<<std::endl;
+		std::cout<<"\t t2: "<<t2<<std::endl;
+		std::cout<<"\t xt1: "<<xt1<<std::endl;
+		std::cout<<"\t vt1: "<<vt1<<std::endl;
+		std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
+		std::cout<<"\t xdes_target: "<<xdes_target<<std::endl;
+	}
 }Prf1;
 
 typedef struct Prf2{
@@ -96,6 +107,14 @@ typedef struct Prf2{
 		this->t1 = t1;
 		this-> a_ch = a_ch;
 	}
+
+        void print(){
+
+                ROS_INFO("Profile 2 Params:");
+                std::cout<<"\t t1: "<<t1<<std::endl;
+                std::cout<<"\t a_ch: "<<a_ch<<std::endl;
+        }
+
 
 }Prf2;
 
@@ -131,6 +150,22 @@ typedef struct Prf3{
 		this-> xdes_chaser =  xdes_chaser;
 		this->xdes_target = xdes_target;
 	}
+
+        void print(){
+
+                ROS_INFO("Profile 3 Params:");
+                std::cout<<"\t t1: "<<t1<<std::endl;
+                std::cout<<"\t t2: "<<t2<<std::endl;
+		std::cout<<"\t t3: "<<t3<<std::endl;
+		std::cout<<"\t a3: "<<a3<<std::endl;
+                std::cout<<"\t Xt1: "<<Xt1<<std::endl;
+		std::cout<<"\t Xt2: "<<Xt2<<std::endl;
+                std::cout<<"\t Vt1: "<<Vt1<<std::endl;
+                std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
+                std::cout<<"\t xdes_target: "<<xdes_target<<std::endl;
+        }
+
+
 
 }Prf3;
 
@@ -173,6 +208,7 @@ geometry_msgs::Vector3 chaser_real_pos;
 geometry_msgs::Vector3 des_pos;
 
 bool calculated_velocity_of_target = false;
+bool start_planning = false;
 
 // Signal-safe flag for whether shutdown is requested
 sig_atomic_t volatile g_request_shutdown = 0;
@@ -184,6 +220,36 @@ void ctrl_C_Handler(int sig)
 
 //The path created by the planner stored for any use
 nav_msgs::Path path;
+
+
+void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
+
+	try{
+		des_pos_listener.lookupTransform("/map", "/gripper_target", ros::Time(0), des_pos_transform);
+		des_pos.x = des_pos_transform.getOrigin().x();
+		des_pos.y = des_pos_transform.getOrigin().y();
+
+		//ROS_WARN("des_pos_x : %lf\n", des_pos.x);
+	}
+	catch (tf::TransformException &ex) {
+		ROS_ERROR("%s",ex.what());
+	}
+}
+
+
+//---Helper functions------
+
+void cut_digits(double &n, double dec_digit){
+
+	//ROS_WARN("n b: %lf",n);
+	double a = n * pow(10, dec_digit);
+	n = (int)a / pow(10, dec_digit);
+	//ROS_WARN("n a: %lf",n);
+}
+
+//------------------------
+
+
 
 //-------Callbacks---------
 
@@ -269,8 +335,36 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 	return;
 }
 
-//---------------------------
+void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
+	start_planning = msg->data;	
+}
 
+
+//---------------------------
+void observate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
+
+	static geometry_msgs::Vector3 target_prev_pos;
+
+	ros::spinOnce();
+
+	target_prev_pos.x = target_real_pos.x;
+	target_prev_pos.y = target_real_pos.y;
+
+	sleep(dt);
+
+	ros::spinOnce();
+
+	if(dt > 0){
+		target_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
+		target_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
+
+		cut_digits(target_vel_X, 2);
+		cut_digits(target_vel_Y, 2);
+
+		std::cout<<"Observated target vel_X: "<<target_vel_X<<std::endl;
+		std::cout<<"Observated target vel_Y: "<<target_vel_Y<<std::endl;
+	}
+}
 
 void calculate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
 
@@ -303,7 +397,12 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 		target_vel_X = xd_fir.filter(target_vel_X);
 		target_vel_Y = yd_fir.filter(target_vel_Y);
 		//Filtered vel
-                std::cout<<" "<<target_vel_X<<std::endl;
+		//std::cout<<" "<<target_vel_X<<std::endl;
+
+		cut_digits(target_vel_X, 2);
+		cut_digits(target_vel_Y, 2);
+
+		std::cout<<target_vel_X<<std::endl;	
 	}
 
 	target_prev_pos.x = x;
@@ -314,7 +413,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	//std::cout<<target_pos_stamp.toSec()<<" "<<target_real_pos.x<<std::endl;
 	//Filtered pos
 	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
-	
+
 
 }
 
@@ -387,7 +486,7 @@ void calc_vel_prof_1_params(const double& A_max,
 
 	if(delta < 0){
 		ROS_WARN("Cannot catch target. Delta < 0");
-		return;
+		exit(1);
 	}
 	else if(delta > 0){    
 
@@ -410,7 +509,7 @@ void calc_vel_prof_1_params(const double& A_max,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Two neg solutions < 0");
-			return;
+			exit(2);
 		}
 	}
 	else{
@@ -421,7 +520,7 @@ void calc_vel_prof_1_params(const double& A_max,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Double neg solution");
-			return;
+			exit(3);
 		}
 	}
 
@@ -434,6 +533,7 @@ void calc_vel_prof_1_params(const double& A_max,
 	xt1 = INIT_CH + 1/2*A_max*(t1*t1);
 	vt1 = A_max * t1;
 	xdes_chaser = xt1 + vt1 * (t2 - t1)-1/2*A_max*pow(t2 - t1,2);
+
 
 	res.set_vals(t1, t2, xdes_target, xt1, vt1, xdes_chaser);
 }
@@ -478,7 +578,7 @@ void calc_vel_prof_3_params(const double& A_MAX,
 
 	if (delta < 0){
 		ROS_WARN("Delta < 0");
-		return;
+		exit(6);
 	} 
 	else if (delta > 0){   
 
@@ -501,7 +601,7 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Two neg solutions < 0");
-			return;
+			exit(4);
 		}    
 
 	}
@@ -514,7 +614,7 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Double neg solution");
-			return;
+			exit(5);
 		}
 	}
 
@@ -549,10 +649,16 @@ void decide_plan_of_action()
 	//Target is moving away or stands still
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, target_init_pos.x, des_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
 		velocity_profile_X = (short)VEL_PROF_1;
+		p1_X.print();
+	}
+	//The target stands still so the chaser has to approach
+	else if(target_vel_X == 0.0){
 
-		 
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		velocity_profile_X = (short)VEL_PROF_1;
+		p1_X.print();
 	}
 
 	// 	Target is aproacing the chaser
@@ -570,13 +676,17 @@ void decide_plan_of_action()
 	//Target is moving away or stands still
 	if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, target_init_pos.y, des_pos.y, p1_Y);
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
 		velocity_profile_Y = (short)VEL_PROF_1;
+		p1_Y.print();
+
 	}
 	//The target stands still so the chaser has to approach
-	else if(true){
+	else if(target_vel_Y == 0.0){
 
-
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		velocity_profile_Y = (short)VEL_PROF_1;
+		p1_Y.print();
 
 	}
 
@@ -695,46 +805,65 @@ int main(int argc, char** argv)
 
 	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
+	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
+
 
 	//Trajectory point
 	double new_x, new_y;
 	geometry_msgs::PoseStamped new_pos;
 
+	//The listener for des_pos
+	tf::TransformListener des_pos_listener;
+	tf::StampedTransform des_pos_transform;
+
+
+	ROS_WARN("Planner is waiting for cmd to start in topic \"/start_chase\"...................");
+	while(!start_planning){
+		ros::spinOnce();
+		sleep(1);
+	}	
+
 	ROS_WARN("Planner is starting the observation and decision process...................");
-	//calculate_target_velocity(target_vel_X, target_vel_Y);
+
+	observate_target_velocity(1,target_vel_X, target_vel_Y);
 	setup_planning_parameters();
 	decide_plan_of_action();
 
 	ros::Rate loop_rate(200);	
-	ros::Duration time;
+	
+	ros::Duration dt;
 	ros::Time prev_time = ros::Time::now();
+	
+	ros::Time init_time = ros::Time::now();
+	ros::Duration timer;
 
 	ROS_WARN("Planner is starting to produce the trajecory");
 	while(!g_request_shutdown){
 
-		time = ros::Time::now() - prev_time;
+		dt = ros::Time::now() - prev_time;
 		prev_time = ros::Time::now();
+		timer = ros::Time::now() - init_time;
 
 		ros::spinOnce();
-		//ROS_INFO("%lf",target_real_pos.x);
-		calculate_target_velocity(time.toSec(), target_vel_X, target_vel_Y);
+		
+		//calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
+		update_des_pos(des_pos_listener, des_pos_transform);
 
-		/*
-		   time = ros::Time::now()- init_time;
+		if(velocity_profile_X == (short)VEL_PROF_1){
+			new_x = produce_chaser_trj_points_prof_1(timer.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
+		}
 
-		   if(velocity_profile_X == (short)VEL_PROF_1){
-		   new_x = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
-		   }
+		if(velocity_profile_Y == (short)VEL_PROF_1){
+			new_y = produce_chaser_trj_points_prof_1(timer.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
+		}
 
-		   if(velocity_profile_Y == (short)VEL_PROF_1){
-		   new_y = produce_chaser_trj_points_prof_1(time.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
-		   }
+		new_pos.pose.position.x = new_x;
+		new_pos.pose.position.y = new_y;
 
-		   new_pos.pose.position.x = new_x;
-		   new_pos.pose.position.y = new_y;
+		//ROS_WARN("%lf %lf %lf", new_x, new_y, timer.toSec());
 
-		   path.poses.push_back(new_pos);
-		 */
+		path.poses.push_back(new_pos);
+
 		loop_rate.sleep();
 	}
 
