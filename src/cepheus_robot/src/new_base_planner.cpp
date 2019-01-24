@@ -62,6 +62,14 @@ DigitalFilter tar_yd_fir(10, 0.0);
 #define VEL_PROF_2 2
 #define VEL_PROF_3 3
 
+//Restriction added due to the experimental constraints (table size)
+//Table size: 2.329 x 1.897
+//The constraint is the length of the diagonal
+//If the the chaser calculate a meeting point greater thatn this constriaint..
+//...it will abort and never move towards the target
+double DISTANSE_LIMIT = 2.8; //meters
+
+
 //Structs containing the nessesary information for every velocity profile used
 typedef struct Prf1{
 
@@ -103,13 +111,16 @@ typedef struct Prf1{
 
 typedef struct Prf2{
 
-	double t1; 
+	double t1;
 	double a_ch;
+	double xdes_chaser; 
 
 	void set_vals(  double t1,
+			double xdes_chaser,
 			double a_ch)
 	{
 		this->t1 = t1;
+		this->xdes_chaser = xdes_chaser;
 		this-> a_ch = a_ch;
 	}
 
@@ -117,6 +128,7 @@ typedef struct Prf2{
 
                 ROS_INFO("Profile 2 Params:");
                 std::cout<<"\t t1: "<<t1<<std::endl;
+		std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
                 std::cout<<"\t a_ch: "<<a_ch<<std::endl;
 
 		 std::cout<<"\t Total Time: "<<t1<<"\n"<<std::endl;
@@ -456,6 +468,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
 
 
+	ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
 }
 
 
@@ -583,6 +596,10 @@ void calc_vel_prof_1_params(const double& A_max,
 	vt1 = A_max * t1;
 	xdes_chaser = xt1 + vt1 * (t2 - t1)-0.5*A_max*pow(t2 - t1,2);
 
+	if (xdes_chaser >= DISTANSE_LIMIT){
+		ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_1");
+		exit(8);
+	}
 
 	res.set_vals(t1, t2, xdes_target, xt1, vt1, xdes_chaser);
 }
@@ -592,12 +609,19 @@ void calc_vel_prof_2_params(const double& INIT_CH,
 		const double&  V_DES,
 		Prf2& res)
 {
-	double t1,a_ch;
+	double t1,a_ch,xdes_chaser;
 
 	t1 = 2.0 * (INIT_CH - INIT_TAR)/V_DES;
 	a_ch = V_DES/t1;
+	xdes_chaser = INIT_CH + 0.5 *a_ch*pow(t1,2);
 
-	res.set_vals(t1, a_ch);
+	if (xdes_chaser >= DISTANSE_LIMIT){
+                ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_2");
+                exit(9);
+        }
+
+
+	res.set_vals(t1, xdes_chaser, a_ch);
 }
 
 void calc_vel_prof_3_params(const double& A_MAX,
@@ -685,6 +709,12 @@ void calc_vel_prof_3_params(const double& A_MAX,
 	Xt2 = Xt1 + Vt1 * (t2 - t1) - 0.5 * a_max * pow(t2 - t1,2);
 	xdes_chaser = INIT_TAR + V_DES * t3;
 
+	if (xdes_chaser >= DISTANSE_LIMIT){
+                ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_3");
+                exit(10);
+        }
+
+
 	xdes_target=V_DES*t3+init_des;
 
 	res.set_vals(t1, t2, t3, a3, Vt1, Xt1, Xt2, xdes_chaser, xdes_target);
@@ -752,39 +782,45 @@ void decide_plan_of_action()
 	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d", velocity_profile_X, velocity_profile_Y);
 }
 
-double  produce_chaser_trj_points_prof_1 (const double& t,
+void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		const double& INIT_CH,
 		const double& A_max,
 		const double& V_DES,
-		const Prf1& prof_params)
+		const Prf1& prof_params,
+		double &cmd_pos,
+		double& cmd_vel)
 {
 
 	if (t <= prof_params.t1){
-		return(INIT_CH + 0.5 * A_max * pow(t,2));
+		cmd_pos = INIT_CH + 0.5 * A_max * pow(t,2);
+		cmd_vel = A_max * t;//u0 = 0
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
-		return(prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2));
+		cmd_pos = prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2);
+		cmd_vel = prof_params.vt1 - A_max * t; // sign correct ? 
 	}
 	else{
-		return(prof_params.xdes_chaser + V_DES * (t - prof_params.t2));
+		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t2);
+		cmd_vel = V_DES;
 	}
 
 }
 
 void produce_chaser_trj_points_prof_2 (const double& t,
-		const double& t2,
 		const double&INIT_CH,
-		const double& a_ch,
 		const double& V_DES,
-		double& x_chaser)
+		const Prf2& prof_params,
+		double& cmd_pos,
+		double& cmd_vel)
 {
-	double xdes_chaser = INIT_CH + 0.5 *a_ch*pow(t2,2);
 
-	if (t<=t2){
-		x_chaser = INIT_CH + 0.5 * a_ch * pow(t,2);
+	if (t <= prof_params.t1){
+		cmd_pos = INIT_CH + 0.5 * prof_params.a_ch * pow(t,2);
+		cmd_vel = prof_params.a_ch * t;
 	}
 	else{
-		x_chaser = xdes_chaser + V_DES*(t-t2);
+		cmd_pos = prof_params.xdes_chaser + V_DES*(t - prof_params.t1);
+		cmd_vel = V_DES;
 	}
 }
 
@@ -837,6 +873,18 @@ void produce_chaser_trj_points_prof_3 (const double& t,
 	}
 }
 
+void wait_to_smooth_error(double dur){
+        ros::Duration timer_norm;
+        ros::Time init_time_norm = ros::Time::now();
+        //in order to normalize pos
+        do{
+                ros::spinOnce();
+                timer_norm = ros::Time::now() - init_time_norm;
+
+        }while(timer_norm.toSec() < dur);
+
+        target_first_time = chaser_first_time = true;
+}
 
 int main(int argc, char** argv)
 {
@@ -856,10 +904,17 @@ int main(int argc, char** argv)
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
 
+	ros::Publisher path_pub = nh.advertise<nav_msgs::Path>("new_path", 1000);
+        
+	//Send cmds to base controller node
+	ros::Publisher pos_pub = nh.advertise<geometry_msgs::PoseStamped>("planner_pos", 1);
+        ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("planner_vel", 1);
+        ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);//neccesary for ctrl...?
 
-	//Trajectory point
-	double new_x, new_y;
+	//Trajectory point produced and command velocity
+	double new_x, new_y, vel_x, vel_y;
 	geometry_msgs::PoseStamped new_pos;
+	geometry_msgs::TwistStamped new_vel;
 
 	//The listener for des_pos
 	tf::TransformListener des_pos_listener;
@@ -874,17 +929,7 @@ int main(int argc, char** argv)
 
 	ROS_WARN("Planner is starting the observation and decision process...................");
 
-	ros::Duration timer_norm;
-        ros::Time init_time_norm = ros::Time::now();
-        //in order to normalize pos
-        do{
-                ros::spinOnce();
-                timer_norm = ros::Time::now() - init_time_norm;
-
-        }while(timer_norm.toSec() < 0.5);
-
-	target_first_time = chaser_first_time = true;
-
+	wait_to_smooth_error(0.5);
 	observate_target_velocity(1,target_vel_X, target_vel_Y);
 	setup_planning_parameters();
 	decide_plan_of_action();
@@ -906,15 +951,15 @@ int main(int argc, char** argv)
 
 		ros::spinOnce();
 		
-		//calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
+		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
 		update_des_pos(des_pos_listener, des_pos_transform);
 
 		if(velocity_profile_X == (short)VEL_PROF_1){
-			new_x = produce_chaser_trj_points_prof_1(timer.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X);
+			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, vel_x);
 		}
 
 		if(velocity_profile_Y == (short)VEL_PROF_1){
-			new_y = produce_chaser_trj_points_prof_1(timer.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y);
+			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, vel_y);
 		}
 
 		new_pos.pose.position.x = new_x;
@@ -923,7 +968,11 @@ int main(int argc, char** argv)
 		//ROS_WARN("%lf %lf %lf", new_x, new_y, timer.toSec());
 
 		path.poses.push_back(new_pos);
-
+		
+		/*new_pos.header.frame_id = "/cepheus";
+		new_pos.header.stamp = ros::Time::now();	
+		path_pub.publish(path);*/
+		
 		loop_rate.sleep();
 	}
 
