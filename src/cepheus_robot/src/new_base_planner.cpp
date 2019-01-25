@@ -243,15 +243,26 @@ void ctrl_C_Handler(int sig)
 //The path created by the planner stored for any use
 nav_msgs::Path path;
 
+double WS_RADIUS = 30.0;
+double theta_des = 0.0;
 
 void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
 
+	double roll, pitch, yaw;
+
 	try{
 		des_pos_listener.lookupTransform("/map", "/gripper_target", ros::Time(0), des_pos_transform);
-		des_pos.x = des_pos_transform.getOrigin().x();
-		des_pos.y = des_pos_transform.getOrigin().y();
 
-		//ROS_WARN("des_pos_x : %lf\n", des_pos.x);
+		tf::Quaternion q = des_pos_transform.getRotation();
+		tf::Matrix3x3 m(q);
+        	m.getRPY(roll,pitch,yaw);
+
+		theta_des = -yaw;		
+
+		des_pos.x = des_pos_transform.getOrigin().x() + WS_RADIUS * cos(yaw);
+		des_pos.y = des_pos_transform.getOrigin().y() + WS_RADIUS * sin(yaw);
+
+		//ROS_WARN("yaw : %lf\n", yaw);
 	}
 	catch (tf::TransformException &ex) {
 		ROS_ERROR("%s",ex.what());
@@ -909,12 +920,13 @@ int main(int argc, char** argv)
 	//Send cmds to base controller node
 	ros::Publisher pos_pub = nh.advertise<geometry_msgs::PoseStamped>("planner_pos", 1);
         ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("planner_vel", 1);
-        ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);//neccesary for ctrl...?
 
 	//Trajectory point produced and command velocity
-	double new_x, new_y, vel_x, vel_y;
+	double new_x, new_y, new_vel_x, new_vel_y;
 	geometry_msgs::PoseStamped new_pos;
 	geometry_msgs::TwistStamped new_vel;
+	tf::Quaternion tf_orientation;
+	geometry_msgs::Quaternion new_orientation;
 
 	//The listener for des_pos
 	tf::TransformListener des_pos_listener;
@@ -955,17 +967,30 @@ int main(int argc, char** argv)
 		update_des_pos(des_pos_listener, des_pos_transform);
 
 		if(velocity_profile_X == (short)VEL_PROF_1){
-			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, vel_x);
+			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x);
 		}
 
 		if(velocity_profile_Y == (short)VEL_PROF_1){
-			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, vel_y);
+			produce_chaser_trj_points_and_vel_prof_1(timer.toSec(), chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y);
 		}
 
+		//For position and orientation
 		new_pos.pose.position.x = new_x;
 		new_pos.pose.position.y = new_y;
-
 		//ROS_WARN("%lf %lf %lf", new_x, new_y, timer.toSec());
+		tf_orientation.setRPY( 0, 0, theta_des );
+		quaternionTFToMsg(tf_orientation , new_orientation);
+		new_pos.pose.orientation =  new_orientation;
+
+
+		//For velocity
+		new_vel.twist.linear.x = new_vel_x;
+		new_vel.twist.linear.y = new_vel_y;
+
+
+		pos_pub.publish(new_pos);
+		vel_pub.publish(new_vel);
+		
 
 		path.poses.push_back(new_pos);
 		

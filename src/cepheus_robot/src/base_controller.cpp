@@ -38,6 +38,9 @@ FILE *latency_fp;
 
 #include "digital_filter.h"
 
+double CEPHEUS_MASS  = 13.0;
+double MOMENT_OF_INERTIA = 0.12; 
+
 using namespace Eigen;
 using namespace angles;
 using namespace geometry_msgs;
@@ -55,6 +58,7 @@ tf::TransformListener* listener;
 
 bool controller_enabled=false;
 bool first_time=true;
+
 
 
 bool controllerControl(std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res)
@@ -184,8 +188,11 @@ class BaseController {
 			   0,   0, 1.14035;
 
 			r = 0.15; //thrusters radius
-			m = 9.2;  //total weight (kg)
+			//m = 9.2;  //total weight (kg)
+			m = CEPHEUS_MASS;
+			
 			j = 0.5*m*pow(r,2);  //Moment of Inertia
+						
 
 			M << m, 0, 0,
 			  0, m, 0,
