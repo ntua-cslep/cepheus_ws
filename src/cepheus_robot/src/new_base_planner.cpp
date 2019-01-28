@@ -243,7 +243,7 @@ void ctrl_C_Handler(int sig)
 //The path created by the planner stored for any use
 nav_msgs::Path path;
 
-double WS_RADIUS = 30.0;
+double WS_RADIUS = 0.3;
 double theta_des = 0.0;
 
 void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
@@ -251,18 +251,21 @@ void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransfor
 	double roll, pitch, yaw;
 
 	try{
-		des_pos_listener.lookupTransform("/map", "/gripper_target", ros::Time(0), des_pos_transform);
+		des_pos_listener.lookupTransform("/map","/gripper_target", ros::Time(0), des_pos_transform);
 
 		tf::Quaternion q = des_pos_transform.getRotation();
 		tf::Matrix3x3 m(q);
         	m.getRPY(roll,pitch,yaw);
 
-		theta_des = -yaw;		
+		theta_des = M_PI - yaw;		
 
 		des_pos.x = des_pos_transform.getOrigin().x() + WS_RADIUS * cos(yaw);
 		des_pos.y = des_pos_transform.getOrigin().y() + WS_RADIUS * sin(yaw);
+		//des_pos.x = des_pos_transform.getOrigin().x();
+		//des_pos.y = des_pos_transform.getOrigin().y();
+		
 
-		//ROS_WARN("yaw : %lf\n", yaw);
+		//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
 	}
 	catch (tf::TransformException &ex) {
 		ROS_ERROR("%s",ex.what());
@@ -466,7 +469,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
-		std::cout<<target_vel_X<<std::endl;	
+		//std::cout<<target_vel_X<<std::endl;	
 	}
 
 	target_prev_pos.x = x;
@@ -479,7 +482,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
 
 
-	ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
+	//ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
 }
 
 
@@ -605,7 +608,7 @@ void calc_vel_prof_1_params(const double& A_max,
 
 	xt1 = INIT_CH + 0.5*A_max*(t1*t1);
 	vt1 = A_max * t1;
-	xdes_chaser = xt1 + vt1 * (t2 - t1)-0.5*A_max*pow(t2 - t1,2);
+	xdes_chaser = xt1 + vt1 * (t2 - t1) - 0.5 * A_max * pow(t2 - t1,2);
 
 	if (xdes_chaser >= DISTANSE_LIMIT){
 		ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_1");
@@ -739,14 +742,14 @@ void decide_plan_of_action()
 	//Target is moving away or stands still
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, target_real_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
 	}
 	//The target stands still so the chaser has to approach
 	else if(target_vel_X == 0.0){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, target_real_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
 	}
@@ -766,7 +769,7 @@ void decide_plan_of_action()
 	//Target is moving away or stands still
 	if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, target_real_pos.y, p1_Y);
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
 
@@ -774,7 +777,7 @@ void decide_plan_of_action()
 	//The target stands still so the chaser has to approach
 	else if(target_vel_Y == 0.0){
 
-		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, target_real_pos.y, p1_Y);
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
 
@@ -790,7 +793,7 @@ void decide_plan_of_action()
 	}
 
 
-	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d", velocity_profile_X, velocity_profile_Y);
+	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
 }
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
@@ -808,7 +811,7 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
 		cmd_pos = prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2);
-		cmd_vel = prof_params.vt1 - A_max * t; // sign correct ? 
+		cmd_vel = prof_params.vt1 + A_max * t; // sign correct ? 
 	}
 	else{
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t2);
@@ -911,6 +914,8 @@ int main(int argc, char** argv)
 	int sched_policy = SCHED_RR;
 	sched_setscheduler(0, sched_policy, &schedParam);
 
+	ros::ServiceClient controller_srv_client = nh.serviceClient<std_srvs::SetBool>("controller_cmd");
+
 	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
@@ -928,6 +933,10 @@ int main(int argc, char** argv)
 	tf::Quaternion tf_orientation;
 	geometry_msgs::Quaternion new_orientation;
 
+	new_pos.header.frame_id = "/cepheus";
+	new_vel.header.frame_id = "/cepheus";
+
+
 	//The listener for des_pos
 	tf::TransformListener des_pos_listener;
 	tf::StampedTransform des_pos_transform;
@@ -944,6 +953,7 @@ int main(int argc, char** argv)
 	wait_to_smooth_error(0.5);
 	observate_target_velocity(1,target_vel_X, target_vel_Y);
 	setup_planning_parameters();
+	update_des_pos(des_pos_listener, des_pos_transform);
 	decide_plan_of_action();
 
 	ros::Rate loop_rate(200);	
@@ -953,9 +963,28 @@ int main(int argc, char** argv)
 	
 	ros::Time init_time = ros::Time::now();
 	ros::Duration timer;
+	
+	bool new_path = true;
+	path.header.frame_id = "/map";
 
 	ROS_WARN("Planner is starting to produce the trajecory");
 	while(!g_request_shutdown){
+
+		if (new_path) {
+                        ROS_INFO("New Path calculated");
+                        new_path=false;
+
+                        //request to enable controller
+                        std_srvs::SetBool srv;
+                        srv.request.data = true;
+                        if (controller_srv_client.call(srv)) {
+                                ROS_INFO_STREAM("Controller response: " << srv.response.message);
+                        }
+                        else{
+                                ROS_ERROR("Failed to call Controller");
+                        }
+                }
+
 
 		dt = ros::Time::now() - prev_time;
 		prev_time = ros::Time::now();
@@ -978,6 +1007,8 @@ int main(int argc, char** argv)
 		new_pos.pose.position.x = new_x;
 		new_pos.pose.position.y = new_y;
 		//ROS_WARN("%lf %lf %lf", new_x, new_y, timer.toSec());
+		
+		//std::cout<<timer.toSec()<<" "<<new_y<<std::endl;
 		tf_orientation.setRPY( 0, 0, theta_des );
 		quaternionTFToMsg(tf_orientation , new_orientation);
 		new_pos.pose.orientation =  new_orientation;
@@ -994,9 +1025,9 @@ int main(int argc, char** argv)
 
 		path.poses.push_back(new_pos);
 		
-		/*new_pos.header.frame_id = "/cepheus";
+
 		new_pos.header.stamp = ros::Time::now();	
-		path_pub.publish(path);*/
+		path_pub.publish(path);
 		
 		loop_rate.sleep();
 	}

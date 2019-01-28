@@ -522,19 +522,6 @@ void moveBaseSimpleCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 { 
 
-	//-------------------------------------------------
-	//---Panagiotis Mavridis 24/04/2018
-	/*
-	   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-
-	   struct timespec ts_arrived;
-	   clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
-
-	   long latency = ((ts_arrived.tv_sec - msg->header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - msg->header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
-	//std::cout << "LATENCY IN PLANNER->CONTROLLER (POSITION) : "<< latency;
-	 */	
-
-	//-------------------------------------------------
 
 	geometry_msgs::PoseStamped temp;
 	temp = *msg;
