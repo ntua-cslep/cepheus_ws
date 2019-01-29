@@ -4,7 +4,7 @@
         <rosparam command="load" file="$(find cepheus_robot)/config/controllers.yaml"/>
 
         <node name="cepheus_interface_node" pkg="cepheus_robot" type="cepheus_interface_node" respawn="false" output="screen" >
-                <param name="thruster_force" value="0.6"/>
+                <param name="thruster_force" value="0.1"/>
                 <param name="max_motor_current" value="2.00"/>
                 <param name="rw_max_speed" value="400"/>
                 <param name="rw_total_inertia" value="0.00197265"/>

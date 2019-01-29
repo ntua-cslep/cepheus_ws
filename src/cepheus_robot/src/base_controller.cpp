@@ -525,10 +525,12 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 	geometry_msgs::PoseStamped temp;
 	temp = *msg;
+	 
+
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
 
 	geometry_msgs::PoseStamped temp_in_map;
-	try{
+	/*try{
 		// listener.waitForTransform("assist/assist_robot", "drogue", now, ros::Duration(3.0));
 		listener->transformPose("/map",temp,temp_in_map); // pose_world is in world frame
 	}
@@ -536,16 +538,28 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 		ROS_ERROR("%s",ex.what());
 		ROS_ERROR_STREAM("Controller requested Pose Couldn't translated from: " << temp.header.frame_id << "frame to: /map");
 	}
-
+	
 	double x = temp_in_map.pose.orientation.x;
 	double y = temp_in_map.pose.orientation.y;
 	double z = temp_in_map.pose.orientation.z;
 	double w = temp_in_map.pose.orientation.w;   
+	*/
+
+	/*
+        double x = temp.pose.orientation.x;
+        double y = temp.pose.orientation.y;
+        double z = temp.pose.orientation.z;
+        double w = temp.pose.orientation.w;   
+	*/
 	double roll,pitch,yaw;
 
-	tf::Quaternion q(x, y, z, w);
+
+
+	tf::Quaternion q(temp.pose.orientation.x, temp.pose.orientation.y, temp.pose.orientation.z, temp.pose.orientation.w);
 	tf::Matrix3x3 m(q);
 	m.getRPY(roll,pitch,yaw);
+
+	//ROS_WARN("yaw in ctr %lf",yaw);
 
 	cmd_pos.x = temp_in_map.pose.position.x;
 	cmd_pos.y = temp_in_map.pose.position.y;
@@ -577,7 +591,7 @@ void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	temp.vector.y = tempTwist.twist.linear.y;
 	temp.vector.z = 0.0;
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
-
+/*
 	try{
 		listener->transformVector("/map", temp, temp_in_map);
 	}
@@ -589,8 +603,12 @@ void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	cmd_vel.x = temp_in_map.vector.x;
 	cmd_vel.y = temp_in_map.vector.y;
 	cmd_vel.z = tempTwist.twist.angular.z;
+ */
+        cmd_vel.x = temp.vector.x;
+        cmd_vel.y = temp.vector.y;
+        cmd_vel.z = tempTwist.twist.angular.z;
 
-	// ROS_INFO_STREAM("u " << cmd_vel.x << "v " <<cmd_vel.y << "w " << cmd_vel.z);
+	//ROS_INFO_STREAM("cmd_vel_x " << cmd_vel.x << "cmd_vel_y " <<cmd_vel.y << "cmd_vel_z " << cmd_vel.z);
 	return;
 }
 
