@@ -303,7 +303,8 @@ void ctrl_C_Handler(int sig)
 //The path created by the planner stored for any use
 nav_msgs::Path path;
 
-double WS_RADIUS = 0.3;
+const double WS_RADIUS = 0.3;
+const double ROBOT_RADIUS = 0.15;
 double theta_des = 0.0;
 
 void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
@@ -330,8 +331,8 @@ void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransfor
 		}
 
 
-		des_pos.x = des_pos_transform.getOrigin().x() + WS_RADIUS * cos(yaw);
-		des_pos.y = des_pos_transform.getOrigin().y() + WS_RADIUS * sin(yaw);
+		des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS) * cos(yaw);
+		des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS) * sin(yaw);
 		//des_pos.x = des_pos_transform.getOrigin().x();
 		//des_pos.y = des_pos_transform.getOrigin().y();
 
@@ -1198,13 +1199,15 @@ int main(int argc, char** argv)
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;
 
-		tf::Quaternion qq = tf::createQuaternionFromYaw(heading);
+		//tf::Quaternion qq = tf::createQuaternionFromYaw(heading);
+		tf::Quaternion qq = tf::createQuaternionFromYaw(theta_des);		
+
 		new_pos.pose.orientation.x = qq.x() ;
 		new_pos.pose.orientation.y = qq.y() ;
 		new_pos.pose.orientation.z = qq.z() ;
 		new_pos.pose.orientation.w = qq.w() ;
 
-		//ROS_WARN("theta_des %lf qx %lf qy %lf qz %lf qw %lf",theta_des, qq.x(), qq.y(), qq.z(), qq.w());
+		//ROS_WARN("new_x %lf , new_y %lf",new_x, new_y);
 
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;

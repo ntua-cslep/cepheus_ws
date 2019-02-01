@@ -322,12 +322,12 @@ class BaseController {
 				F_robot = R_trans*(M*edd + Kd*ed + Kp*e);
 				//ROS_INFO_STREAM("F_robot\n" << F_robot);
 
-				std::cout<<"kp: "<<Kp<<" kd: "<<Kd<<std::endl; 	
+				//std::cout<<"kp: "<<Kp<<" kd: "<<Kd<<std::endl; 	
 
 				if (rw_present) {
 					Vector4d F_actuator;
 					F_actuator = D_pinv*F_robot;
-					ROS_INFO_STREAM("F_actuator\n" << F_actuator);
+					//ROS_INFO_STREAM("F_actuator\n" << F_actuator);
 
 					for (int i=0; i<4;i++){
 						output[i]=F_actuator[i];
@@ -547,7 +547,7 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
 
-	geometry_msgs::PoseStamped temp_in_map;
+	//geometry_msgs::PoseStamped temp_in_map;
 	/*try{
 		// listener.waitForTransform("assist/assist_robot", "drogue", now, ros::Duration(3.0));
 		listener->transformPose("/map",temp,temp_in_map); // pose_world is in world frame
@@ -577,11 +577,13 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 	tf::Matrix3x3 m(q);
 	m.getRPY(roll,pitch,yaw);
 
-	//ROS_WARN("yaw in ctr %lf",yaw);
 
-	cmd_pos.x = temp_in_map.pose.position.x;
-	cmd_pos.y = temp_in_map.pose.position.y;
+	cmd_pos.x = temp.pose.position.x;
+	cmd_pos.y = temp.pose.position.y;
 	cmd_pos.z = yaw;
+
+	ROS_WARN("pos in ctrl x %lf pos in ctrl %lf",cmd_pos.x, cmd_pos.y);
+
 	return;
 }
 
