@@ -145,6 +145,7 @@ void thrusterCallback(const geometry_msgs::Vector3Stamped::ConstPtr& cmd)
 	thrust[1] = (double)cmd->vector.y;
 	thrust[2] = (double)cmd->vector.z;
 	thrust[3] = (double)0;
+	//ROS_WARN("%lf %lf %lf", thrust[0], thrust[1], thrust[2]);
 	robot.setThrustPwm(thrust, 0.001, 0.9);
 	return;
 }

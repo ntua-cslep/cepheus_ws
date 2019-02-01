@@ -67,7 +67,58 @@ DigitalFilter tar_yd_fir(10, 0.0);
 //The constraint is the length of the diagonal
 //If the the chaser calculate a meeting point greater thatn this constriaint..
 //...it will abort and never move towards the target
-double DISTANSE_LIMIT = 2.8; //meters
+const double DISTANSE_LIMIT = 2.8; //meters
+
+//the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
+const double TIME_TO_DISABLE_CTRL = 2; //seconds
+
+//These flags will be true when the vel prof is over and the controller must be disabled
+//Both flags must be true in order to disable ctrl
+bool disable_ctrl_X = false;
+bool disable_ctrl_Y = false;
+
+
+class Geometric_Constraints{
+
+	double table_length_x;
+	double table_length_y;
+	double robot_radious;
+	double robot_ws;
+	double assist_robot_length;//it's square
+
+	double constraint_for_x;//the constraint derived from the above
+	double constraint_for_y;
+
+	public:	
+
+	Geometric_Constraints(double x, 
+			double y, 
+			double r, 
+			double ws, 
+			double arl)
+		:table_length_x(x), table_length_y(y), robot_radious(r), robot_ws(ws), assist_robot_length(arl)
+	{
+		double abs_d = 2.0 * robot_radious + robot_ws + assist_robot_length;
+
+		constraint_for_x = table_length_x - abs_d;
+		constraint_for_y = table_length_x - abs_d;
+
+	}
+
+
+	bool in_constraints(double des_x, double des_y){
+
+		if(des_x < constraint_for_x && des_y < constraint_for_y)
+			return true;
+		else
+			return false;
+
+	}
+};
+
+//Create the constraints for the experiment
+Geometric_Constraints constraints(1.897, 2.329, 0.15, 0.3, 0.5);
+
 
 
 //Structs containing the nessesary information for every velocity profile used
@@ -79,6 +130,7 @@ typedef struct Prf1{
 	double xt1;
 	double vt1;
 	double xdes_chaser;
+	double duration_with_active_ctrl;
 
 	void set_vals(	double t1,
 			double t2,
@@ -93,6 +145,7 @@ typedef struct Prf1{
 		this->xt1 = xt1;
 		this->vt1 = vt1;
 		this-> xdes_chaser =  xdes_chaser;
+		this->duration_with_active_ctrl = t1 + t2 + TIME_TO_DISABLE_CTRL;
 	}
 
 	void print(){
@@ -105,7 +158,7 @@ typedef struct Prf1{
 		std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
 		std::cout<<"\t xdes_target: "<<xdes_target<<std::endl;
 
-		std::cout<<"\t Total Time: "<<t1+t2<<"\n"<<std::endl;
+		std::cout<<"\t Total Time: "<<duration_with_active_ctrl<<"\n"<<std::endl;
 	}
 }Prf1;
 
@@ -114,6 +167,7 @@ typedef struct Prf2{
 	double t1;
 	double a_ch;
 	double xdes_chaser; 
+	double duration_with_active_ctrl;
 
 	void set_vals(  double t1,
 			double xdes_chaser,
@@ -122,6 +176,7 @@ typedef struct Prf2{
 		this->t1 = t1;
 		this->xdes_chaser = xdes_chaser;
 		this-> a_ch = a_ch;
+		this->duration_with_active_ctrl = t1 + TIME_TO_DISABLE_CTRL;
 	}
 
 	void print(){
@@ -131,7 +186,7 @@ typedef struct Prf2{
 		std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
 		std::cout<<"\t a_ch: "<<a_ch<<std::endl;
 
-		std::cout<<"\t Total Time: "<<t1<<"\n"<<std::endl;
+		std::cout<<"\t Total Time: "<<duration_with_active_ctrl<<"\n"<<std::endl;
 	}
 
 
@@ -148,6 +203,7 @@ typedef struct Prf3{
 	double Xt2;
 	double xdes_chaser;
 	double xdes_target;
+	double duration_with_active_ctrl;
 
 	void set_vals(  double t1,
 			double t2,
@@ -168,6 +224,7 @@ typedef struct Prf3{
 		this->Vt1 = Vt1;
 		this-> xdes_chaser =  xdes_chaser;
 		this->xdes_target = xdes_target;
+		this->duration_with_active_ctrl = t1 + t2 + t3 + TIME_TO_DISABLE_CTRL;
 	}
 
 	void print(){
@@ -183,7 +240,7 @@ typedef struct Prf3{
 		std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
 		std::cout<<"\t xdes_target: "<<xdes_target<<std::endl;
 
-		std::cout<<"\t Total Time: "<<t1+t2+t3<<"\n"<<std::endl;
+		std::cout<<"\t Total Time: "<<duration_with_active_ctrl<<"\n"<<std::endl;
 
 	}
 
@@ -202,7 +259,7 @@ Prf3 p3_X; Prf3 p3_Y;
 //indcates which vel prof be used in each axis
 short velocity_profile_X = 0, velocity_profile_Y = 0;
 
-const double Fmax_thrust = 0.001;//Newton
+const double Fmax_thrust = 0.06;//Newton
 const double Chaser_mass = 13.5;//kg
 
 //The maximum acceleration of the chaser
@@ -228,6 +285,9 @@ geometry_msgs::Vector3 chaser_real_pos;
 
 //The goal pos to move the chaser to
 geometry_msgs::Vector3 des_pos;
+
+
+
 
 bool calculated_velocity_of_target = false;
 bool start_planning = false;
@@ -621,10 +681,12 @@ void calc_vel_prof_1_params(const double& A_max,
 	vt1 = A_max * t1;
 	xdes_chaser = xt1 + vt1 * (t2 - t1) - 0.5 * A_max * pow(t2 - t1,2);
 
+	/*
 	if (xdes_chaser >= DISTANSE_LIMIT){
 		ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_1");
 		exit(8);
 	}
+	*/
 
 	res.set_vals(t1, t2, xdes_target, xt1, vt1, xdes_chaser);
 }
@@ -640,11 +702,12 @@ void calc_vel_prof_2_params(const double& INIT_CH,
 	a_ch = V_DES/t1;
 	xdes_chaser = INIT_CH + 0.5 *a_ch*pow(t1,2);
 
+	/*
 	if (xdes_chaser >= DISTANSE_LIMIT){
 		ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_2");
 		exit(9);
 	}
-
+	*/
 
 	res.set_vals(t1, xdes_chaser, a_ch);
 }
@@ -734,11 +797,12 @@ void calc_vel_prof_3_params(const double& A_MAX,
 	Xt2 = Xt1 + Vt1 * (t2 - t1) - 0.5 * a_max * pow(t2 - t1,2);
 	xdes_chaser = INIT_TAR + V_DES * t3;
 
+	/*
 	if (xdes_chaser >= DISTANSE_LIMIT){
 		ROS_WARN("MEETING POINT >= DISTANSE_LIMIT IN VEL _PROF_3");
 		exit(10);
 	}
-
+	*/
 
 	xdes_target=V_DES*t3+init_des;
 
@@ -748,12 +812,16 @@ void calc_vel_prof_3_params(const double& A_MAX,
 
 void decide_plan_of_action()
 {
+	//for checking the table contraints
+	double meet_point_x, meet_point_y;
+
 	//-----------FOR X AXIS------------
 
 	//Target is moving away or stands still
 	if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
 	}
@@ -761,6 +829,7 @@ void decide_plan_of_action()
 	else if(target_vel_X == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
 	}
@@ -781,6 +850,7 @@ void decide_plan_of_action()
 	if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		meet_point_y = p1_Y.xdes_chaser;
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
 
@@ -789,6 +859,7 @@ void decide_plan_of_action()
 	else if(target_vel_Y == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		meet_point_y = p1_Y.xdes_chaser;
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
 
@@ -802,9 +873,15 @@ void decide_plan_of_action()
 	else{
 
 	}
-
-
-	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
+/*
+	if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
+		ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
+		exit(12);
+	}
+	else{
+		ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
+	}
+*/
 }
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
@@ -813,20 +890,28 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		const double& V_DES,
 		const Prf1& prof_params,
 		double &cmd_pos,
-		double& cmd_vel)
+		double& cmd_vel,
+		double& cmd_acc)
 {
 
 	if (t <= prof_params.t1){
+		//ROS_WARN("vt1 : %lf",prof_params.vt1);
 		cmd_pos = INIT_CH + 0.5 * A_max * pow(t,2);
 		cmd_vel = A_max * t;//u0 = 0
+		cmd_acc = A_max;
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
 		cmd_pos = prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2);
-		cmd_vel = prof_params.vt1 + A_max * t; // sign correct ? 
+		cmd_vel = prof_params.vt1 - A_max * (t - prof_params.t1); 
+		cmd_acc = -A_max; 
 	}
-	else{
+	else if (t > prof_params.t2 && t <= prof_params.duration_with_active_ctrl){
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t2);
 		cmd_vel = V_DES;
+		cmd_acc = 0.0;
+	}
+	else{
+		ROS_WARN("PROF1 MUST DISABLE CTRL!");
 	}
 
 }
@@ -836,17 +921,23 @@ void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
 		const double& V_DES,
 		const Prf2& prof_params,
 		double& cmd_pos,
-		double& cmd_vel)
+		double& cmd_vel,
+		double& cmd_acc)
 {
 
 	if (t <= prof_params.t1){
 		cmd_pos = INIT_CH + 0.5 * prof_params.a_ch * pow(t,2);
 		cmd_vel = prof_params.a_ch * t;
+		cmd_acc = prof_params.a_ch;
 	}
-	else{
+	else if(t > prof_params.t1 && t <= prof_params.duration_with_active_ctrl){
 		cmd_pos = prof_params.xdes_chaser + V_DES*(t - prof_params.t1);
 		cmd_vel = V_DES;
+		cmd_acc = 0.0;
 	}
+	else{
+		ROS_WARN("PROF2 MUST DISABLE CTRL!");
+	}	
 }
 
 void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
@@ -855,7 +946,8 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		const double& V_DES,
 		const Prf3& prof_params,
 		double& cmd_pos,
-		double& cmd_vel)
+		double& cmd_vel,
+		double& cmd_acc)
 {
 
 	double a_max_axis;
@@ -885,9 +977,13 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 	else if (t <= prof_params.t3){
 		cmd_pos = prof_params.Xt2 + 0.5 * prof_params.a3 * pow(t - prof_params.t2, 2);
 	}
-	else{
+	else if(t > prof_params.t3 && t <= prof_params.duration_with_active_ctrl){
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t3);
 	}
+	else{
+		ROS_WARN("PROF3 MUST DISABLE CTRL!");
+	}
+
 }
 
 void wait_to_smooth_error(double dur){
@@ -909,28 +1005,56 @@ void set_commands(const double& t,
 		double& new_x,
 		double& new_y,
 		double& new_vel_x,
-		double& new_vel_y)
+		double& new_vel_y,
+		double& new_acc_x,
+                double& new_acc_y)
 {
 
-		if(velocity_profile_X == (short)VEL_PROF_1){
-                        produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x);
-                }
-                else if(velocity_profile_X == (short)VEL_PROF_2){
-                        produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.x, target_vel_X, p2_X , new_x, new_vel_x);
-                }
-                else if(velocity_profile_X == (short)VEL_PROF_3){
-                        produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x);
-                }
+	if(velocity_profile_X == (short)VEL_PROF_1){
 
-                if(velocity_profile_Y == (short)VEL_PROF_1){
-                        produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y);
+		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+		if(t > p1_X.duration_with_active_ctrl){
+			disable_ctrl_X = true;
 		}
-		else if(velocity_profile_Y == (short)VEL_PROF_2){
-                        produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.y, target_vel_Y, p2_Y , new_y, new_vel_y);
-                }
-                else if(velocity_profile_Y == (short)VEL_PROF_3){
-                        produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y);
-                }
+	}
+	else if(velocity_profile_X == (short)VEL_PROF_2){
+
+		produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.x, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
+		if(t > p2_X.duration_with_active_ctrl){
+			disable_ctrl_X = true;
+		}
+	}
+	else if(velocity_profile_X == (short)VEL_PROF_3){
+
+		produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
+		if(t > p3_X.duration_with_active_ctrl){
+			disable_ctrl_X = true;
+		}
+	}
+
+	if(velocity_profile_Y == (short)VEL_PROF_1){
+
+		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+		if(t > p1_Y.duration_with_active_ctrl){
+			disable_ctrl_Y = true;
+		}
+	}
+	else if(velocity_profile_Y == (short)VEL_PROF_2){
+
+		produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
+		if(t > p2_Y.duration_with_active_ctrl){
+			disable_ctrl_Y = true;
+		}
+
+	}
+	else if(velocity_profile_Y == (short)VEL_PROF_3){
+
+		produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
+		if(t > p3_Y.duration_with_active_ctrl){
+			disable_ctrl_Y = true;
+		}
+
+	}
 
 
 }
@@ -949,6 +1073,10 @@ int main(int argc, char** argv)
 	int sched_policy = SCHED_RR;
 	sched_setscheduler(0, sched_policy, &schedParam);
 
+	//Create the constraints for the experiment
+	Geometric_Constraints constraints(1.897, 2.329, 0.15, 0.3, 0.5);
+
+
 	ros::ServiceClient controller_srv_client = nh.serviceClient<std_srvs::SetBool>("controller_cmd");
 
 	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
@@ -960,13 +1088,20 @@ int main(int argc, char** argv)
 	//Send cmds to base controller node
 	ros::Publisher pos_pub = nh.advertise<geometry_msgs::PoseStamped>("planner_pos", 1);
 	ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("planner_vel", 1);
+	ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);
+
 
 	//Trajectory point produced and command velocity
-	double new_x, new_y, new_vel_x, new_vel_y;
+	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
 	geometry_msgs::PoseStamped new_pos;
+	geometry_msgs::PoseStamped prev_pos;	
+
+
 	geometry_msgs::TwistStamped new_vel;
 	tf::Quaternion tf_orientation;
 	geometry_msgs::Quaternion new_orientation;
+
+	geometry_msgs::Vector3 new_acc;
 
 	new_pos.header.frame_id = "/cepheus";
 	new_vel.header.frame_id = "/cepheus";
@@ -991,6 +1126,7 @@ int main(int argc, char** argv)
 	update_des_pos(des_pos_listener, des_pos_transform);
 	decide_plan_of_action();
 
+
 	ros::Rate loop_rate(200);	
 
 	ros::Duration dt;
@@ -1002,16 +1138,36 @@ int main(int argc, char** argv)
 	bool new_path = true;
 	path.header.frame_id = "/map";
 
+
+
+
 	ROS_WARN("Planner is starting to produce the trajecory");
 	while(!g_request_shutdown){
 
 		if (new_path) {
-			ROS_INFO("New Path calculated");
+
 			new_path=false;
 
 			//request to enable controller
 			std_srvs::SetBool srv;
 			srv.request.data = true;
+			if (controller_srv_client.call(srv)) {
+				ROS_INFO_STREAM("Controller response: " << srv.response.message);
+			}
+			else{
+				ROS_ERROR("Failed to call Controller");
+			}
+
+			prev_pos.pose.position.x = chaser_init_pos.x;
+			prev_pos.pose.position.y = chaser_init_pos.y;
+		}
+
+		//both velocity profiles traj is over 
+		if(disable_ctrl_X && disable_ctrl_Y){
+
+			//request to disable controller
+			std_srvs::SetBool srv;
+			srv.request.data = false;
 			if (controller_srv_client.call(srv)) {
 				ROS_INFO_STREAM("Controller response: " << srv.response.message);
 			}
@@ -1030,17 +1186,19 @@ int main(int argc, char** argv)
 		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
 		update_des_pos(des_pos_listener, des_pos_transform);
 
-		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y);
+		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
 
 		//For position and orientation
 		new_pos.pose.position.x = new_x;
 		new_pos.pose.position.y = new_y;
 		//ROS_WARN("%lf %lf %lf", new_x, new_y, timer.toSec());
 
-		//std::cout<<timer.toSec()<<" "<<new_y<<std::endl;
-		//tf_orientation.setRPY( 0, 0, theta_des );
-		tf::Quaternion qq = tf::createQuaternionFromYaw(theta_des);
-		//quaternionTFToMsg(tf_orientation , new_orientation);
+		//std::cout<<timer.toSec()<<" "<<new_vel_x<<std::endl;
+		double heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+		prev_pos.pose.position.x = new_x;
+		prev_pos.pose.position.y = new_y;
+
+		tf::Quaternion qq = tf::createQuaternionFromYaw(heading);
 		new_pos.pose.orientation.x = qq.x() ;
 		new_pos.pose.orientation.y = qq.y() ;
 		new_pos.pose.orientation.z = qq.z() ;
@@ -1051,16 +1209,19 @@ int main(int argc, char** argv)
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;
 		new_vel.twist.linear.y = new_vel_y;
-		new_vel.twist.angular.z = 0.0;
+		//new_vel.twist.angular.z = 0.0;
 
-		//ROS_WARN("velx %lf vel_y %lf", new_vel_x, new_vel_y);
+		//For acceleration
+		new_acc.x = new_acc_x;
+		new_acc.y = new_acc_y;
+		new_acc.z = 0.0;
 
+		//Send commands to base controller
 		pos_pub.publish(new_pos);
 		vel_pub.publish(new_vel);
-
+		acc_pub.publish(new_acc);
 
 		path.poses.push_back(new_pos);
-
 
 		new_pos.header.stamp = ros::Time::now();	
 		path_pub.publish(path);

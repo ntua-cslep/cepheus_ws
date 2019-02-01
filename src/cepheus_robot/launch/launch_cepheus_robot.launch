@@ -3,8 +3,8 @@
 
         <rosparam command="load" file="$(find cepheus_robot)/config/controllers.yaml"/>
 
-        <node name="cepheus_interface_node" pkg="cepheus_robot" type="cepheus_interface_node" respawn="false" output="screen" >
-                <param name="thruster_force" value="0.1"/>
+        <node name="cepheus_interface_node" pkg="cepheus_robot" type="cepheus_interface_node" respawn="false" output="screen" required="true" >
+                <param name="thruster_force" value="0.6"/>
                 <param name="max_motor_current" value="2.00"/>
                 <param name="rw_max_speed" value="400"/>
                 <param name="rw_total_inertia" value="0.00197265"/>
@@ -18,7 +18,7 @@
                 
         </node>
 
-        <node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen">
+        <node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen" required="true">
 		<param name="controllers_to_spawn" value="joint_state_publisher reaction_wheel_effort_controller"/>
 	</node>
 
@@ -28,17 +28,23 @@
     			<param name="baud" value="9600"/>
   	</node-->
 
-        <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
+        <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="true">
                 <param name="publish_frequency" value="100"/>
         </node>  
 
-        <node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" >
+        <node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
                 <param name="use_reaction_wheel" value="True"/>
                 <param name="loop_rate" value="200.0"/>
                 <param name="use_with_planner" value="True"/>
-                <param name="kp_gain_lin" value="1.2"/> 
+                <!--param name="kp_gain_lin" value="1.2"/-->
+
+		<param name="kp_gain_lin" value="0.3"/>
+ 
                 <param name="kp_gain_ang" value="1.0"/>
-                <param name="kd_gain_lin" value="12.0"/>
+
+                <!--param name="kd_gain_lin" value="12.0"/-->
+		<param name="kd_gain_lin" value="3.0"/>	
+
                 <param name="kd_gain_ang" value="1.24035"/>
         </node>  
 
@@ -50,7 +56,7 @@
                 <param name="probe_offset" value="0.523"/>
         </node-->  
 
-	<node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen">
+	<node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen" required="true">
 	</node>
 
         <include file="$(find phase_space)/launch/track_two_objects.launch">

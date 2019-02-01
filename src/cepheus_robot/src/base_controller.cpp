@@ -38,7 +38,7 @@ FILE *latency_fp;
 
 #include "digital_filter.h"
 
-double CEPHEUS_MASS  = 13.0;
+double CEPHEUS_MASS  = 13.5;
 double MOMENT_OF_INERTIA = 0.12; 
 
 using namespace Eigen;
@@ -177,7 +177,8 @@ class BaseController {
 
 
 			rw_present = false;
-
+			
+			/*
 			Kp << 1.7, 0, 0,
 			   0, 1.7, 0,
 			   0, 0, 0.82875;
@@ -186,6 +187,7 @@ class BaseController {
 			Kd << 5.6, 0, 0,
 			   0, 5.6, 0,
 			   0,   0, 1.14035;
+			*/
 
 			r = 0.15; //thrusters radius
 			//m = 9.2;  //total weight (kg)
@@ -223,13 +225,26 @@ class BaseController {
 
 		void setControllerGains(double _kp_lin, double _kp_ang, double _kd_lin, double _kd_ang) 
 		{
-			Kp(0,0) = _kp_lin;
-			Kp(1,1) = _kp_lin;
-			Kp(2,2) = _kp_ang;
+			double ts_lin = 45.0;
+			double wn_lin = 6.0/ts_lin;
 
-			Kd(0,0) = _kd_lin;
-			Kd(1,1) = _kd_lin;
-			Kd(2,2) = _kd_ang;
+			double ts_ang = 20.0;
+                        double wn_ang = 6.0/ts_ang;
+
+			
+			double Kp_lin = pow(wn_lin, 2) * M(1,1);
+			double Kp_ang = pow(wn_ang, 2) * M(3,3);
+			double Kd_lin = 2.0 * wn_lin * M(1,1);
+			double Kd_ang = 2.0 * wn_ang * M(3,3);
+
+			Kp(0,0) = Kp_lin;
+                        Kp(1,1) = Kp_lin;
+                        Kp(2,2) = Kp_ang;
+
+                        Kd(0,0) = Kd_lin;
+                        Kd(1,1) = Kd_lin;
+                        Kd(2,2) = Kd_ang;
+			
 		}
 
 		void hasReactionWheel(bool val)
@@ -290,9 +305,10 @@ class BaseController {
 				err[3]=ed[0];
 				err[4]=ed[1];
 				err[5]=ed[2];
-				// ROS_INFO_STREAM("Error\n" << e);
-				// ROS_INFO_STREAM("eDot\n" << ed);
-				// ROS_INFO_STREAM("eDDot\n" << edd);
+				 
+				 //ROS_INFO_STREAM("Error\n" << e);
+				 //ROS_INFO_STREAM("eDot\n" << ed);
+				 //ROS_INFO_STREAM("eDDot\n" << edd);
 
 				//rotation matrix
 				Matrix3d R;
@@ -304,12 +320,14 @@ class BaseController {
 
 				//Vector3d F_robot;
 				F_robot = R_trans*(M*edd + Kd*ed + Kp*e);
-				// ROS_INFO_STREAM("F_robot\n" << F_robot);
+				//ROS_INFO_STREAM("F_robot\n" << F_robot);
+
+				std::cout<<"kp: "<<Kp<<" kd: "<<Kd<<std::endl; 	
 
 				if (rw_present) {
 					Vector4d F_actuator;
 					F_actuator = D_pinv*F_robot;
-					//ROS_INFO_STREAM("F_actuator\n" << F_actuator);
+					ROS_INFO_STREAM("F_actuator\n" << F_actuator);
 
 					for (int i=0; i<4;i++){
 						output[i]=F_actuator[i];
@@ -662,6 +680,7 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~kp_gain_ang", kp_gain_ang, 0.82875);
 	ros::param::param<double>("~kd_gain_lin", kd_gain_lin, 5.6);
 	ros::param::param<double>("~kd_gain_ang", kd_gain_ang, 1.14035);
+
 	control.setControllerGains(kp_gain_lin, kp_gain_ang, kd_gain_lin, kd_gain_ang);
 
 
@@ -788,9 +807,9 @@ int main(int argc, char** argv)
 		des[3] = cmd_vel.x;
 		des[4] = cmd_vel.y;
 		des[5] = cmd_vel.z;
-		des[6] = 0.0;//cmd_acc.x;
-		des[7] = 0.0;//cmd_acc.y;
-		des[8] = 0.0;//cmd_acc.z;
+		des[6] = cmd_acc.x;
+		des[7] = cmd_acc.y;
+		des[8] = cmd_acc.z;
 
 		//ROS_INFO("dt: %f, x: %f, y: %f, theta: %f",time_step.toSec(), ps_transform.transform.translation.x, ps_transform.transform.translation.y, theta);
 		if(controller_enabled) {
@@ -865,6 +884,10 @@ int main(int argc, char** argv)
 			thrust_pub.publish(thrust_vector);
 			rwTorque_pub.publish(torque);
 
+			//Panagiotis mavridis
+			//We comment the above cause we want to have const speed when disabling base ctrl
+			//The below cosde used in assist holds steady pos
+			/*
 			pos.x = attitude[0];
 			pos.y = attitude[1];
 			pos.z = attitude[2];
@@ -873,6 +896,7 @@ int main(int argc, char** argv)
 			vel.z = attitude[5];
 			pos_pub.publish(pos);
 			vel_pub.publish(vel);
+			*/
 		}
 
 		frobot.header.frame_id = "cepheus";
