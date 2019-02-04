@@ -63,7 +63,7 @@ bool first_time=true;
 
 bool controllerControl(std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res)
 {
-	ROS_INFO("requested to: %s the controller", req.data ? "enable" : "disable" );
+	//ROS_INFO("requested to: %s the controller", req.data ? "enable" : "disable" );
 	if(controller_enabled) {
 		if(req.data) {
 			first_time=true;
@@ -100,72 +100,6 @@ class BaseController {
 			y_prev = 0.0;
 			th_prev = 0.0;
 
-			double g[] = {
-				0.00012007374898776981,
-				0.0002767496205367667,
-				0.00048015900158427614,
-				0.000628498993458411,
-				0.0005809274633175113,
-				0.00019793927061766286,
-				-0.00057970940482609,
-				-0.0016484394616127838,
-				-0.0026971108911555816,
-				-0.0032416972306314826,
-				-0.00276062573291664,
-				-0.0009122418867167238,
-				0.002229527763036331,
-				0.006018023820277788,
-				0.009253615718237242,
-				0.010438148878123178,
-				0.008244492924719507,
-				0.0020903785026598607,
-				-0.007366331395230152,
-				-0.018013327792288918,
-				-0.026500248311975755,
-				-0.02891651625209736,
-				-0.021808288070764712,
-				-0.0032748261203597397,
-				0.026185031661902784,
-				0.06337320882158314,
-				0.10280117944014414,
-				0.1377665476108595,
-				0.16184932081943304,
-				0.17043583689034478,
-				0.16184932081943304,
-				0.1377665476108595,
-				0.10280117944014414,
-				0.06337320882158314,
-				0.026185031661902784,
-				-0.0032748261203597397,
-				-0.021808288070764705,
-				-0.028916516252097353,
-				-0.026500248311975755,
-				-0.018013327792288918,
-				-0.007366331395230152,
-				0.002090378502659864,
-				0.008244492924719501,
-				0.010438148878123178,
-				0.009253615718237242,
-				0.006018023820277788,
-				0.002229527763036331,
-				-0.0009122418867167238,
-				-0.00276062573291664,
-				-0.0032416972306314826,
-				-0.0026971108911555816,
-				-0.0016484394616127838,
-				-0.0005797094048260938,
-				0.00019793927061766663,
-				0.0005809274633175151,
-				0.0006284989934584072,
-				0.00048015900158427614,
-				0.0002767496205367667,
-				0.00012007374898776981
-			};
-			int sz = sizeof(g)/sizeof(g[0]);
-
-			// x_fir = new DigitalFilter(sz-1,g,0);
-			// y_fir = new DigitalFilter(sz-1,g,0);
-			// z_fir = new DigitalFilter(sz-1,g,0);
 
 			x_fir = new DigitalFilter(10,0.0);
 			y_fir = new DigitalFilter(10,0.0);
@@ -178,16 +112,6 @@ class BaseController {
 
 			rw_present = false;
 			
-			/*
-			Kp << 1.7, 0, 0,
-			   0, 1.7, 0,
-			   0, 0, 0.82875;
-			//9.2
-			//.1035
-			Kd << 5.6, 0, 0,
-			   0, 5.6, 0,
-			   0,   0, 1.14035;
-			*/
 
 			r = 0.15; //thrusters radius
 			//m = 9.2;  //total weight (kg)
@@ -439,23 +363,6 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 	geometry_msgs::TransformStamped temp;
 	temp = *msg;
 
-	//-------------------------------------------------
-	//---Panagiotis Mavridis 24/04/2018
-	/*
-	   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-
-	   static int m_counter = 0;
-	   struct timespec ts_arrived;
-	   clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
-
-	   long latency = ((ts_arrived.tv_sec - temp.header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - temp.header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
-	//std::cout << "LATENCY IN PHASE_SPACE->CONTROLLER  : "<< latency << std::endl;
-
-	m_counter++;
-	fprintf(latency_fp,"%ld\n",latency);
-	 */	
-	//--i----------------------------------------------
-
 
 	double x = temp.transform.rotation.x;
 	double y = temp.transform.rotation.y;
@@ -539,70 +446,28 @@ void moveBaseSimpleCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 { 
-
-
 	geometry_msgs::PoseStamped temp;
 	temp = *msg;
-	 
 
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
 
-	//geometry_msgs::PoseStamped temp_in_map;
-	/*try{
-		// listener.waitForTransform("assist/assist_robot", "drogue", now, ros::Duration(3.0));
-		listener->transformPose("/map",temp,temp_in_map); // pose_world is in world frame
-	}
-	catch (tf::TransformException ex){
-		ROS_ERROR("%s",ex.what());
-		ROS_ERROR_STREAM("Controller requested Pose Couldn't translated from: " << temp.header.frame_id << "frame to: /map");
-	}
-	
-	double x = temp_in_map.pose.orientation.x;
-	double y = temp_in_map.pose.orientation.y;
-	double z = temp_in_map.pose.orientation.z;
-	double w = temp_in_map.pose.orientation.w;   
-	*/
-
-	/*
-        double x = temp.pose.orientation.x;
-        double y = temp.pose.orientation.y;
-        double z = temp.pose.orientation.z;
-        double w = temp.pose.orientation.w;   
-	*/
 	double roll,pitch,yaw;
-
-
 
 	tf::Quaternion q(temp.pose.orientation.x, temp.pose.orientation.y, temp.pose.orientation.z, temp.pose.orientation.w);
 	tf::Matrix3x3 m(q);
 	m.getRPY(roll,pitch,yaw);
 
-
 	cmd_pos.x = temp.pose.position.x;
 	cmd_pos.y = temp.pose.position.y;
 	cmd_pos.z = yaw;
 
-	ROS_WARN("pos in ctrl x %lf pos in ctrl %lf",cmd_pos.x, cmd_pos.y);
+	//ROS_WARN("pos in ctrl x %lf pos in ctrl %lf",cmd_pos.x, cmd_pos.y);
 
 	return;
 }
 
 void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
-
-	//-------------------------------------------------
-	//---Panagiotis Mavridis 24/04/2018
-	/*
-	   CALCULATING MONOTONIC CLOCK TIME DIFFERENCE 
-
-	   struct timespec ts_arrived;
-	   clock_gettime(CLOCK_MONOTONIC_RAW, &ts_arrived);
-
-	   long latency = ((ts_arrived.tv_sec - msg->header.stamp.sec) * 1000000000 + (ts_arrived.tv_nsec - msg->header.stamp.nsec))/NANO_TO_MICRO_DIVISOR;
-	//std::cout << "LATENCY IN PLANNER->CONTROLLER (VELOCITY) : "<< latency;
-	 */	
-
-	//-------------------------------------------------
 
 	geometry_msgs::Vector3Stamped temp,temp_in_map;
 	geometry_msgs::TwistStamped tempTwist=*msg;
@@ -611,20 +476,8 @@ void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	temp.vector.y = tempTwist.twist.linear.y;
 	temp.vector.z = 0.0;
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
-/*
-	try{
-		listener->transformVector("/map", temp, temp_in_map);
-	}
-	catch (tf::TransformException ex){
-		ROS_ERROR("%s",ex.what());
-		ROS_ERROR_STREAM("Controller requested velocity Couldn't translated from: " << temp.header.frame_id << "frame to: /map");
-	}
-
-	cmd_vel.x = temp_in_map.vector.x;
-	cmd_vel.y = temp_in_map.vector.y;
-	cmd_vel.z = tempTwist.twist.angular.z;
- */
-        cmd_vel.x = temp.vector.x;
+        
+	cmd_vel.x = temp.vector.x;
         cmd_vel.y = temp.vector.y;
         cmd_vel.z = tempTwist.twist.angular.z;
 
@@ -855,40 +708,27 @@ int main(int argc, char** argv)
 			ed_pub.publish(ed);
 		}
 		else {
+			//ROS_INFO("CONTROLLER_DISABLED");
+
 			control.updateNoOut(time_step.toSec(), pose, attitude);
 			f_robot[0] = 0.0;
 			f_robot[1] = 0.0;
 			f_robot[2] = 0.0;
 
-			//-----ORIGINAL----------
-
-			// thrust_vector.x = 0.0;
-			// thrust_vector.y = 0.0;
-			// thrust_vector.z = 0.0;
-
-			//----------------------------
-			//------REPLACE WITH ORIGINAL IF NESSESARY-----
 			//----Panagiotis Mavridis 24/04/2018------
 
 			thrust_vector.vector.x = 0.0;
 			thrust_vector.vector.y = 0.0;
 			thrust_vector.vector.z = 0.0;
 
-			/*
-			   struct timespec ts_thrust;
-			   clock_gettime(CLOCK_MONOTONIC_RAW, &ts_thrust);
-			   thrust_vector.header.stamp.sec = ts_thrust.tv_sec;
-			   thrust_vector.header.stamp.nsec = ts_thrust.tv_nsec;
-			 */
-			//---------------------------------------          
 
 			torque.data     = 0.0;
 			thrust_pub.publish(thrust_vector);
 			rwTorque_pub.publish(torque);
 
 			//Panagiotis mavridis
-			//We comment the above cause we want to have const speed when disabling base ctrl
-			//The below cosde used in assist holds steady pos
+			//We comment the below cause we want to have const speed when disabling base ctrl
+			//The below code used in assist holds steady pos
 			/*
 			pos.x = attitude[0];
 			pos.y = attitude[1];
