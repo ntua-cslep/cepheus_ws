@@ -611,7 +611,7 @@ void decide_plan_of_action()
 	//Target almost still 
 	if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, 0.0, chaser_init_pos.x, des_pos.x, p1_X);
 		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
@@ -641,7 +641,7 @@ void decide_plan_of_action()
 	//Target almost still
 	if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
 
-                calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+                calc_vel_prof_1_params(A_MAX_Y, 0.0, chaser_init_pos.y, des_pos.y, p1_Y);
                 meet_point_y = p1_Y.xdes_chaser;
                 velocity_profile_Y = (short)VEL_PROF_1;
                 p1_Y.print();
