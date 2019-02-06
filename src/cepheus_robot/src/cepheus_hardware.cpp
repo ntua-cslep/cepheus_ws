@@ -499,7 +499,7 @@ void CepheusHW::init_left_wrist(){
 
 	for(int i = LEFT_WRIST_MIN_ANGLE; i <= LEFT_WRIST_INIT_ANGLE; i++){
 
-		cmd[LEFT_WRIST] = (double)30;
+		cmd[LEFT_WRIST] = (double)i;
 		double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
 		width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
@@ -563,7 +563,7 @@ void CepheusHW::set_right_wrist(double c){
 
 	ros::Rate loop_rate(200);
 
-	for(int i = RIGHT_WRIST_INIT_ANGLE; i <= RIGHT_WRIST_MAX_ANGLE; i++){
+	for(int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_MAX_ANGLE; i++){
 
 		cmd[RIGHT_WRIST] = (double)i;
 		double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
@@ -649,36 +649,54 @@ void CepheusHW::writeMotors()
 	{
 		//Left Finger(0-120 deg)
 		if(i==LEFT_GRIPPER){
-		/*	if(cmd[LEFT_GRIPPER] >= 0 && cmd[LEFT_GRIPPER] <= LEFT_FINGER_MAX_ANGLE ){
-
-
+		
+			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
 
 				//ROS_WARN("div %f",div);
-				ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
+				//ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
 
-				double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
-				width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+				double div = (double)cmd[i]/(double)LEFT_FINGER_MAX_ANGLE;
+				width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 		
-				write_left_finger(width[LEFT_GRIPPER]);
+				write_left_finger(width[i]);
 				
 			}
 			else{
 				width[i] = width[i];
 				ROS_WARN("Servo commanded out of range. Command Ignored");
 			}
-		*/
 		}
 
+		if(i==RIGHT_GRIPPER){
+
+                        if(cmd[i] >= 0 && cmd[i] <= RIGHT_FINGER_MAX_ANGLE ){
+
+                                //ROS_WARN("div %f",div);
+                                //ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
+
+                                double div = (double)cmd[i]/(double)RIGHT_FINGER_MAX_ANGLE;
+                                width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+
+                                write_right_finger(width[i]);
+                        }
+                        else{
+                                width[i] = width[i];
+                                ROS_WARN("Servo commanded out of range. Command Ignored");
+                        }
+
+                }
+
+
 		//Left Wrist (0-120 deg)
-		if(i==8){
+		if(i==LEFT_WRIST){
 
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_WRIST_MAX_ANGLE ){
 
-				double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
+				double div = (double)cmd[i]/(double)LEFT_WRIST_MAX_ANGLE;
 
 				//ROS_WARN("cmd %lf",cmd[LEFT_WRIST]);
-				width[LEFT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
-				write_left_wrist(width[LEFT_WRIST]);
+				width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+				write_left_wrist(width[i]);
 
 			}
 			else {
@@ -687,6 +705,25 @@ void CepheusHW::writeMotors()
 			}
 
 		}
+
+		if(i==RIGHT_WRIST){
+
+                        if(cmd[i] >= 0 && cmd[i] <= RIGHT_WRIST_MAX_ANGLE ){
+
+                                double div = (double)cmd[i]/(double)RIGHT_WRIST_MAX_ANGLE;
+
+                                //ROS_WARN("cmd %lf",cmd[i]);
+                                width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+                                write_right_wrist(width[i]);
+
+                        }
+                        else {
+                                width[i] = width[i];
+                                ROS_WARN("Servo commanded out of range. Command Ignored");
+                        }
+
+                }
+
 
 
 	}
@@ -784,50 +821,51 @@ void CepheusHW::readLimitSwitches()
 	uint16_t input;
 	dm7820_status = DM7820_StdIO_Get_Input (manipulator_board, DM7820_STDIO_PORT_0, &input);
 	DM7820_Return_Status(dm7820_status, "DM7820_StdIO_Get_Input()");
-		//printf("%d\n",input);
+			
 	//	ROS_INFO("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
 
 	//printf("input:");
 	//print_binary(input);
 	//printf("masked1:");
-	//print_binary(input&(1<<LIMIT_L1));
+	//print_binary(input&(1<<(int)LIMIT_L1));
 	//if (prev != (input&(1<<LIMIT_L1))) ROS_WARN("DIFF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	//prev = input&(1<<LIMIT_L1);
 	//printf("masked2:");
-	//print_binary(input&(1<<LIMIT_L2));
+	//print_binary(input&(1<<(int)LIMIT_L2));
+	//printf("%d\n", input&(1<<(int)LIMIT_L2) );
 
-	if(!(input&(1<<LIMIT_L1))) 
+	if(!(input&(1<<(int)LIMIT_L1))) 
 	{
 		//printf("%d\n",input&(1<<LIMIT_L1));
 		limit[LEFT_SHOULDER] = 1;
 		//ROS_WARN("limit 4 pressed");
 	}
-	else limit[4] = 0;
+	else limit[LEFT_SHOULDER] = 0;
 
-	if(!(input&(1<<LIMIT_L2))) 
+	if(!(input&(1<<(int)LIMIT_L2))) 
 	{
 		//printf("%d\n",input&(1<<LIMIT_L2));
 		limit[LEFT_ELBOW] = 1;
 		//ROS_WARN("limit 5 pressed");
 	}
-	else limit[5] = 0;
+	else limit[LEFT_ELBOW] = 0;
 	
-	if(!(input&(1<<LIMIT_R1)))
+	if(!(input&(1<<(int)LIMIT_R1)))
         {
                 //printf("%d\n",input&(1<<LIMIT_L2));
                 limit[RIGHT_SHOULDER] = 1;
                 //ROS_WARN("limit 6 pressed");
         }
-        else limit[6] = 0;
+        else limit[RIGHT_SHOULDER] = 0;
 
-	if(!(input&(1<<LIMIT_R2)))
+	if(!(input&(1<<(int)LIMIT_R2)))
         {
                 //printf("%d\n",input&(1<<LIMIT_L2));
                 limit[RIGHT_ELBOW] = 1;
                 //ROS_WARN("limit 7 pressed");
         }
-        else limit[7] = 0;
+        else limit[RIGHT_ELBOW] = 0;
 
 }
 
@@ -1137,7 +1175,6 @@ void CepheusHW::readEncoders(ros::Duration dt)
 		vel_new[i]= ((pos[i] - prev_pos[i])) / dt.toSec();
 		prev_pos[i] = pos[i];
 
-		//limit[i] = 0;
 
 		vel[0] = vel_new[0];  // reaction wheel
 
@@ -1541,6 +1578,7 @@ CepheusHW::CepheusHW()
 		pos[i] = 0;
 		prev_pos[i] = pos[i];
 		offset_pos[i] = 0;
+		limit[i] = 0;
 
 		//initialize FIR filter
 		for(int j=0; j<FIR_LENGTH; j++)

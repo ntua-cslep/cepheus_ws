@@ -31,6 +31,7 @@
 #include <controller_manager_msgs/ControllerState.h>
 
 #include "cepheus_hardware.h"
+#include "cepheus_ctrl.h"
 
 #define MSG_NUM 100
 

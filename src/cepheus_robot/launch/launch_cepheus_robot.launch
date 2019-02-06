@@ -23,10 +23,10 @@
 	</node>
 
 	
-	<!--node pkg="rosserial_python" type="serial_node.py" name="serial_node">
+	<node pkg="rosserial_python" type="serial_node.py" name="serial_node">
     			<param name="port" value="/dev/ttyACM0"/>
     			<param name="baud" value="9600"/>
-  	</node-->
+  	</node>
 
         <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="true">
                 <param name="publish_frequency" value="100"/>
@@ -59,10 +59,10 @@
 	<node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen" required="true">
 	</node>
 
-        <include file="$(find phase_space)/launch/track_two_objects.launch">
+        <!--include file="$(find phase_space)/launch/track_two_objects.launch">
             <arg name="turn_rviz_on" value="false" />
             <arg name="turn_phase_space_on" value="true" />
-        </include>
+        </include-->
 
 	<node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.2575 -0.2575 0 0 0 0 assist_robot gripper_target" />
 	<node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" />

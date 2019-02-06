@@ -130,6 +130,8 @@ include_directories(  ${catkin_INCLUDE_DIRS} )
 
 ## Declare a C++ library
 add_library(librtd_dm7820 include/${PROJECT_NAME}/librtd-dm7820.c)
+add_library(cepheus_init_ctrls src/cepheus_init_ctrls.cpp)
+add_library(cepheus_arms_operations src/cepheus_arms_operations)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -150,7 +152,6 @@ add_executable(cepheus_ctrl src/cepheus_ctrl.cpp)
 add_executable(cepheus_force_sensor src/bota_FTS.cpp)
 add_executable(gripper_target_broadcaster src/gripper_target_broadcaster.cpp)
 add_executable(new_base_planner_node src/new_base_planner.cpp)
-		
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -161,7 +162,7 @@ add_executable(new_base_planner_node src/new_base_planner.cpp)
 #target_link_libraries(mouse_odom_node  ${catkin_LIBRARIES})
 target_link_libraries(phase_space_inverted_node  ${catkin_LIBRARIES})
 target_link_libraries(thrusters_node  ${catkin_LIBRARIES} librtd_dm7820)
-target_link_libraries(cepheus_interface_node  ${catkin_LIBRARIES} librtd_dm7820)
+target_link_libraries(cepheus_interface_node  ${catkin_LIBRARIES} librtd_dm7820 cepheus_init_ctrls cepheus_arms_operations)
 target_link_libraries(FT_interface_node  ${catkin_LIBRARIES})
 target_link_libraries(cepheus_ctrl  ${catkin_LIBRARIES})
 target_link_libraries(thrusters_interface_node  ${catkin_LIBRARIES} librtd_dm7820)
