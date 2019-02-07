@@ -78,7 +78,7 @@ typedef struct Prf1{
                 this->xt1 = xt1;
                 this->vt1 = vt1;
                 this-> xdes_chaser =  xdes_chaser;
-                this->duration_with_active_ctrl = t1 + t2 + TIME_TO_DISABLE_CTRL;
+                this->duration_with_active_ctrl = t1 + (t2 - t1) + TIME_TO_DISABLE_CTRL;
         }
 
         void print(){
@@ -156,7 +156,7 @@ typedef struct Prf3{
                 this->Vt1 = Vt1;
                 this-> xdes_chaser =  xdes_chaser;
                 this->xdes_target = xdes_target;
-                this->duration_with_active_ctrl = t1 + t2 + t3 + TIME_TO_DISABLE_CTRL;
+                this->duration_with_active_ctrl = t1 + (t2 - t1) + (t3 - t2) + TIME_TO_DISABLE_CTRL;
         }
 
         void print(){
