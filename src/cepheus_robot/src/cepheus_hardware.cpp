@@ -138,7 +138,7 @@ void CepheusHW::setJointTorque(int sh,  int elb)
 //double e_sum = 0.0;
 void CepheusHW::update_shoulder(double shoulder_rate, double des, double &shoulder_torque)
 {
-	double kp = 0.0258;
+	double kp = 0.0158;
 	double ki = 0.000001;
 
 	double e(des-shoulder_rate);
@@ -199,8 +199,8 @@ double velocity_for_joint_init(double t2, double t, bool positive){
 
 void CepheusHW::init_left_shoulder(){
 
-	double shoulder_out;
-	double des_shoulder;
+	double shoulder_out, elbow_out;
+	double des_shoulder, des_elbow;
 
 	if(home_pos[LEFT_SHOULDER]>0) {
 
@@ -214,8 +214,11 @@ void CepheusHW::init_left_shoulder(){
 		do{
 
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+			des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
 			update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
+	                update_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
+        	        cmd[LEFT_ELBOW] = elbow_out;
 			cmd[LEFT_SHOULDER] = shoulder_out;
 
 			writeMotors();
@@ -235,6 +238,8 @@ void CepheusHW::init_left_shoulder(){
 
 
 }
+
+
 
 void CepheusHW::init_right_shoulder(){
 

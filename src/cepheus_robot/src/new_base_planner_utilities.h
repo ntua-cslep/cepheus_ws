@@ -14,7 +14,7 @@ const double ROBOT_RADIUS = 0.15;
 #define VEL_PROF_3 3
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
-const double TIME_TO_DISABLE_CTRL = 2; //seconds
+const double TIME_TO_DISABLE_CTRL = 2.0; //seconds
 
 
 class Geometric_Constraints{

@@ -312,6 +312,15 @@ void observate_target_velocity(double dt, double& target_vel_X, double& target_v
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
+                if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
+                        target_vel_X = 0.0;
+                }
+
+                if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
+                        target_vel_Y = 0.0;
+                }
+
+
 		std::cout<<"Observated target vel_X: "<<target_vel_X<<std::endl;
 		std::cout<<"Observated target vel_Y: "<<target_vel_Y<<std::endl;
 	}
@@ -353,6 +362,15 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
+		if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
+			target_vel_X = 0.0;
+		}
+
+                if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
+                        target_vel_Y = 0.0;
+                }
+
+
 		//std::cout<<target_vel_X<<std::endl;	
 	}
 
@@ -366,7 +384,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
 
 
-	ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
+	//ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
 }
 
 
@@ -609,9 +627,9 @@ void decide_plan_of_action()
 	//-----------FOR X AXIS------------
 
 	//Target almost still 
-	if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
+	if(target_vel_X == 0.0){
 
-		calc_vel_prof_1_params(A_MAX_X, 0.0, chaser_init_pos.x, des_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
 		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
@@ -639,9 +657,9 @@ void decide_plan_of_action()
 	//------------FOR Y AXIS--------------
 
 	//Target almost still
-	if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
+	if(target_vel_Y == 0.0){
 
-                calc_vel_prof_1_params(A_MAX_Y, 0.0, chaser_init_pos.y, des_pos.y, p1_Y);
+                calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
                 meet_point_y = p1_Y.xdes_chaser;
                 velocity_profile_Y = (short)VEL_PROF_1;
                 p1_Y.print();
@@ -688,17 +706,19 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 {
 
 	if (t <= prof_params.t1){
-		//ROS_WARN("vt1 : %lf",prof_params.vt1);
+		ROS_INFO("Accelerate =>");
 		cmd_pos = INIT_CH + 0.5 * A_max * pow(t,2);
 		cmd_vel = A_max * t;//u0 = 0
 		cmd_acc = A_max;
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
+		ROS_INFO("Deaccelerate =>");
 		cmd_pos = prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2);
 		cmd_vel = prof_params.vt1 - A_max * (t - prof_params.t1); 
 		cmd_acc = -A_max; 
 	}
 	else if (t > prof_params.t2 && t <= prof_params.duration_with_active_ctrl){
+		ROS_INFO("Stand Still...");
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t2);
 		cmd_vel = V_DES;
 		cmd_acc = 0.0;
@@ -1012,11 +1032,11 @@ int main(int argc, char** argv)
 		acc_pub.publish(new_acc);
 
 		//For visualizing the path in rviz
-		/*
+		
 		path.poses.push_back(new_pos);
-		  new_pos.header.stamp = ros::Time::now();	
-		  path_pub.publish(path);
-		*/
+		new_pos.header.stamp = ros::Time::now();	
+		path_pub.publish(path);
+		
 
 		loop_rate.sleep();
 	}

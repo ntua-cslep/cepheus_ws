@@ -450,8 +450,6 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 		one_time = false;
 
 		//theta2 needs to be from -90 deg to 0 deg
-
-
 		//TO DO...ADD COMMMEEEEENTS
 
 		//The lengths of the joint of the left arm
@@ -479,7 +477,7 @@ void catchObjectCallback(const std_msgs::Float64ConstPtr& cmd_angle_to_catch, co
 		//double y = -0.1;
 
 		//some cm before the target
-		double x = transform.getOrigin().x() - 0.03;
+		double x = transform.getOrigin().x() - 0.06;
 		double y = transform.getOrigin().y();
 
 
@@ -647,12 +645,12 @@ int main(int argc, char** argv)
 	ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
 	ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
 
-	//ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
+	ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
 	
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
 	ros::Subscriber right_gripper_action_sub =  nh.subscribe("right_gripper_action", 1, rightGripperActionCallback);
 
-	//ros::Subscriber catch_object_sub =  nh.subscribe<std_msgs::Float64>("catch_object", 1, boost::bind(&catchObjectCallback, _1, boost::ref(cm)));	
+	ros::Subscriber catch_object_sub =  nh.subscribe<std_msgs::Float64>("catch_object", 1, boost::bind(&catchObjectCallback, _1, boost::ref(cm)));	
 	//ros::ServiceServer service = n.advertiseService("catch_object", boost::bind(&catchObijectCallback, _1, boost::ref(cm)));
 
 
@@ -683,8 +681,8 @@ int main(int argc, char** argv)
 	//Initialize the  arms and start the ros controllers
 	
 	start_standard_controllers(nh, cm, loop_rate);
-	init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
-	init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
+	//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 
 	sleep(5);
 	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
