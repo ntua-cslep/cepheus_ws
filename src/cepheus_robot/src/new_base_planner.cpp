@@ -74,6 +74,10 @@ Prf1 p1_X; Prf1 p1_Y;
 Prf2 p2_X; Prf2 p2_Y;
 Prf3 p3_X; Prf3 p3_Y;
 
+//Some time constants needed in the decision process of the planning
+const double TIME_TO_SMOOTH_ERROR = 0.5;//s
+const double TIME_TO_OBSERVE_TARGET = 1.0;//s
+
 //values {1,2,3}
 //indcates which vel prof be used in each axis
 short velocity_profile_X = 0, velocity_profile_Y = 0;
@@ -117,14 +121,14 @@ void ctrl_C_Handler(int sig)
 //The path created by the planner stored for any use
 nav_msgs::Path path;
 
-double theta_des = 0.0;
-
+//double theta_des = 0.0;
+/*
 void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
 
 	double roll, pitch, yaw;
 
 	try{
-		des_pos_listener.lookupTransform("/map","/gripper_target", ros::Time(0), des_pos_transform);
+		des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
 
 		tf::Quaternion q = des_pos_transform.getRotation();
 		tf::Matrix3x3 m(q);
@@ -143,8 +147,8 @@ void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransfor
 		}
 
 
-		des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS) * cos(yaw);
-		des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS) * sin(yaw);
+		des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
+		des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
 		//des_pos.x = des_pos_transform.getOrigin().x();
 		//des_pos.y = des_pos_transform.getOrigin().y();
 
@@ -155,7 +159,7 @@ void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransfor
 		ROS_ERROR("%s",ex.what());
 	}
 }
-
+*/
 
 //---Helper functions------
 
@@ -291,7 +295,7 @@ void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
 
 
 //---------------------------
-void observate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
+void observate_target_velocity(const double dt, double& target_vel_X, double& target_vel_Y){
 
 	static geometry_msgs::Vector3 target_prev_pos;
 
@@ -312,11 +316,11 @@ void observate_target_velocity(double dt, double& target_vel_X, double& target_v
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
-                if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
+                if(target_vel_X < 0.01 && target_vel_X > -0.01){
                         target_vel_X = 0.0;
                 }
 
-                if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
+                if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
                         target_vel_Y = 0.0;
                 }
 
@@ -346,7 +350,6 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	x = target_real_pos.x;
 	y = target_real_pos.y;
 
-	//ROS_WARN("dt %lf",dt);
 
 	if(dt != 0){
 		target_vel_X = (x - target_prev_pos.x)/dt;
@@ -362,16 +365,17 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
-		if(target_vel_X <= 0.01 && target_vel_X >= -0.01){
+		if(target_vel_X < 0.01 && target_vel_X > -0.01){
 			target_vel_X = 0.0;
 		}
 
-                if(target_vel_Y <= 0.01 && target_vel_Y >= -0.01){
+                if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
                         target_vel_Y = 0.0;
                 }
 
 
-		//std::cout<<target_vel_X<<std::endl;	
+		//std::cout<<"vel X: "<<target_vel_X<<" , velY: "<<target_vel_Y<<std::endl;
+			
 	}
 
 	target_prev_pos.x = x;
@@ -385,6 +389,44 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 
 
 	//ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
+
+	//Calculate the targets orientation
+	//Not in need cause we can grab it anywhare in the circle around it
+	/*
+        double roll, pitch, yaw;
+
+        try{
+                des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
+
+                tf::Quaternion q = des_pos_transform.getRotation();
+                tf::Matrix3x3 m(q);
+                m.getRPY(roll,pitch,yaw);
+
+                //ROS_WARN("yaw %lf",yaw);
+
+                theta_des = M_PI + yaw;
+                double mod = std::fmod(theta_des, 2.0 * M_PI);
+
+                if(mod <= M_PI && mod >= 0 ){
+                        theta_des = mod;
+                }
+                else{
+                        theta_des = mod - 2.0 * M_PI;
+                }
+
+
+                //des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
+                //des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
+                //des_pos.x = des_pos_transform.getOrigin().x();
+                //des_pos.y = des_pos_transform.getOrigin().y();
+
+
+                //ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
+        }
+        catch (tf::TransformException &ex) {
+                ROS_ERROR("%s",ex.what());
+        }
+	*/
 }
 
 
@@ -706,19 +748,19 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 {
 
 	if (t <= prof_params.t1){
-		ROS_INFO("Accelerate =>");
+		//ROS_INFO("Accelerate =>");
 		cmd_pos = INIT_CH + 0.5 * A_max * pow(t,2);
 		cmd_vel = A_max * t;//u0 = 0
 		cmd_acc = A_max;
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
-		ROS_INFO("Deaccelerate =>");
+		//ROS_INFO("Deaccelerate =>");
 		cmd_pos = prof_params.xt1 + prof_params.vt1*(t - prof_params.t1) - 0.5 * A_max * pow(t - prof_params.t1,2);
 		cmd_vel = prof_params.vt1 - A_max * (t - prof_params.t1); 
 		cmd_acc = -A_max; 
 	}
 	else if (t > prof_params.t2 && t <= prof_params.duration_with_active_ctrl){
-		ROS_INFO("Stand Still...");
+		//ROS_INFO("Stand Still...");
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t2);
 		cmd_vel = V_DES;
 		cmd_acc = 0.0;
@@ -798,7 +840,7 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 
 }
 
-void wait_to_smooth_error(double dur){
+void wait_to_smooth_error(const double dur){
 
 	ros::Duration timer_norm;
 	ros::Time init_time_norm = ros::Time::now();
@@ -933,10 +975,10 @@ int main(int argc, char** argv)
 
 	ROS_WARN("Planner is starting the observation and decision process...................");
 
-	wait_to_smooth_error(0.5);
-	observate_target_velocity(1,target_vel_X, target_vel_Y);
+	wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
+	observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
 	setup_planning_parameters();
-	update_des_pos(des_pos_listener, des_pos_transform);
+	//update_des_pos(des_pos_listener, des_pos_transform);
 	decide_plan_of_action();
 
 	ROS_WARN("Planner is starting to produce the trajecory");
@@ -970,7 +1012,7 @@ int main(int argc, char** argv)
 
 		//both velocity profiles traj is over 
 		if(disable_ctrl_X && disable_ctrl_Y){
-			ROS_WARN("REQUEST_TO_DISABLE_CTRL");
+			//ROS_WARN("REQUEST_TO_DISABLE_CTRL");
 			//request to disable controller
 			srv.request.data = false;
 			if (controller_srv_client.call(srv)) {
@@ -989,8 +1031,9 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 
 		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
-		update_des_pos(des_pos_listener, des_pos_transform);
+		//update_des_pos(des_pos_listener, des_pos_transform);
 
+		//Produce the cmd_pos, cmd_vel, cmd_acc
 		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
 		//ROS_WARN("new_x %lf new_y %lf new_vel_x %lf new_vel_y %lf new_acc_x %lf new_acc_y %lf",new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
 
@@ -1001,13 +1044,14 @@ int main(int argc, char** argv)
 		//ROS_WARN("new y %lf prev y %lf ", new_y,  prev_pos.pose.position.y);
 
 		//std::cout<<timer.toSec()<<" "<<new_y<<std::endl;
-		//heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+		heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+		
 		//ROS_WARN("dy %lf dx %lf heading %lf", new_y - prev_pos.pose.position.y,  new_x - prev_pos.pose.position.x, heading);
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;
 
-		//qq = tf::createQuaternionFromYaw(heading);
-		qq = tf::createQuaternionFromYaw(theta_des);		
+		qq = tf::createQuaternionFromYaw(heading);
+		//qq = tf::createQuaternionFromYaw(theta_des);		
 
 		new_pos.pose.orientation.x = qq.x() ;
 		new_pos.pose.orientation.y = qq.y() ;
@@ -1032,11 +1076,9 @@ int main(int argc, char** argv)
 		acc_pub.publish(new_acc);
 
 		//For visualizing the path in rviz
-		
 		path.poses.push_back(new_pos);
 		new_pos.header.stamp = ros::Time::now();	
 		path_pub.publish(path);
-		
 
 		loop_rate.sleep();
 	}

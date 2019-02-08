@@ -5,9 +5,9 @@
 
 const double FMAX_THRUST = 0.06;//Newton
 const double CHASER_MASS = 13.5;//kg
-const double WS_RADIUS = 0.3;
-const double ROBOT_RADIUS = 0.15;
-
+const double WS_RADIUS = 0.3;//m
+const double ROBOT_RADIUS = 0.15;//m
+const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 
 #define VEL_PROF_1 1
 #define VEL_PROF_2 2
