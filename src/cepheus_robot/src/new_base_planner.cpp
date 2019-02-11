@@ -327,6 +327,18 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 
 		std::cout<<"Observated target vel_X: "<<target_vel_X<<std::endl;
 		std::cout<<"Observated target vel_Y: "<<target_vel_Y<<std::endl;
+
+		double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
+
+		des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
+		des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
+		//des_pos.x = target_real_pos.x - 0.2;
+		//des_pos.y = target_real_pos.y - 0.2;
+
+                std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
+                std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
+
+
 	}
 }
 
@@ -668,7 +680,9 @@ void decide_plan_of_action()
 
 	//-----------FOR X AXIS------------
 
-	//Target almost still 
+	//Target almost still
+	ROS_WARN("Prof X: ");
+ 
 	if(target_vel_X == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
@@ -677,7 +691,7 @@ void decide_plan_of_action()
 		p1_X.print();
 	}
 	//target moving away
-	else if((chaser_init_pos.x <= target_init_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= target_init_pos.x && target_vel_X  < 0)){
+	else if((chaser_init_pos.x <= des_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= des_pos.x && target_vel_X  < 0)){
 
                 calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
                 meet_point_x = p1_X.xdes_chaser;
@@ -697,7 +711,7 @@ void decide_plan_of_action()
 
 
 	//------------FOR Y AXIS--------------
-
+	 ROS_WARN("Prof Y: ");
 	//Target almost still
 	if(target_vel_Y == 0.0){
 
@@ -709,7 +723,7 @@ void decide_plan_of_action()
         }
 
 	//Target is moving away
-	else if((chaser_init_pos.y <= target_init_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= target_init_pos.y && target_vel_Y  < 0)){
+	else if((chaser_init_pos.y <= des_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= des_pos.y && target_vel_Y  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
 		meet_point_y = p1_Y.xdes_chaser;
@@ -726,15 +740,15 @@ void decide_plan_of_action()
 	else{
 
 	}
-	/*
+/*	
 	   if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
-	   ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
-	   exit(12);
+	   	ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
+	   	exit(12);
 	   }
 	   else{
-	   ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
+	   	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
 	   }
-	 */
+*/	 
 }
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
@@ -991,7 +1005,11 @@ int main(int argc, char** argv)
         ros::Time init_time = ros::Time::now();
         ros::Duration timer;
 
+	int counter = 0;
+
 	while(!g_request_shutdown){
+
+		counter++;
 
 		if (new_path) {
 
@@ -1030,8 +1048,34 @@ int main(int argc, char** argv)
 
 		ros::spinOnce();
 
-		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
-		//update_des_pos(des_pos_listener, des_pos_transform);
+		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
+		//200 loops is 1 second
+/*		if(counter = 200){
+			
+			counter = 0;
+
+			target_init_pos.x = target_real_pos.x;
+			target_init_pos.y = target_real_pos.y;
+
+			//chaser_init_pos.x = chaser_real_pos.x;
+			//chaser_init_pos.y = chaser_real_pos.y;
+			chaser_init_pos.x = new_x;
+                        chaser_init_pos.y = new_y;
+
+
+
+			calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
+			setup_planning_parameters();
+        		decide_plan_of_action();
+
+			//reset timers......?
+			ros::Time prev_time = ros::Time::now();
+		        ros::Time init_time = ros::Time::now();
+
+			continue;
+		}
+*/
+
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
 		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
