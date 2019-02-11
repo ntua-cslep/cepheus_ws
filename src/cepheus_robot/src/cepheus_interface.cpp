@@ -1,19 +1,8 @@
-#include <errno.h>
-#include <error.h>
-#include <getopt.h>
-#include <limits.h>
 #include <signal.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <math.h>
 
-//for clock_gettime and monotonic clocks
-#include <time.h>
-#include <sys/time.h>
 #include <sys/resource.h>
-#define NANO_TO_MICRO_DIVISOR 1000
 FILE *latency_fp;
 #include <boost/bind.hpp>
 #define RT_PRIORITY 95
@@ -23,19 +12,15 @@ FILE *latency_fp;
 #include <std_srvs/Empty.h>
 #include <controller_manager/controller_manager.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Vector3Stamped.h>
 
 
 #include <std_msgs/Float64.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/String.h>
 #include <std_msgs/UInt8.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
 
 #include <tf/transform_listener.h>
-#include <boost/bind.hpp>
 #include "cepheus_hardware.h"
 
 

@@ -1,20 +1,5 @@
-#include <errno.h>
-#include <error.h>
-#include <getopt.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/joint_state_interface.h>
-#include <hardware_interface/robot_hw.h>
-#include <ros/ros.h>
 #include <dm7820_library.h>
 #include "cepheus_hardware.h"
-#include <math.h>
 
 #define TORQUE_REDUCE 1.0
 

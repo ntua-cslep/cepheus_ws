@@ -1,15 +1,9 @@
 #include <signal.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <math.h>
 
 #include <ros/ros.h>
 
-//for clock_gettime and monotonic clocks
-#include <time.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 #define NANO_TO_MICRO_DIVISOR 1000
 FILE *latency_fp;
@@ -20,7 +14,6 @@ FILE *latency_fp;
 
 
 #include <angles/angles.h>
-#include <Eigen/Eigen>
 #include <Eigen/Dense>
 
 #include <geometry_msgs/TransformStamped.h>

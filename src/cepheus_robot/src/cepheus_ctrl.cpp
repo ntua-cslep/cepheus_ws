@@ -1,25 +1,6 @@
-#include <errno.h>
-#include <error.h>
-#include <getopt.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <math.h>
 #include <string>
-#include <sys/types.h>
 #include <boost/bind.hpp>
-
-#include <ros/ros.h>
-#include <std_srvs/Trigger.h>
-#include <std_srvs/Empty.h>
-#include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
-
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3.h>
 
 #include <controller_manager/controller_manager.h>
 #include <controller_manager_msgs/ListControllerTypes.h>

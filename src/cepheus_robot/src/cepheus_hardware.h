@@ -1,12 +1,7 @@
+
 #include <errno.h>
 #include <error.h>
-#include <getopt.h>
-#include <limits.h>
 #include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #include <ros/ros.h>
 #include <hardware_interface/joint_command_interface.h>

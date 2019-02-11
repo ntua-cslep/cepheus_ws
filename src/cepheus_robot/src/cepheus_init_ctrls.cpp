@@ -1,4 +1,3 @@
-#include <ros/ros.h>
 #include <controller_manager/controller_manager.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>

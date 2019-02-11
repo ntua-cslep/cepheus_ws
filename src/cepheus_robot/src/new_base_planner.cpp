@@ -19,15 +19,9 @@
  */
 
 #include <signal.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <math.h>
 
-//for clock_gettime and monotonic clocks
-#include <time.h>
-#define NANO_TO_MICRO_DIVISOR 1000
 #include <ros/ros.h>
 #define RT_PRIORITY 95
 
@@ -39,7 +33,6 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/Path.h>
-#include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
@@ -830,6 +823,8 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		}
 
 		cmd_pos = INIT_CH + 0.5 * a_max_axis * pow(t,2);
+
+
 	}    
 	else if (t <= prof_params.t2){
 
@@ -841,6 +836,7 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		}
 
 		cmd_pos = prof_params.Xt1 + prof_params.Vt1 * (t - prof_params.t1) - 0.5 * a_max_axis * pow(t - prof_params.t1,2);
+
 	}    
 	else if (t <= prof_params.t3){
 		cmd_pos = prof_params.Xt2 + 0.5 * prof_params.a3 * pow(t - prof_params.t2, 2);
@@ -1034,7 +1030,7 @@ int main(int argc, char** argv)
 			//request to disable controller
 			srv.request.data = false;
 			if (controller_srv_client.call(srv)) {
-				ROS_INFO_STREAM("Controller response: " << srv.response.message);
+				//ROS_INFO_STREAM("Controller response: " << srv.response.message);
 			}
 			else{
 				ROS_ERROR("Failed to call Controller");
