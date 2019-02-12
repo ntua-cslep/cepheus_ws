@@ -356,7 +356,6 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 	geometry_msgs::TransformStamped temp;
 	temp = *msg;
 
-
 	double x = temp.transform.rotation.x;
 	double y = temp.transform.rotation.y;
 	double z = temp.transform.rotation.z;
@@ -509,7 +508,6 @@ int main(int argc, char** argv)
 
 	nh_ps.setCallbackQueue(&phase_space_callback_queue);	
 	//---------------------------------------------
-
 
 
 	tf::TransformListener lr(ros::Duration(3));

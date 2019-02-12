@@ -36,6 +36,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
 
 #include "digital_filter.h"
 #include "new_base_planner_utilities.h"
@@ -85,6 +86,7 @@ double A_MAX_X, A_MAX_Y;
 double L_X = 1;
 double L_Y = 1;
 
+//The target's velcoty as observated form the chaser via the phase space system
 double target_vel_X = 0.0, target_vel_Y = 0.0;
 
 geometry_msgs::Vector3 target_real_pos;
@@ -321,8 +323,8 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 
 		des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
 		des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-		//des_pos.x = target_real_pos.x - 0.2;
-		//des_pos.y = target_real_pos.y - 0.2;
+		//des_pos.x = target_real_pos.x;
+		//des_pos.y = target_real_pos.y;
 
                 std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
                 std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
@@ -919,6 +921,19 @@ void set_commands(const double& t,
 
 }
 
+
+bool in_chaser_workspace(){
+
+	ros::spinOnce();
+
+	
+	double dist = sqrt( pow(target_real_pos.x - chaser_real_pos.x, 2) + pow(target_real_pos.y - chaser_real_pos.y, 2) ) - CIRCLE_RADIUS;
+
+	//ROS_WARN("dist %lf ws %lf", dist,WS_RADIUS);
+	return (dist < WS_RADIUS);
+}
+
+
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "new_base_planner_node", ros::init_options::NoSigintHandler);
@@ -949,6 +964,8 @@ int main(int argc, char** argv)
 	ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("planner_vel", 1);
 	ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);
 
+	//Send command to cepheus interface to start invert kinematics in order to catch the target
+	ros::Publisher grip_pub = nh.advertise<std_msgs::Float64>("catch_object", 1);
 
 	//Trajectory point produced ,command velocity and command acceleration
 	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
@@ -1042,6 +1059,23 @@ int main(int argc, char** argv)
 			else{
 				ROS_ERROR("Failed to call Controller");
 			}
+
+			//check if target is in chaser's workspace
+			if(in_chaser_workspace()){
+			
+				ROS_WARN("The chaser will reach to grab the target!");
+				
+				//command to catch object in interface
+				/*
+				std_msgs::Float64 angle_to_catch;
+				angle_to_catch.data = M_PI/3.0;
+				grip_pub.publish(angle_to_catch);
+				*/
+			}
+			else{
+				//ROS_WARN("The target is out of chaser's workspace!");
+			}			
+
 		}
 
 
