@@ -6,10 +6,10 @@
    and the sign of the target's velocity
    We can have either of the 3 profiles in each axis idependent from each other
 
-   Profile 1: (vel_profile = 1) means that the target is moving away form the chaser and that the chaser is going to accelerate
+   Profile 1: (vel_profile = 1) means that the target is moving away from the chaser, or stands almost still and that the chaser is going to accelerate
    with full acceleration and the deaccelerate in order to reach the target
 
-   Profile 2: (vel_profile = 2) means that the chaser is going to accelerate
+   Profile 2: (vel_profile = 2) means that the chaser is going to accelerate in the same direction of the target,
    with an acceleration calculated at that time in order to reach the
    target's velocity and then move with target's speed along with the target
 
@@ -25,8 +25,6 @@
 #include <ros/ros.h>
 #define RT_PRIORITY 95
 
-#include <Eigen/Eigen>
-#include <Eigen/Dense>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf/transform_datatypes.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -99,8 +97,6 @@ geometry_msgs::Vector3 chaser_real_pos;
 //The goal pos to move the chaser to
 geometry_msgs::Vector3 des_pos;
 
-
-bool calculated_velocity_of_target = false;
 bool start_planning = false;
 
 // Signal-safe flag for whether shutdown is requested
@@ -699,7 +695,7 @@ void decide_plan_of_action()
 	// if the time needed is smaller than a threshold we coose we have to choose the second profile 
 	// else the third
 	else{
-
+		ROS_WARN("Prof 2 or 3");
 	}
 
 
@@ -731,7 +727,7 @@ void decide_plan_of_action()
 	// if the time needed is smaller than a threshold we coose we have to choose the second profile 
 	// else the third
 	else{
-
+		 ROS_WARN("Prof 2 or 3");
 	}
 /*	
 	   if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
@@ -976,36 +972,47 @@ int main(int argc, char** argv)
 
         double heading;
         tf::Quaternion qq;
-
-	ROS_WARN("Planner is waiting for cmd to start in topic \"/start_chase\"...................");
-	while(!start_planning){
-		ros::spinOnce();
-		sleep(1);
-	}	
-
-	ROS_WARN("Planner is starting the observation and decision process...................");
-
-	wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
-	observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
-	setup_planning_parameters();
-	//update_des_pos(des_pos_listener, des_pos_transform);
-	decide_plan_of_action();
-
-	ROS_WARN("Planner is starting to produce the trajecory");
-
 	ros::Rate loop_rate(200);
 
         ros::Duration dt;
-        ros::Time prev_time = ros::Time::now();
-
-        ros::Time init_time = ros::Time::now();
+        ros::Time prev_time;
+        ros::Time init_time;
         ros::Duration timer;
 
-	int counter = 0;
+	//int counter = 0;
 
 	while(!g_request_shutdown){
 
-		counter++;
+		//counter++;
+
+		if(!start_planning){
+
+			//in order to reinitialize the robots' init positions
+			chaser_first_time = true;
+			target_first_time = true;
+
+	                //In order not to terminate the program when you wan to rerun-------
+	                ROS_WARN("Planner is waiting for cmd to start in topic \"/start_chase\"...................");
+	                while(!start_planning){
+	                        ros::spinOnce();
+	                        sleep(1);
+	                }
+	
+	                ROS_WARN("Planner is starting the observation and decision process...................");
+	
+	                wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
+	                observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
+        	        setup_planning_parameters();
+        	        decide_plan_of_action();
+	
+                	ROS_WARN("Planner is starting to produce the trajecory");
+			
+			prev_time = ros::Time::now();
+			init_time = ros::Time::now();
+
+			new_path = true;
+		}
+
 
 		if (new_path) {
 
@@ -1043,6 +1050,8 @@ int main(int argc, char** argv)
 		timer = ros::Time::now() - init_time;
 
 		ros::spinOnce();
+
+
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
 		//200 loops is 1 second
