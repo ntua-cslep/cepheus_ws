@@ -166,6 +166,65 @@ void move_left_arm(double set_point_shoulder,
 	}
 
 }
+
+void move_right_arm(double set_point_shoulder,
+                double set_point_elbow,
+                double set_point_wrist,
+                double movement_duration,
+                controller_manager::ControllerManager& cm,
+                CepheusHW& robot,
+                ros::Publisher right_shoulder_pub,
+                ros::Publisher right_elbow_pub){
+
+
+
+        ros::Time init_time = ros::Time::now();
+        ros::Duration timer;
+        timer = ros::Time::now() - init_time;
+
+        robot.readEncoders(timer);
+
+        double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
+        double init_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
+        double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
+        double init_pos_wrist = robot.getCmd(RIGHT_WRIST);
+
+        ros::Rate loop_rate(200);
+
+        std_msgs::Float64 cmd_pos;
+        double wrist_cmd;
+
+        while(timer.toSec() <= movement_duration){
+
+                robot.readEncoders(timer);
+
+                curr_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
+                curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
+                curr_pos_wrist = robot.getCmd(RIGHT_WRIST);
+
+                cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
+                //ROS_WARN("pos : %lf",cmd_pos.data);
+                right_shoulder_pub.publish(cmd_pos);
+
+                cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
+                right_elbow_pub.publish(cmd_pos);
+
+                wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
+                robot.setCmd(RIGHT_WRIST, wrist_cmd);
+
+                robot.readEncoders(timer);
+                cm.update(ros::Time::now(), timer);
+                robot.writeMotors();
+                robot.heartbeat();
+
+                ros::spinOnce();
+
+                timer = ros::Time::now() - init_time;
+                loop_rate.sleep();
+        }
+
+}
+
 /*
 void test_catch_object(double cmd_angle_to_catch, controller_manager::ControllerManager& cm, double xt, double yt){
 

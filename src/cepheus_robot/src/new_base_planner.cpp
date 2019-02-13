@@ -28,6 +28,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <tf/transform_datatypes.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/Path.h>
@@ -925,12 +926,12 @@ void set_commands(const double& t,
 bool in_chaser_workspace(){
 
 	ros::spinOnce();
-
 	
 	double dist = sqrt( pow(target_real_pos.x - chaser_real_pos.x, 2) + pow(target_real_pos.y - chaser_real_pos.y, 2) ) - CIRCLE_RADIUS;
 
 	//ROS_WARN("dist %lf ws %lf", dist,WS_RADIUS);
-	return (dist < WS_RADIUS);
+	//WS radius 10 cm bigger than the normal in order to be easier to cath the target if it moves a bit away
+	return (dist < 0.4);
 }
 
 
@@ -965,7 +966,8 @@ int main(int argc, char** argv)
 	ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);
 
 	//Send command to cepheus interface to start invert kinematics in order to catch the target
-	ros::Publisher grip_pub = nh.advertise<std_msgs::Float64>("catch_object", 1);
+	ros::Publisher left_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("left_arm_catch_object", 1);
+	ros::Publisher right_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("right_arm_catch_object", 1);
 
 	//Trajectory point produced ,command velocity and command acceleration
 	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
@@ -1064,16 +1066,25 @@ int main(int argc, char** argv)
 			if(in_chaser_workspace()){
 			
 				ROS_WARN("The chaser will reach to grab the target!");
-				
+
+				//calculate one last time the best point to grip the target	
+				ros::spinOnce();
+
+				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
+
+			        double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
+                		double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
+			
 				//command to catch object in interface
-				/*
-				std_msgs::Float64 angle_to_catch;
-				angle_to_catch.data = M_PI/3.0;
-				grip_pub.publish(angle_to_catch);
-				*/
+				geometry_msgs::PointStamped point_to_catch;
+
+				point_to_catch.point.x = x;
+				point_to_catch.point.y = y;
+				
+				right_arm_grip_pub.publish(point_to_catch);
 			}
 			else{
-				//ROS_WARN("The target is out of chaser's workspace!");
+				ROS_WARN("The target is out of chaser's workspace!");
 			}			
 
 		}
