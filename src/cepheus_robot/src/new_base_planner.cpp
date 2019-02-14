@@ -42,6 +42,12 @@
 #include "digital_filter.h"
 #include "new_base_planner_utilities.h"
 
+//For the grip action testing
+#include <cepheus_robot/DoDishesAction.h>
+#include <actionlib/client/simple_action_client.h>
+
+typedef actionlib::SimpleActionClient<cepheus_robot::DoDishesAction> ActionClient;
+
 DigitalFilter tar_x_fir(10, 0.0);
 DigitalFilter tar_y_fir(10, 0.0);
 DigitalFilter ch_x_fir(10, 0.0);
@@ -969,6 +975,11 @@ int main(int argc, char** argv)
 	ros::Publisher left_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("left_arm_catch_object", 1);
 	ros::Publisher right_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("right_arm_catch_object", 1);
 
+	//Action testring fo grip!!!!!!!!!!CXANGE ITTTTT
+	ActionClient client("do_dishes", true); // true -> don't need ros::spin()
+ 	client.waitForServer();
+ 	cepheus_robot::DoDishesGoal goal;
+
 	//Trajectory point produced ,command velocity and command acceleration
 	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
 	geometry_msgs::PoseStamped new_pos;
@@ -1081,11 +1092,17 @@ int main(int argc, char** argv)
 				point_to_catch.point.x = x;
 				point_to_catch.point.y = y;
 				
-				right_arm_grip_pub.publish(point_to_catch);
-			}
-			else{
-				ROS_WARN("The target is out of chaser's workspace!");
-			}			
+				//right_arm_grip_pub.publish(point_to_catch);
+				//replacing the above publishing with action
+				client.sendGoal(goal);
+  				client.waitForResult(ros::Duration(5.0));
+  				if (client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    					printf("Yay! The dishes are now clean");
+  					printf("Current State: %s\n", client.getState().toString().c_str());
+				}
+				else{
+					ROS_WARN("The target is out of chaser's workspace!");
+				}			
 
 		}
 

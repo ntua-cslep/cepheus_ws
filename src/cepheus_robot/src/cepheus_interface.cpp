@@ -19,9 +19,21 @@ FILE *latency_fp;
 #include <std_msgs/UInt8.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
+#include <std_srvs/SetBool.h>
 
 #include <tf/transform_listener.h>
 #include "cepheus_hardware.h"
+
+#include <cepheus_robot/DoDishesAction.h>  
+#include <actionlib/server/simple_action_server.h>
+
+typedef actionlib::SimpleActionServer<cepheus_robot::DoDishesAction> ActionServer;
+
+void execute(const cepheus_robot::DoDishesGoalConstPtr& goal, ActionServer* as)  
+{
+  // Do lots of awesome groundbreaking robot stuff here
+  as->setSucceeded();
+}
 
 
 #define SH_DUR 2
@@ -34,7 +46,8 @@ FILE *latency_fp;
 #define KI 1
 #define F_HIGH 4
 #define F_LOW 2
-
+#define DURATION_NO_GRIP 4
+#define FSR_AVG_THRESHOLD 2
 
 //------------------------------------
 
@@ -270,14 +283,15 @@ void left_fsr_update(){
 		ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);	
 		//For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
 		dur =  ros::Time::now() - init_time;
-		if(dur.toSec() >= 10 && avg <= -2.0 ){
+		if(dur.toSec() >= (double)DURATION_NO_GRIP && avg <= (double) -FSR_AVG_THRESHOLD ){
 			//open and try again
 			robot.init_left_finger();
-			sleep(2);
+			sleep(1);
 			init_time = ros::Time::now();
 			error_sum = 0;
 			count = 0;
 			left_gripper_first_time = true;
+			ready_to_grip_left = false;
 		}
 
 		//uint8_t pi_out = KP * error + KI * error_sum;
@@ -337,14 +351,15 @@ void right_fsr_update(){
                 ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);
                 //For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
                 dur =  ros::Time::now() - init_time;
-                if(dur.toSec() >= 10 && avg <= -2.0 ){
+                if(dur.toSec() >= (double)DURATION_NO_GRIP && avg <= (double) -FSR_AVG_THRESHOLD ){
                         //open and try again
                         robot.init_right_finger();
-                        sleep(2);
+                        sleep(1);
                         init_time = ros::Time::now();
                         error_sum = 0;
                         count = 0;
                         right_gripper_first_time = true;
+			ready_to_grip_right = false;
                 }
 
                 //uint8_t pi_out = KP * error + KI * error_sum;
@@ -565,7 +580,11 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
 			q11 = q11 - M_PI/2.0;
 
 			ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-			move_right_arm(q11, q21, q31, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			move_left_arm(q11, q21, q31, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+			
+			//in order to invoke the fsr update callback in the master loop
+			ready_to_grip_left = true;
+
 		}
 		else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (M_PI/2.0  <= q12 && q12 <= M_PI)){
 			//solution is tuple2
@@ -573,11 +592,15 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
 			q12 = q12 - M_PI/2.0;
 
 			ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
-			move_right_arm(q12, q22, q32, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			move_left_arm(q12, q22, q32, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+
+			//in order to invoke the fsr update callback in the master loop
+                        ready_to_grip_left = true;
+
 		}
 		else{
 			//we see.....
-			ROS_WARN("Out of right arm workspace");
+			ROS_WARN("Out of left arm workspace");
 		}
 
 	}
@@ -586,7 +609,7 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
 
 
 void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& point_to_catch, controller_manager::ControllerManager& cm){
-    
+   
         if(right_catch_object_one_time){
                 right_catch_object_one_time = false;
     
@@ -711,7 +734,11 @@ void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& po
                         q11 = q11 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-                        move_left_arm(q11, q21, q31, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+                        move_right_arm(q11, q21, q31, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+
+			//in order to invoke the fsr update callback in the master loop
+                        ready_to_grip_right = true;
+
                 }
                 else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (-M_PI  <= q12 && q12 <= -M_PI/2.0)){
                         //solution is tuple2
@@ -719,11 +746,15 @@ void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& po
                         q12 = q12 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
-                        move_left_arm(q12, q22, q32, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+                        move_right_arm(q12, q22, q32, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+
+			//in order to invoke the fsr update callback in the master loop
+                        ready_to_grip_right = true;
+
                 }
                 else{
                         //we see.....
-                        ROS_WARN("Out of left arm workspace");
+                        ROS_WARN("Out of right arm workspace");
                 }
 
         }
@@ -749,6 +780,11 @@ int main(int argc, char** argv)
 	double l1_limit_pos, l2_limit_pos, r1_limit_pos, r2_limit_pos;
 	double max_thrust;
 	double rw_max_torque, rw_max_speed, rw_max_power, rw_total_inertia;
+	
+	//in order to be able to know if feedback about the succesfull grip of the target have to be sent back to planner
+	//exists because this node have to be able to operate correctly with or without a planner
+	bool use_with_chase_planner;
+
 	ros::param::param<double>("~thruster_force", max_thrust, 1.5); //the thrust of an open thruster in Newtons
 	//ros::param::param<double>("~max_motor_current", max_cur, 1.72); //the max current of the motor
 	ros::param::param<double>("~rw_max_torque", rw_max_torque, 0.5); 
@@ -761,6 +797,7 @@ int main(int argc, char** argv)
 	ros::param::param<double>("~right_shoulder_limit_pos", r1_limit_pos, -2.4);
 	ros::param::param<double>("~right_elbow_limit_pos", r2_limit_pos, -1.4);
 
+	ros::param::param<bool>("~use_with_chase_planner", use_with_chase_planner, false);
 
 	//--------Panagiotis Mavridis 25/04/2018----------------
 
@@ -804,6 +841,11 @@ int main(int argc, char** argv)
 
 	ros::Subscriber left_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("left_arm_catch_object", 1, boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(cm)));	
 	ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(cm)));
+
+	//Action for fripping test
+	ActionServer actionServer(nh, "do_dishes", boost::bind(&execute, _1, &actionServer), false);
+  	actionServer.start();
+			
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);

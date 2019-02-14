@@ -54,7 +54,12 @@
   <build_depend>tf</build_depend>
   <build_depend>angles</build_depend>
   <build_depend>Boost</build_depend>
-  
+ 
+  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>actionlib_msgs</run_depend>
+ 
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>

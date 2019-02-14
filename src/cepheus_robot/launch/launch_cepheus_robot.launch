@@ -15,6 +15,9 @@
                 <param name="left_elbow_limit_pos" value="1.75" />
 		<param name="right_shoulder_limit_pos" value="-2.59" />
                 <param name="right_elbow_limit_pos" value="-1.75" />
+
+		<!-- For the param below : False if no planner needed. It exists for gripper feedback to the planner. Nessesary if the robots tracks, chases and tries to grip something -->
+		<param name="use_with_chase_planner" value="True" />
                 
         </node>
 

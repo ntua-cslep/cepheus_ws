@@ -21,10 +21,16 @@ find_package(catkin REQUIRED COMPONENTS
   controller_interface
   controller_manager
   angles
+  genmsg
+  actionlib_msgs
+  actionlib	
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
+
+add_action_files(DIRECTORY action FILES DoDishes.action)
+generate_messages(DEPENDENCIES actionlib_msgs)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
