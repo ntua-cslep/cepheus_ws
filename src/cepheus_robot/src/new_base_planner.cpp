@@ -43,10 +43,12 @@
 #include "new_base_planner_utilities.h"
 
 //For the grip action testing
-#include <cepheus_robot/DoDishesAction.h>
+#include <cepheus_robot/RightCatchObjectAction.h>
+#include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/client/simple_action_client.h>
+typedef actionlib::SimpleActionClient<cepheus_robot::RightCatchObjectAction> ActionClientRight;
+typedef actionlib::SimpleActionClient<cepheus_robot::LeftCatchObjectAction> ActionClientLeft;
 
-typedef actionlib::SimpleActionClient<cepheus_robot::DoDishesAction> ActionClient;
 
 DigitalFilter tar_x_fir(10, 0.0);
 DigitalFilter tar_y_fir(10, 0.0);
@@ -121,43 +123,43 @@ nav_msgs::Path path;
 
 //double theta_des = 0.0;
 /*
-void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
+   void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
 
-	double roll, pitch, yaw;
+   double roll, pitch, yaw;
 
-	try{
-		des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
+   try{
+   des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
 
-		tf::Quaternion q = des_pos_transform.getRotation();
-		tf::Matrix3x3 m(q);
-		m.getRPY(roll,pitch,yaw);
+   tf::Quaternion q = des_pos_transform.getRotation();
+   tf::Matrix3x3 m(q);
+   m.getRPY(roll,pitch,yaw);
 
-		//ROS_WARN("yaw %lf",yaw);
+//ROS_WARN("yaw %lf",yaw);
 
-		theta_des = M_PI + yaw;		
-		double mod = std::fmod(theta_des, 2.0 * M_PI);
+theta_des = M_PI + yaw;		
+double mod = std::fmod(theta_des, 2.0 * M_PI);
 
-		if(mod <= M_PI && mod >= 0 ){
-			theta_des = mod;
-		}
-		else{
-			theta_des = mod - 2.0 * M_PI;
-		}
-
-
-		des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
-		des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
-		//des_pos.x = des_pos_transform.getOrigin().x();
-		//des_pos.y = des_pos_transform.getOrigin().y();
-
-
-		//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
-	}
-	catch (tf::TransformException &ex) {
-		ROS_ERROR("%s",ex.what());
-	}
+if(mod <= M_PI && mod >= 0 ){
+theta_des = mod;
 }
-*/
+else{
+theta_des = mod - 2.0 * M_PI;
+}
+
+
+des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
+des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
+//des_pos.x = des_pos_transform.getOrigin().x();
+//des_pos.y = des_pos_transform.getOrigin().y();
+
+
+//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
+}
+catch (tf::TransformException &ex) {
+ROS_ERROR("%s",ex.what());
+}
+}
+ */
 
 //---Helper functions------
 
@@ -314,13 +316,13 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 		cut_digits(target_vel_X, 2);
 		cut_digits(target_vel_Y, 2);
 
-                if(target_vel_X < 0.01 && target_vel_X > -0.01){
-                        target_vel_X = 0.0;
-                }
+		if(target_vel_X < 0.01 && target_vel_X > -0.01){
+			target_vel_X = 0.0;
+		}
 
-                if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
-                        target_vel_Y = 0.0;
-                }
+		if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
+			target_vel_Y = 0.0;
+		}
 
 
 		std::cout<<"Observated target vel_X: "<<target_vel_X<<std::endl;
@@ -333,8 +335,8 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 		//des_pos.x = target_real_pos.x;
 		//des_pos.y = target_real_pos.y;
 
-                std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
-                std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
+		std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
+		std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
 
 
 	}
@@ -379,13 +381,13 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 			target_vel_X = 0.0;
 		}
 
-                if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
-                        target_vel_Y = 0.0;
-                }
+		if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
+			target_vel_Y = 0.0;
+		}
 
 
 		//std::cout<<"vel X: "<<target_vel_X<<" , velY: "<<target_vel_Y<<std::endl;
-			
+
 	}
 
 	target_prev_pos.x = x;
@@ -403,40 +405,40 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 	//Calculate the targets orientation
 	//Not in need cause we can grab it anywhare in the circle around it
 	/*
-        double roll, pitch, yaw;
+	   double roll, pitch, yaw;
 
-        try{
-                des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
+	   try{
+	   des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
 
-                tf::Quaternion q = des_pos_transform.getRotation();
-                tf::Matrix3x3 m(q);
-                m.getRPY(roll,pitch,yaw);
+	   tf::Quaternion q = des_pos_transform.getRotation();
+	   tf::Matrix3x3 m(q);
+	   m.getRPY(roll,pitch,yaw);
 
-                //ROS_WARN("yaw %lf",yaw);
+	//ROS_WARN("yaw %lf",yaw);
 
-                theta_des = M_PI + yaw;
-                double mod = std::fmod(theta_des, 2.0 * M_PI);
+	theta_des = M_PI + yaw;
+	double mod = std::fmod(theta_des, 2.0 * M_PI);
 
-                if(mod <= M_PI && mod >= 0 ){
-                        theta_des = mod;
-                }
-                else{
-                        theta_des = mod - 2.0 * M_PI;
-                }
-
-
-                //des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
-                //des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
-                //des_pos.x = des_pos_transform.getOrigin().x();
-                //des_pos.y = des_pos_transform.getOrigin().y();
+	if(mod <= M_PI && mod >= 0 ){
+	theta_des = mod;
+	}
+	else{
+	theta_des = mod - 2.0 * M_PI;
+	}
 
 
-                //ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
-        }
-        catch (tf::TransformException &ex) {
-                ROS_ERROR("%s",ex.what());
-        }
-	*/
+	//des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
+	//des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
+	//des_pos.x = des_pos_transform.getOrigin().x();
+	//des_pos.y = des_pos_transform.getOrigin().y();
+
+
+	//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
+	}
+	catch (tf::TransformException &ex) {
+	ROS_ERROR("%s",ex.what());
+	}
+	 */
 }
 
 
@@ -680,7 +682,7 @@ void decide_plan_of_action()
 
 	//Target almost still
 	ROS_WARN("Prof X: ");
- 
+
 	if(target_vel_X == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
@@ -691,11 +693,11 @@ void decide_plan_of_action()
 	//target moving away
 	else if((chaser_init_pos.x <= des_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= des_pos.x && target_vel_X  < 0)){
 
-                calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
-                meet_point_x = p1_X.xdes_chaser;
-                velocity_profile_X = (short)VEL_PROF_1;
-                p1_X.print();
-        }
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		meet_point_x = p1_X.xdes_chaser;
+		velocity_profile_X = (short)VEL_PROF_1;
+		p1_X.print();
+	}
 
 
 	// 	Target is aproacing the chaser
@@ -709,16 +711,16 @@ void decide_plan_of_action()
 
 
 	//------------FOR Y AXIS--------------
-	 ROS_WARN("Prof Y: ");
+	ROS_WARN("Prof Y: ");
 	//Target almost still
 	if(target_vel_Y == 0.0){
 
-                calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
-                meet_point_y = p1_Y.xdes_chaser;
-                velocity_profile_Y = (short)VEL_PROF_1;
-                p1_Y.print();
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		meet_point_y = p1_Y.xdes_chaser;
+		velocity_profile_Y = (short)VEL_PROF_1;
+		p1_Y.print();
 
-        }
+	}
 
 	//Target is moving away
 	else if((chaser_init_pos.y <= des_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= des_pos.y && target_vel_Y  < 0)){
@@ -736,17 +738,17 @@ void decide_plan_of_action()
 	// if the time needed is smaller than a threshold we coose we have to choose the second profile 
 	// else the third
 	else{
-		 ROS_WARN("Prof 2 or 3");
+		ROS_WARN("Prof 2 or 3");
 	}
-/*	
-	   if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
-	   	ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
-	   	exit(12);
-	   }
-	   else{
-	   	ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
-	   }
-*/	 
+	/*	
+		if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
+		ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
+		exit(12);
+		}
+		else{
+		ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
+		}
+	 */	 
 }
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
@@ -778,7 +780,7 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		cmd_acc = 0.0;
 	}
 	else{
-	//	ROS_WARN("PROF1 MUST DISABLE CTRL!");
+		//	ROS_WARN("PROF1 MUST DISABLE CTRL!");
 	}
 }
 
@@ -802,7 +804,7 @@ void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
 		cmd_acc = 0.0;
 	}
 	else{
-	//	ROS_WARN("PROF2 MUST DISABLE CTRL!");
+		//	ROS_WARN("PROF2 MUST DISABLE CTRL!");
 	}	
 }
 
@@ -850,7 +852,7 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t3);
 	}
 	else{
-	//	ROS_WARN("PROF3 MUST DISABLE CTRL!");
+		//	ROS_WARN("PROF3 MUST DISABLE CTRL!");
 	}
 
 }
@@ -932,7 +934,7 @@ void set_commands(const double& t,
 bool in_chaser_workspace(){
 
 	ros::spinOnce();
-	
+
 	double dist = sqrt( pow(target_real_pos.x - chaser_real_pos.x, 2) + pow(target_real_pos.y - chaser_real_pos.y, 2) ) - CIRCLE_RADIUS;
 
 	//ROS_WARN("dist %lf ws %lf", dist,WS_RADIUS);
@@ -975,10 +977,16 @@ int main(int argc, char** argv)
 	ros::Publisher left_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("left_arm_catch_object", 1);
 	ros::Publisher right_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("right_arm_catch_object", 1);
 
-	//Action testring fo grip!!!!!!!!!!CXANGE ITTTTT
-	ActionClient client("do_dishes", true); // true -> don't need ros::spin()
- 	client.waitForServer();
- 	cepheus_robot::DoDishesGoal goal;
+	//Action testing for right grip!!!!!!!!!!
+	ActionClientRight cl_right("right_catch_object_action", true); // true -> don't need ros::spin()
+	cl_right.waitForServer();
+	cepheus_robot::RightCatchObjectGoal right_goal;
+
+	ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
+        cl_left.waitForServer();
+        cepheus_robot::LeftCatchObjectGoal left_goal;
+
+
 
 	//Trajectory point produced ,command velocity and command acceleration
 	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
@@ -994,20 +1002,20 @@ int main(int argc, char** argv)
 	tf::TransformListener des_pos_listener;
 	tf::StampedTransform des_pos_transform;
 
-        bool new_path = true;
-        path.header.frame_id = "/map";
+	bool new_path = true;
+	path.header.frame_id = "/map";
 
-        //For enabling/disabling base controller
-        std_srvs::SetBool srv;
+	//For enabling/disabling base controller
+	std_srvs::SetBool srv;
 
-        double heading;
-        tf::Quaternion qq;
+	double heading;
+	tf::Quaternion qq;
 	ros::Rate loop_rate(200);
 
-        ros::Duration dt;
-        ros::Time prev_time;
-        ros::Time init_time;
-        ros::Duration timer;
+	ros::Duration dt;
+	ros::Time prev_time;
+	ros::Time init_time;
+	ros::Duration timer;
 
 	//int counter = 0;
 
@@ -1021,22 +1029,22 @@ int main(int argc, char** argv)
 			chaser_first_time = true;
 			target_first_time = true;
 
-	                //In order not to terminate the program when you wan to rerun-------
-	                ROS_WARN("Planner is waiting for cmd to start in topic \"/start_chase\"...................");
-	                while(!start_planning){
-	                        ros::spinOnce();
-	                        sleep(1);
-	                }
-	
-	                ROS_WARN("Planner is starting the observation and decision process...................");
-	
-	                wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
-	                observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
-        	        setup_planning_parameters();
-        	        decide_plan_of_action();
-	
-                	ROS_WARN("Planner is starting to produce the trajecory");
-			
+			//In order not to terminate the program when you wan to rerun-------
+			ROS_WARN("Planner is waiting for cmd to start in topic \"/start_chase\"...................");
+			while(!start_planning){
+				ros::spinOnce();
+				sleep(1);
+			}
+
+			ROS_WARN("Planner is starting the observation and decision process...................");
+
+			wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
+			observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
+			setup_planning_parameters();
+			decide_plan_of_action();
+
+			ROS_WARN("Planner is starting to produce the trajecory");
+
 			prev_time = ros::Time::now();
 			init_time = ros::Time::now();
 
@@ -1075,7 +1083,7 @@ int main(int argc, char** argv)
 
 			//check if target is in chaser's workspace
 			if(in_chaser_workspace()){
-			
+
 				ROS_WARN("The chaser will reach to grab the target!");
 
 				//calculate one last time the best point to grip the target	
@@ -1083,26 +1091,28 @@ int main(int argc, char** argv)
 
 				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
-			        double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
-                		double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-			
-				//command to catch object in interface
-				geometry_msgs::PointStamped point_to_catch;
+				double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
+				double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
 
-				point_to_catch.point.x = x;
-				point_to_catch.point.y = y;
-				
-				//right_arm_grip_pub.publish(point_to_catch);
-				//replacing the above publishing with action
-				client.sendGoal(goal);
-  				client.waitForResult(ros::Duration(5.0));
-  				if (client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-    					printf("Yay! The dishes are now clean");
-  					printf("Current State: %s\n", client.getState().toString().c_str());
+				//command to catch object in interface
+				right_goal.point_to_catch.point.x = x;
+				right_goal.point_to_catch.point.y = y;
+				cl_right.sendGoal(right_goal);
+				cl_right.waitForResult(ros::Duration(15.0));
+
+				if (cl_right.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+					printf("Cepheus completed inverse kinematics");
 				}
 				else{
-					ROS_WARN("The target is out of chaser's workspace!");
-				}			
+					ROS_WARN("Cepheus failed to complete inverse kinematics");
+				}
+
+				printf("Current State: %s\n", cl_right.getState().toString().c_str());
+			
+			}
+			else{
+				ROS_WARN("The target is out of chaser's workspace!");
+			}			
 
 		}
 
@@ -1117,31 +1127,31 @@ int main(int argc, char** argv)
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
 		//200 loops is 1 second
-/*		if(counter = 200){
-			
-			counter = 0;
+		/*		if(counter = 200){
 
-			target_init_pos.x = target_real_pos.x;
-			target_init_pos.y = target_real_pos.y;
+				counter = 0;
 
-			//chaser_init_pos.x = chaser_real_pos.x;
-			//chaser_init_pos.y = chaser_real_pos.y;
-			chaser_init_pos.x = new_x;
-                        chaser_init_pos.y = new_y;
+				target_init_pos.x = target_real_pos.x;
+				target_init_pos.y = target_real_pos.y;
+
+		//chaser_init_pos.x = chaser_real_pos.x;
+		//chaser_init_pos.y = chaser_real_pos.y;
+		chaser_init_pos.x = new_x;
+		chaser_init_pos.y = new_y;
 
 
 
-			calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
-			setup_planning_parameters();
-        		decide_plan_of_action();
+		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
+		setup_planning_parameters();
+		decide_plan_of_action();
 
-			//reset timers......?
-			ros::Time prev_time = ros::Time::now();
-		        ros::Time init_time = ros::Time::now();
+		//reset timers......?
+		ros::Time prev_time = ros::Time::now();
+		ros::Time init_time = ros::Time::now();
 
-			continue;
+		continue;
 		}
-*/
+		 */
 
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
@@ -1156,7 +1166,7 @@ int main(int argc, char** argv)
 
 		//std::cout<<timer.toSec()<<" "<<new_y<<std::endl;
 		heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
-		
+
 		//ROS_WARN("dy %lf dx %lf heading %lf", new_y - prev_pos.pose.position.y,  new_x - prev_pos.pose.position.x, heading);
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;

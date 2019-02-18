@@ -24,17 +24,12 @@ FILE *latency_fp;
 #include <tf/transform_listener.h>
 #include "cepheus_hardware.h"
 
-#include <cepheus_robot/DoDishesAction.h>  
+#include <cepheus_robot/RightCatchObjectAction.h>  
+#include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/server/simple_action_server.h>
 
-typedef actionlib::SimpleActionServer<cepheus_robot::DoDishesAction> ActionServer;
-
-void execute(const cepheus_robot::DoDishesGoalConstPtr& goal, ActionServer* as)  
-{
-  // Do lots of awesome groundbreaking robot stuff here
-  as->setSucceeded();
-}
-
+typedef actionlib::SimpleActionServer<cepheus_robot::RightCatchObjectAction> ActionServerRightArm;
+typedef actionlib::SimpleActionServer<cepheus_robot::LeftCatchObjectAction> ActionServerLeftArm;
 
 #define SH_DUR 2
 #define ELB_DUR 2
@@ -451,14 +446,12 @@ void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array,
 }
 
 //---------------------------------------------------------------------------------------
-bool left_catch_object_one_time = true;
-bool right_catch_object_one_time = true;
+//bool left_catch_object_one_time = true;
+//bool right_catch_object_one_time = true;
 
 // Inverse kinematics...calculate the set points of the joints of the left arm given an angle that you want ot catch a target
-void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& point_to_catch, controller_manager::ControllerManager& cm){
+void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr& goal, ActionServerLeftArm& as ,controller_manager::ControllerManager& cm ){
 
-	if(left_catch_object_one_time){
-		left_catch_object_one_time = false;
 
 		//theta2 needs to be from -90 deg to 0 deg
 		//TO DO...ADD COMMMEEEEENTS
@@ -474,7 +467,7 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
  		geometry_msgs::PointStamped transform;
 
 		try{
-			listener.transformPoint("/left_hand_base", *point_to_catch, transform);
+			listener.transformPoint("/left_hand_base", goal->point_to_catch, transform);
 		}
 		catch (tf::TransformException &ex) {
 			ROS_ERROR("%s",ex.what());
@@ -584,7 +577,7 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
 			
 			//in order to invoke the fsr update callback in the master loop
 			ready_to_grip_left = true;
-
+			as.setSucceeded();
 		}
 		else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (M_PI/2.0  <= q12 && q12 <= M_PI)){
 			//solution is tuple2
@@ -596,22 +589,19 @@ void leftArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& poi
 
 			//in order to invoke the fsr update callback in the master loop
                         ready_to_grip_left = true;
-
+			as.setSucceeded();
 		}
 		else{
 			//we see.....
 			ROS_WARN("Out of left arm workspace");
 		}
 
-	}
 }
 
 
 
-void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& point_to_catch, controller_manager::ControllerManager& cm){
+void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm ){
    
-        if(right_catch_object_one_time){
-                right_catch_object_one_time = false;
     
                 //theta2 needs to be from -90 deg to 0 deg
                 //TO DO...ADD COMMMEEEEENTS
@@ -627,7 +617,7 @@ void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& po
                 geometry_msgs::PointStamped transform;
     
                 try{
-                        listener.transformPoint("/right_hand_base", *point_to_catch, transform);
+                        listener.transformPoint("/right_hand_base", goal->point_to_catch, transform);
                 }
                 catch (tf::TransformException &ex) {
                         ROS_ERROR("%s",ex.what());
@@ -738,6 +728,7 @@ void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& po
 
 			//in order to invoke the fsr update callback in the master loop
                         ready_to_grip_right = true;
+			as.setSucceeded();
 
                 }
                 else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (-M_PI  <= q12 && q12 <= -M_PI/2.0)){
@@ -750,14 +741,14 @@ void rightArmCatchObjectCallback(const geometry_msgs::PointStamped::ConstPtr& po
 
 			//in order to invoke the fsr update callback in the master loop
                         ready_to_grip_right = true;
-
+			as.setSucceeded();
                 }
                 else{
                         //we see.....
                         ROS_WARN("Out of right arm workspace");
                 }
 
-        }
+        
 }
 
 
@@ -839,12 +830,15 @@ int main(int argc, char** argv)
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
 	ros::Subscriber right_gripper_action_sub =  nh.subscribe("right_gripper_action", 1, rightGripperActionCallback);
 
-	ros::Subscriber left_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("left_arm_catch_object", 1, boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(cm)));	
-	ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(cm)));
+	//ros::Subscriber left_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("left_arm_catch_object", 1, boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(cm)));	
+	//ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(cm)));
 
 	//Action for fripping test
-	ActionServer actionServer(nh, "do_dishes", boost::bind(&execute, _1, &actionServer), false);
-  	actionServer.start();
+	ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
+  	as_right.start();
+
+	ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
+        as_left.start();
 			
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);

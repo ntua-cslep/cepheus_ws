@@ -29,8 +29,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
 
-add_action_files(DIRECTORY action FILES DoDishes.action)
-generate_messages(DEPENDENCIES actionlib_msgs)
+add_action_files(DIRECTORY action FILES RightCatchObject.action)
+add_action_files(DIRECTORY action FILES LeftCatchObject.action)
+generate_messages(DEPENDENCIES actionlib_msgs geometry_msgs)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
