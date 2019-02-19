@@ -1,5 +1,5 @@
 # Define the goal
-geometry_msgs/PointStamped point_to_catch
+geometry_msgs/PoseStamped point_to_catch
 ---
 # Define the result
 bool success

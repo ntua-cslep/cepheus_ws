@@ -44,10 +44,10 @@
 
 //For the grip action testing
 #include <cepheus_robot/RightCatchObjectAction.h>
-#include <cepheus_robot/LeftCatchObjectAction.h>
+//#include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/client/simple_action_client.h>
 typedef actionlib::SimpleActionClient<cepheus_robot::RightCatchObjectAction> ActionClientRight;
-typedef actionlib::SimpleActionClient<cepheus_robot::LeftCatchObjectAction> ActionClientLeft;
+//typedef actionlib::SimpleActionClient<cepheus_robot::LeftCatchObjectAction> ActionClientLeft;
 
 
 DigitalFilter tar_x_fir(10, 0.0);
@@ -234,6 +234,8 @@ void PhaseSpaceCallbackChaser(const geometry_msgs::TransformStamped::ConstPtr& m
 	return;
 }
 
+geometry_msgs::Quaternion target_rotation;
+
 void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& msg)
 {
 
@@ -245,6 +247,8 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 	double z = temp.transform.rotation.z;
 	double w = temp.transform.rotation.w;
 	double roll,pitch,yaw;
+
+	target_rotation = temp.transform.rotation;
 
 	tf::Quaternion q(x, y, z, w);
 	tf::Matrix3x3 m(q);
@@ -981,11 +985,13 @@ int main(int argc, char** argv)
 	ActionClientRight cl_right("right_catch_object_action", true); // true -> don't need ros::spin()
 	cl_right.waitForServer();
 	cepheus_robot::RightCatchObjectGoal right_goal;
-
+	right_goal.point_to_catch.header.frame_id = "/assist_robot";
+		
+/*
 	ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
         cl_left.waitForServer();
         cepheus_robot::LeftCatchObjectGoal left_goal;
-
+*/
 
 
 	//Trajectory point produced ,command velocity and command acceleration
@@ -1082,7 +1088,7 @@ int main(int argc, char** argv)
 			}
 
 			//check if target is in chaser's workspace
-			if(in_chaser_workspace()){
+			//if(in_chaser_workspace()){
 
 				ROS_WARN("The chaser will reach to grab the target!");
 
@@ -1095,10 +1101,12 @@ int main(int argc, char** argv)
 				double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
 
 				//command to catch object in interface
-				right_goal.point_to_catch.point.x = x;
-				right_goal.point_to_catch.point.y = y;
+				right_goal.point_to_catch.pose.position.x = x;
+				right_goal.point_to_catch.pose.position.y = y;
+				right_goal.point_to_catch.pose.orientation = target_rotation;
+
 				cl_right.sendGoal(right_goal);
-				cl_right.waitForResult(ros::Duration(15.0));
+				cl_right.waitForResult(ros::Duration(13.0));
 
 				if (cl_right.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
 					printf("Cepheus completed inverse kinematics");
@@ -1109,10 +1117,10 @@ int main(int argc, char** argv)
 
 				printf("Current State: %s\n", cl_right.getState().toString().c_str());
 			
-			}
-			else{
-				ROS_WARN("The target is out of chaser's workspace!");
-			}			
+			//}
+			//else{
+			//	ROS_WARN("The target is out of chaser's workspace!");
+			//}			
 
 		}
 
@@ -1156,18 +1164,13 @@ int main(int argc, char** argv)
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
 		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
-		//ROS_WARN("new_x %lf new_y %lf new_vel_x %lf new_vel_y %lf new_acc_x %lf new_acc_y %lf",new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
-
 
 		//For position and orientation
 		new_pos.pose.position.x = new_x;
 		new_pos.pose.position.y = new_y;
-		//ROS_WARN("new y %lf prev y %lf ", new_y,  prev_pos.pose.position.y);
 
-		//std::cout<<timer.toSec()<<" "<<new_y<<std::endl;
 		heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
 
-		//ROS_WARN("dy %lf dx %lf heading %lf", new_y - prev_pos.pose.position.y,  new_x - prev_pos.pose.position.x, heading);
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;
 
@@ -1178,8 +1181,6 @@ int main(int argc, char** argv)
 		new_pos.pose.orientation.y = qq.y() ;
 		new_pos.pose.orientation.z = qq.z() ;
 		new_pos.pose.orientation.w = qq.w() ;
-
-		//ROS_WARN("new_x %lf , new_y %lf",new_x, new_y);
 
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;

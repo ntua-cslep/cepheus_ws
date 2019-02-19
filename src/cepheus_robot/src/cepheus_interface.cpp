@@ -25,11 +25,11 @@ FILE *latency_fp;
 #include "cepheus_hardware.h"
 
 #include <cepheus_robot/RightCatchObjectAction.h>  
-#include <cepheus_robot/LeftCatchObjectAction.h>
+//include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/server/simple_action_server.h>
 
 typedef actionlib::SimpleActionServer<cepheus_robot::RightCatchObjectAction> ActionServerRightArm;
-typedef actionlib::SimpleActionServer<cepheus_robot::LeftCatchObjectAction> ActionServerLeftArm;
+//typedef actionlib::SimpleActionServer<cepheus_robot::LeftCatchObjectAction> ActionServerLeftArm;
 
 #define SH_DUR 2
 #define ELB_DUR 2
@@ -450,6 +450,7 @@ void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array,
 //bool right_catch_object_one_time = true;
 
 // Inverse kinematics...calculate the set points of the joints of the left arm given an angle that you want ot catch a target
+/*
 void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr& goal, ActionServerLeftArm& as ,controller_manager::ControllerManager& cm ){
 
 
@@ -488,15 +489,15 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 
 
 		//the desired angle of the wrist translated to cepheus coordinates
-		/*double roll, pitch, yaw;
-		tf::Quaternion q(transform.getRotation());
-		tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
-		double yaw_to_deg = yaw*180.0/M_PI;
-		ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
+		//double roll, pitch, yaw;
+		//tf::Quaternion q(transform.getRotation());
+		//tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
+		//double yaw_to_deg = yaw*180.0/M_PI;
+		//ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
 
 		//to rad
-		double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
-		*/
+		//double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
+		
 
 		
 		double phi = atan2(y, x);
@@ -597,13 +598,15 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 		}
 
 }
-
+*/
 
 
 void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm ){
    
     
-                //theta2 needs to be from -90 deg to 0 deg
+		cepheus_robot::RightCatchObjectResult result;
+                
+		//theta2 needs to be from -90 deg to 0 deg
                 //TO DO...ADD COMMMEEEEENTS
     
                 //The lengths of the joint of the left arm
@@ -614,10 +617,11 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                 //Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
     
                 tf::TransformListener listener;
-                geometry_msgs::PointStamped transform;
+                geometry_msgs::PoseStamped transform;
     
                 try{
-                        listener.transformPoint("/right_hand_base", goal->point_to_catch, transform);
+			sleep(5);
+                        listener.transformPose("/right_hand_base", goal->point_to_catch, transform);
                 }
                 catch (tf::TransformException &ex) {
                         ROS_ERROR("%s",ex.what());
@@ -632,21 +636,21 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                 //some cm before the target
                 //double x = transform.getOrigin().x() - 0.06;
                 //double y = transform.getOrigin().y();
-                double x = transform.point.x - 0.06;
-                double y = transform.point.y;
+                double x = transform.pose.position.x - 0.06;
+                double y = transform.pose.position.y;
 
 
 
                 //the desired angle of the wrist translated to cepheus coordinates
-                /*double roll, pitch, yaw;
-                tf::Quaternion q(transform.getRotation());
-                tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
-                double yaw_to_deg = yaw*180.0/M_PI;
-                ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
+                //double roll, pitch, yaw;
+                //tf::Quaternion q(transform.getRotation());
+                //tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
+                //double yaw_to_deg = yaw*180.0/M_PI;
+                //ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
 
                 //to rad
-                double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
-                */
+                //double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
+                
 
 
                 double phi = atan2(y, x);
@@ -716,6 +720,7 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                 ROS_WARN("q11= %lf,  q21= %lf,  q31= %lf",q11,q21,q31);
                 ROS_WARN("q12= %lf,  q22= %lf,  q32= %lf",q12,q22,q32);
 
+
                 //checking the results in order to discard odd angles
                 if( (-M_PI/3 <= q31 && q31 <= M_PI/3.0) && (-2.0*M_PI/3.0 <= q21 && q21 <= 2.0*M_PI/3.0) && (-M_PI <= q11 && q11 <= -M_PI/2.0) ){
                         //solution is tuple1
@@ -724,11 +729,12 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                         q11 = q11 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-                        move_right_arm(q11, q21, q31, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        //move_right_arm(q11, q21, q31, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
 			//in order to invoke the fsr update callback in the master loop
                         ready_to_grip_right = true;
-			as.setSucceeded();
+			result.success = true;
+			as.setSucceeded(result);
 
                 }
                 else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (-M_PI  <= q12 && q12 <= -M_PI/2.0)){
@@ -737,13 +743,18 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                         q12 = q12 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
-                        move_right_arm(q12, q22, q32, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        //move_right_arm(q12, q22, q32, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
 			//in order to invoke the fsr update callback in the master loop
                         ready_to_grip_right = true;
-			as.setSucceeded();
+			result.success = true;
+                        as.setSucceeded(result);
+
                 }
                 else{
+			result.success = false;
+                        as.setSucceeded(result);
+
                         //we see.....
                         ROS_WARN("Out of right arm workspace");
                 }
@@ -837,8 +848,8 @@ int main(int argc, char** argv)
 	ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
   	as_right.start();
 
-	ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
-        as_left.start();
+	//ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
+        //as_left.start();
 			
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);

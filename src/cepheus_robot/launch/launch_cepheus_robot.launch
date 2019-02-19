@@ -32,7 +32,7 @@
   	</node>
 
         <node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="true">
-                <param name="publish_frequency" value="100"/>
+                <param name="publish_frequency" value="200"/>
         </node>  
 
         <node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
