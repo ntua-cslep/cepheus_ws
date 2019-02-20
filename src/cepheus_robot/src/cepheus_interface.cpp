@@ -880,10 +880,10 @@ int main(int argc, char** argv)
 	
 	start_standard_controllers(nh, cm, loop_rate);
 	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
-	//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+	init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 
-	//sleep(5);
-	//move_left_arm(0.0, 0.0, 60.0, 12.0, cm);
+	sleep(2);
+	move_right_arm(0.0, 0.0, 60.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
 
 	/*ROS_WARN("STARTING SIN...");

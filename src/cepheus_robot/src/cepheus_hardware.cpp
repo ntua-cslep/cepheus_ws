@@ -257,7 +257,9 @@ void CepheusHW::init_right_shoulder(){
 
                 ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
                 offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
-        }
+        	ROS_WARN("offset %lf", offset_pos[RIGHT_SHOULDER]);
+
+	}
         else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
 
 
@@ -304,7 +306,7 @@ void CepheusHW::init_left_elbow(){
 		
 		ROS_INFO_STREAM("homing of LEFT ELBOW  succesful");
 		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW];
-
+		
 	}
 	else
 		ROS_WARN_STREAM("No homing performed for LEFT ELBOW because no home position setted");
@@ -331,11 +333,11 @@ void CepheusHW::init_right_elbow(){
                 //e_sum = 0.0;
                 do{
 
-                        //des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
                         des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
-                        //update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
-                        //cmd[RIGHT_SHOULDER] = shoulder_out;
+                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+                        cmd[RIGHT_SHOULDER] = shoulder_out;
                         update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
                         cmd[RIGHT_ELBOW] = elbow_out;
 
@@ -351,6 +353,8 @@ void CepheusHW::init_right_elbow(){
                 
 		ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
                 offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
+		ROS_WARN("offset %lf", offset_pos[RIGHT_ELBOW]);
+
 
         }
         else
@@ -1157,7 +1161,9 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	pos[6]=  (double)(encoder_7/121027.38703744316) + offset_pos[6];
 	pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
 
-	//ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
+	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
+
+	///ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
 
 	// Speed Calculation radians/sec
 	for(int i=0; i<8; i++)
