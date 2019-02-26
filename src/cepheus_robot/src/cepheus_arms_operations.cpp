@@ -186,31 +186,58 @@ void move_right_arm(double set_point_shoulder,
 
         double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
         double init_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
-        double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
         double init_pos_wrist = robot.getCmd(RIGHT_WRIST);
+	double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
 
         ros::Rate loop_rate(200);
 
-        std_msgs::Float64 cmd_pos;
+        std_msgs::Float64 cmd_pos_sh;
+	std_msgs::Float64 cmd_pos_elb;
         double wrist_cmd;
+
+	//robot.setCmd(RIGHT_SHOULDER, 0.0);
+	//robot.setCmd(RIGHT_ELBOW, 0.0);
 
         while(timer.toSec() <= movement_duration){
 
                 robot.readEncoders(timer);
 
                 curr_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
-                curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
-                curr_pos_wrist = robot.getCmd(RIGHT_WRIST);
+        	curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
+	        curr_pos_wrist = robot.getCmd(RIGHT_WRIST);
 
-                cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
-                //ROS_WARN("pos : %lf",cmd_pos.data);
-                right_shoulder_pub.publish(cmd_pos);
+                cmd_pos_sh.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
+		cmd_pos_elb.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
+		wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
+
+                right_elbow_pub.publish(cmd_pos_elb);
+                right_shoulder_pub.publish(cmd_pos_sh);
+                robot.setCmd(RIGHT_WRIST, wrist_cmd);
+
+                cm.update(ros::Time::now(), timer);
+                robot.writeMotors();
+                robot.heartbeat();
+
+                ros::spinOnce();
+
+                timer = ros::Time::now() - init_time;
+                loop_rate.sleep();
+        }
+/*
+
+	init_time = ros::Time::now();
+        timer = ros::Time::now() - init_time;
+
+	robot.readEncoders(timer);
+
+        double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
+        while(timer.toSec() <= movement_duration){
+
+                robot.readEncoders(timer);
+                curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
 
                 cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
                 right_elbow_pub.publish(cmd_pos);
-
-                wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
-                robot.setCmd(RIGHT_WRIST, wrist_cmd);
 
                 robot.readEncoders(timer);
                 cm.update(ros::Time::now(), timer);
@@ -222,7 +249,7 @@ void move_right_arm(double set_point_shoulder,
                 timer = ros::Time::now() - init_time;
                 loop_rate.sleep();
         }
-
+*/
 }
 
 /*

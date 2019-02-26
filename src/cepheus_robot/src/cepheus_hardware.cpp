@@ -261,8 +261,7 @@ void CepheusHW::init_right_shoulder(){
 
 	}
         else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
-
-
+	
 }
 
 
@@ -334,12 +333,12 @@ void CepheusHW::init_right_elbow(){
                 do{
 
                         des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
-                        des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
+                        //des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
                         update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
                         cmd[RIGHT_SHOULDER] = shoulder_out;
-                        update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
-                        cmd[RIGHT_ELBOW] = elbow_out;
+                        //update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
+                        //cmd[RIGHT_ELBOW] = elbow_out;
 
                         //ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);              
                         writeMotors();
@@ -359,7 +358,6 @@ void CepheusHW::init_right_elbow(){
         }
         else
                 ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
-
 
 }
 
@@ -527,7 +525,7 @@ void CepheusHW::init_right_wrist(){
 
 	for(int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_INIT_ANGLE; i++){
 
-		cmd[RIGHT_WRIST] = (double)30;
+		cmd[RIGHT_WRIST] = (double)i;
 		double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
 		width[RIGHT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
@@ -1159,7 +1157,8 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	//printf("offset:%f\n",offset_pos[5]);
 	//pos[5]=  (double)(encoder_6/121027.38703744316) + (double)(encoder_5/121027.38703744316) + offset_pos[5];
 	pos[6]=  (double)(encoder_7/121027.38703744316) + offset_pos[6];
-	pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
+	//pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
+	pos[7]=  (double)(encoder_8/121027.38703744316) - (double)(encoder_7/121027.38703744316) + offset_pos[7];
 
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
 
