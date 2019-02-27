@@ -779,16 +779,17 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                 //The lengths of the joint of the left arm
                 double l1 = 0.181004;   //shoulder
                 double l2 = 0.1605;     //elbow
-                double l3 = 0.0499;     //wrist
-    
+                double l3 = 0.069;     //wrist
+		double CIRCLE_RADIUS = 0.405;    
+
                 //Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
     
                 tf::TransformListener listener;
 		tf::StampedTransform transform;
     
                 try{
-			listener.waitForTransform("/right_hand_base", "/right_gripper_target", ros::Time(0), ros::Duration(2.0));
-                        listener.lookupTransform("/right_hand_base", "/right_gripper_target", ros::Time(0),transform);
+			listener.waitForTransform("/right_hand_base", "/assist_robot", ros::Time(0), ros::Duration(2.0));
+                        listener.lookupTransform("/right_hand_base", "/assist_robot", ros::Time(0),transform);
                 }
                 catch (tf::TransformException &ex) {
                         ROS_ERROR("%s",ex.what());
@@ -796,84 +797,27 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                 }
     
     
-                //Coordinates of target based on cepheus origin
-                //double x = 0.21;
-                //double y = -0.1;
-    
                 //some cm before the target
                 double x = transform.getOrigin().x();
                 double y = transform.getOrigin().y();
-                //double x = transform.point.x - 0.06;
-                //double y = transform.point.y;
 
-		//std::cout<<"x "<<x<<" y "<<y<<std::endl;
+		double phi = atan2(y, x);
 
+		x = x - CIRCLE_RADIUS * cos(phi);
+		y = y - CIRCLE_RADIUS * sin(phi);
 
-                //the desired angle of the wrist translated to cepheus coordinates
-                /*double roll, pitch, yaw;
-                tf::Quaternion q(transform.getRotation());
-                tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
-                double yaw_to_deg = yaw*180.0/M_PI;
-                ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
+                double yn = y - l3  * cos(phi);
+                double xn = x - l3 * sin(phi);
 
-                //to rad
-                double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
-                */
-
-
-                double phi = atan2(y, x);
-
-                //Need to transform the above coordinates to the base of the left arm
-                //x = x - 0.17268;
-                //y = y + 0.091404;
-
-                double q31 ,q32;
-                q31 = q32 = 0.0;
-
-                //double yn = y - l3  * cos(phi);
-                //double xn = x - l3 * sin(phi);
-                double yn = y;
-                double xn = x - l3;
-
-		std::cout<<"xn "<<xn<<" yn "<<yn<<std::endl;
+		std::cout<<"x "<<x<<" y "<<y<<" phi "<<phi<<std::endl;
                 //calculating 2 results for each angle
 
                 //For q2
                 double q21 = acos( ((double)pow(yn, 2) + (double)pow(xn, 2) - (double)pow(l2, 2) - (double)pow(l1, 2)) / (2.0 * l1 * l2));
                 double q22 = -q21;
 
-		//std::cout<<"div "<<((double)pow(yn, 2) + (double)pow(xn, 2) - (double)pow(l2, 2) - (double)pow(l1, 2)) / (2.0 * l1 * l2)<<std::endl;
 
                 //For q1
-/*
-                //q11
-                double a = -l1 - l2 * cos(q21);
-                double b = -l2 * sin(q21);
-                double c = -yn;
-                double d = -l2 * sin(q21);
-                double e = l1 + l2 * cos(q21);
-                double f = -xn;
-
-                double s11 = ((c/a) - (f/d)) / ((e/d) - (b/a));
-                double c11 = (b*s11/a)+ (c/a);
-
-                double q11 = atan2(s11, c11);
-
-                //q12
-                a = -l1 - l2 * cos(q22);
-                b = -l2 * sin(q22);
-                c = -yn;
-                d = -l2 * sin(q22);
-                e = l1 + l2 * cos(q22);
-                f = -xn;
-
-                double s12 = ((c/a) - (f/d))/((e/d) - (b/a));
-                double c12 = (b * s12/a) + (c/a);
-
-                double q12 = atan2(s12, c12);
-*/
-                //double q31 = phi - q11 - q21;
-                //double q32 = phi - q12 - q22; 
 
 		//For q1
 		double theta = atan2(yn, xn);
@@ -885,6 +829,9 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
 
 		double q11 = theta - psi;
 		double q12 = theta + psi;
+
+		double q31 = phi - q11 - q21;
+		double q32 = phi - q12 - q22;
 
                 double tuple1[3];
                 double tuple2[3];
@@ -906,7 +853,7 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                 if( (-M_PI/3.0 <= q31 && q31 <= M_PI/3.0) && (-2.0*M_PI/3.0 <= q21 && q21 <= 2.0*M_PI/3.0) && (- 2.0 * M_PI/3.0 <= q11 && q11 <= 0.0) ){
                         //solution is tuple1
                         //translate wrist cmd  to (0 to 120)
-                        q31 = abs((q31 * 180.0 / M_PI) + 60.0);
+                        q31 = abs((q31 * 180.0 / M_PI) - 60.0);
                         //q11 = q11 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
@@ -914,7 +861,7 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                 }
                 else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (- 2.0 * M_PI / 3.0 <= q12 && q12 <= 0.0)){
                         //solution is tuple2
-                        q32 = abs((q32 * 180.0 / M_PI) + 60.0);
+                        q32 = abs((q32 * 180.0 / M_PI) - 60.0);
                         //q12 = q12 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
