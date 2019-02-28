@@ -14,7 +14,7 @@
                 <param name="left_shoulder_limit_pos" value="2.548" />
                 <param name="left_elbow_limit_pos" value="1.658" />
 		<param name="right_shoulder_limit_pos" value="-2.453" />
-                <param name="right_elbow_limit_pos" value="-1.575" />
+                <param name="right_elbow_limit_pos" value="-1.5865" />
 
 		<!-- For the param below : False if no planner needed. It exists for gripper feedback to the planner. Nessesary if the robots tracks, chases and tries to grip something -->
 		<param name="use_with_chase_planner" value="True" />
@@ -62,10 +62,10 @@
 	<!--node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen" required="true">
 	</node-->
 
-        <include file="$(find phase_space)/launch/track_two_objects.launch">
+        <!--include file="$(find phase_space)/launch/track_two_objects.launch">
             <arg name="turn_rviz_on" value="false" />
             <arg name="turn_phase_space_on" value="true" />
-        </include>
+        </include-->
 
 	<node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" />
 	<node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" />

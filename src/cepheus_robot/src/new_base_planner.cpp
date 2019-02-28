@@ -1088,7 +1088,7 @@ int main(int argc, char** argv)
 			}
 
 			//check if target is in chaser's workspace
-			//if(in_chaser_workspace()){
+			if(in_chaser_workspace()){
 
 				ROS_WARN("The chaser will reach to grab the target!");
 
@@ -1117,10 +1117,10 @@ int main(int argc, char** argv)
 
 				printf("Current State: %s\n", cl_right.getState().toString().c_str());
 			
-			//}
-			//else{
-			//	ROS_WARN("The target is out of chaser's workspace!");
-			//}			
+			}
+			else{
+				ROS_WARN("The target is out of chaser's workspace!");
+			}			
 
 		}
 

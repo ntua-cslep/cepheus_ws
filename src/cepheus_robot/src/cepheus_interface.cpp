@@ -343,7 +343,7 @@ void right_fsr_update(){
                 error_sum += error;
                 count ++;
                 double avg = (double)error_sum/(double)count;
-                ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);
+                //ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);
                 //For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
                 dur =  ros::Time::now() - init_time;
                 if(dur.toSec() >= (double)DURATION_NO_GRIP && avg <= (double) -FSR_AVG_THRESHOLD ){
@@ -377,7 +377,7 @@ void right_fsr_update(){
 
                 robot.setCmd(RIGHT_GRIPPER, new_angle);
 
-		ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
+		//ROS_WARN("FSR: %d, error: %d, PI_OUT: %lf, d_theta: %lf, new_angle: %lf", fsr_val, error, pi_out, d_theta, new_angle);
         }
 }
 
@@ -385,7 +385,7 @@ void right_fsr_update(){
 //----------------------------------------------------------------
 
 
-
+/*
 //----Create trajectory (given a set_point) for the left arm
 void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array,
 		controller_manager::ControllerManager& cm){
@@ -444,7 +444,7 @@ void moveLeftArmCallback(const std_msgs::Float64MultiArray::ConstPtr& cmd_array,
 	}
 
 }
-
+*/
 //---------------------------------------------------------------------------------------
 //bool left_catch_object_one_time = true;
 //bool right_catch_object_one_time = true;
@@ -612,7 +612,7 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                 //The lengths of the joint of the left arm
                 double l1 = 0.181004;   //shoulder
                 double l2 = 0.1605;     //elbow
-                double l3 = 0.0499;     //wrist
+                double l3 = 0.069;     //wrist
     
                 //Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
     
@@ -628,30 +628,8 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
                         ros::Duration(1.0).sleep();
                 }
     
-    
-                //Coordinates of target based on cepheus origin
-                //double x = 0.21;
-                //double y = -0.1;
-    
-                //some cm before the target
-                //double x = transform.getOrigin().x() - 0.06;
-                //double y = transform.getOrigin().y();
                 double x = transform.pose.position.x - 0.06;
                 double y = transform.pose.position.y;
-
-
-
-                //the desired angle of the wrist translated to cepheus coordinates
-                //double roll, pitch, yaw;
-                //tf::Quaternion q(transform.getRotation());
-                //tf::Matrix3x3(q).getRPY(roll,pitch,yaw);
-                //double yaw_to_deg = yaw*180.0/M_PI;
-                //ROS_WARN("yaw_to_deg %lf",yaw_to_deg);
-
-                //to rad
-                //double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
-                
-
 
                 double phi = atan2(y, x);
 
@@ -780,7 +758,7 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                 double l1 = 0.181004;   //shoulder
                 double l2 = 0.1605;     //elbow
                 double l3 = 0.069;     //wrist
-		double CIRCLE_RADIUS = 0.405;    
+		double CIRCLE_RADIUS = 0.4;    
 
                 //Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
     
@@ -947,7 +925,7 @@ int main(int argc, char** argv)
 	ros::Subscriber left_wrist_sub =  nh.subscribe("left_wrist_cmd", 1, leftWristCallback);
 	ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
 
-	ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
+	//ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
 	
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
 	ros::Subscriber right_gripper_action_sub =  nh.subscribe("right_gripper_action", 1, rightGripperActionCallback);
@@ -992,11 +970,9 @@ int main(int argc, char** argv)
 	start_standard_controllers(nh, cm, loop_rate);
 	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
 	init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+	sleep(2);
 
-	//sleep(2);
-
-
-	//move_right_arm(-M_PI/4.0, M_PI/4.0, 60.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	move_right_arm(-M_PI/4.0, M_PI/2.0, 105.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
 	//sleep(3);
 	//move_right_arm(0.0, 0.0, 60.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
