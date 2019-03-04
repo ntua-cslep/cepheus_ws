@@ -743,13 +743,15 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
         
 }
 
-bool right_catch_object_one_time = true;
+//bool right_catch_object_one_time = true;
 
-void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){
-
-    
-        if(right_catch_object_one_time){
-                right_catch_object_one_time = false;
+//void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){
+void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm){ 
+   
+		cepheus_robot::RightCatchObjectResult result;
+ 
+        //if(right_catch_object_one_time){
+                //right_catch_object_one_time = false;
     
                 //theta2 needs to be from -90 deg to 0 deg
                 //TO DO...ADD COMMMEEEEENTS
@@ -835,7 +837,12 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                         //q11 = q11 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-                        move_right_arm(q11, q21, q31, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        
+			move_right_arm(q11, q21, q31, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			ready_to_grip_right = true;
+                        result.success = true;
+                        as.setSucceeded(result);
+			
                 }
                 else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (- 2.0 * M_PI / 3.0 <= q12 && q12 <= 0.0)){
                         //solution is tuple2
@@ -843,14 +850,23 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
                         //q12 = q12 - M_PI/2.0;
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
-                        move_right_arm(q12, q22, q32, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+
+                        move_right_arm(q12, q22, q32, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			ready_to_grip_right = true;
+                        result.success = true;
+                        as.setSucceeded(result);
+
                 }
                 else{
                         //we see.....
+
                         ROS_WARN("Out of right arm workspace");
+                        result.success = false;
+                        as.setSucceeded(result);
+
                 }
 
-        }
+        //}
 }
 
 
@@ -931,10 +947,10 @@ int main(int argc, char** argv)
 	ros::Subscriber right_gripper_action_sub =  nh.subscribe("right_gripper_action", 1, rightGripperActionCallback);
 
 	//ros::Subscriber left_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("left_arm_catch_object", 1, boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(cm)));	
-	ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmInvKinCallback, _1, boost::ref(cm)));
+	//ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmInvKinCallback, _1, boost::ref(cm)));
 
 	//Action for fripping test
-	ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmCatchObjectCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
+	ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmInvKinCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
   	as_right.start();
 
 	//ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
@@ -972,7 +988,7 @@ int main(int argc, char** argv)
 	init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 	sleep(2);
 
-	move_right_arm(-M_PI/4.0, M_PI/2.0, 105.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
 	//sleep(3);
 	//move_right_arm(0.0, 0.0, 60.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);

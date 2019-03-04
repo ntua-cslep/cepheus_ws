@@ -5,7 +5,7 @@
 
 const double FMAX_THRUST = 0.06;//Newton
 const double CHASER_MASS = 13.5;//kg
-const double WS_RADIUS = 0.3;//m
+const double WS_RADIUS = 0.47;//m
 const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
@@ -15,7 +15,7 @@ const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the ta
 #define VEL_PROF_3 3
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
-const double TIME_TO_DISABLE_CTRL = 2.0; //seconds
+const double TIME_TO_DISABLE_CTRL = 3.0; //seconds
 
 
 class Geometric_Constraints{

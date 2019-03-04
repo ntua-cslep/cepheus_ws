@@ -717,10 +717,7 @@ int main(int argc, char** argv)
 			thrust_pub.publish(thrust_vector);
 			rwTorque_pub.publish(torque);
 
-			//Panagiotis mavridis
-			//We comment the below cause we want to have const speed when disabling base ctrl
-			//The below code used in assist holds steady pos
-			/*
+			
 			pos.x = attitude[0];
 			pos.y = attitude[1];
 			pos.z = attitude[2];
@@ -729,7 +726,7 @@ int main(int argc, char** argv)
 			vel.z = attitude[5];
 			pos_pub.publish(pos);
 			vel_pub.publish(vel);
-			*/
+			
 		}
 
 		frobot.header.frame_id = "cepheus";

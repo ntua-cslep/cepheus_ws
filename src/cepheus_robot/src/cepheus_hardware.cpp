@@ -1161,7 +1161,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	pos[7]=  (double)(encoder_8/121027.38703744316) - (double)(encoder_7/121027.38703744316) + offset_pos[7];
 
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
-	ROS_WARN("pos[7] : %lf", pos[7]);
+	//ROS_WARN("pos[7] : %lf", pos[7]);
 
 	///ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
 

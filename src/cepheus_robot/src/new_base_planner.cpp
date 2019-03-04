@@ -943,7 +943,7 @@ bool in_chaser_workspace(){
 
 	//ROS_WARN("dist %lf ws %lf", dist,WS_RADIUS);
 	//WS radius 10 cm bigger than the normal in order to be easier to cath the target if it moves a bit away
-	return (dist < 0.4);
+	return (dist < 0.55);
 }
 
 
@@ -1015,6 +1015,9 @@ int main(int argc, char** argv)
 	std_srvs::SetBool srv;
 
 	double heading;
+	double prev_heading = 0.0;
+
+
 	tf::Quaternion qq;
 	ros::Rate loop_rate(200);
 
@@ -1024,6 +1027,8 @@ int main(int argc, char** argv)
 	ros::Duration timer;
 
 	//int counter = 0;
+
+	bool inv_kin_successs = false;
 
 	while(!g_request_shutdown){
 
@@ -1088,7 +1093,7 @@ int main(int argc, char** argv)
 			}
 
 			//check if target is in chaser's workspace
-			if(in_chaser_workspace()){
+			if(in_chaser_workspace() && !inv_kin_successs){
 
 				ROS_WARN("The chaser will reach to grab the target!");
 
@@ -1106,10 +1111,11 @@ int main(int argc, char** argv)
 				right_goal.point_to_catch.pose.orientation = target_rotation;
 
 				cl_right.sendGoal(right_goal);
-				cl_right.waitForResult(ros::Duration(13.0));
+				cl_right.waitForResult(ros::Duration(8.0));
 
 				if (cl_right.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
 					printf("Cepheus completed inverse kinematics");
+					inv_kin_successs = true;
 				}
 				else{
 					ROS_WARN("Cepheus failed to complete inverse kinematics");
@@ -1169,7 +1175,11 @@ int main(int argc, char** argv)
 		new_pos.pose.position.x = new_x;
 		new_pos.pose.position.y = new_y;
 
-		heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+		if(new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y)
+			heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+
+		
+
 
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;
@@ -1185,7 +1195,16 @@ int main(int argc, char** argv)
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;
 		new_vel.twist.linear.y = new_vel_y;
-		//new_vel.twist.angular.z = 0.0;
+	
+	
+		if(dt.toSec() != 0.0)
+			new_vel.twist.angular.z = (heading - prev_heading) / dt.toSec();
+		else
+			new_vel.twist.angular.z = 0.0;
+
+		prev_heading = heading;		
+
+		//std::cout<<"heading "<<heading<<std::endl;
 
 		//For acceleration
 		new_acc.x = new_acc_x;
