@@ -838,7 +838,7 @@ void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& g
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
                         
-			move_right_arm(q11, q21, q31, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			move_right_arm(q11, q21, q31, 4.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			ready_to_grip_right = true;
                         result.success = true;
                         as.setSucceeded(result);
@@ -851,7 +851,7 @@ void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& g
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
 
-                        move_right_arm(q12, q22, q32, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        move_right_arm(q12, q22, q32, 4.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			ready_to_grip_right = true;
                         result.success = true;
                         as.setSucceeded(result);
@@ -990,15 +990,6 @@ int main(int argc, char** argv)
 
 	move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 
-	//sleep(3);
-	//move_right_arm(0.0, 0.0, 60.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-	/*ROS_WARN("STARTING SIN...");
-	  moveLeftArmSin(cm);	
-	  sleep(3);
-	  moveLeftArmSin(cm);
-	 */
-
-	//ready_to_grip_left = true;
 
 	ROS_WARN("About to enter normal spinning...");
 	ros::AsyncSpinner spinner(3);

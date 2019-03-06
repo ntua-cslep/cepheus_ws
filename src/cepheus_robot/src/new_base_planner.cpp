@@ -299,7 +299,7 @@ void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
 
 
 //---------------------------
-void observate_target_velocity(const double dt, double& target_vel_X, double& target_vel_Y){
+void observate_target_velocity(const double dt, double& t_vel_X, double& t_vel_Y){
 
 	static geometry_msgs::Vector3 target_prev_pos;
 
@@ -312,25 +312,29 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 	ros::spinOnce();
 
 	if(dt > 0){
-		ROS_INFO("trp %lf tpp %lf" ,target_real_pos.x ,  target_prev_pos.x);
+		//ROS_INFO("trp %lf tpp %lf" ,target_real_pos.x ,  target_prev_pos.x);
 
-		target_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
-		target_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
+		t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
+		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
-		cut_digits(target_vel_X, 2);
-		cut_digits(target_vel_Y, 2);
+		//ROS_WARN("Uncut velx %lf, uncut vely %lf",target_vel_X, target_vel_Y);
+		
+		//cut_digits(target_vel_X, 3);
+		//cut_digits(target_vel_Y, 3);
 
-		if(target_vel_X < 0.01 && target_vel_X > -0.01){
-			target_vel_X = 0.0;
+		//ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
+
+		if(t_vel_X < 0.001 && t_vel_X > -0.001){
+			t_vel_X = 0.0;
 		}
 
-		if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
-			target_vel_Y = 0.0;
+		if(t_vel_Y < 0.001 && t_vel_Y > -0.001){
+			t_vel_Y = 0.0;
 		}
 
 
-		std::cout<<"Observated target vel_X: "<<target_vel_X<<std::endl;
-		std::cout<<"Observated target vel_Y: "<<target_vel_Y<<std::endl;
+		std::cout<<"Observated target vel_X: "<<t_vel_X<<std::endl;
+		std::cout<<"Observated target vel_Y: "<<t_vel_Y<<std::endl;
 
 		double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
@@ -339,13 +343,14 @@ void observate_target_velocity(const double dt, double& target_vel_X, double& ta
 		//des_pos.x = target_real_pos.x;
 		//des_pos.y = target_real_pos.y;
 
-		std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
-		std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
+		//std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
+		//std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
 
 
 	}
 }
 
+//NOT USED
 void calculate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
 
 	static bool first_time = true;
@@ -448,7 +453,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 
 void setup_planning_parameters()
 {
-	double Fmax_X = 2.0*cos(M_PI/3.0) * FMAX_THRUST;
+	double Fmax_X = 2.0*cos(M_PI/6.0) * FMAX_THRUST;
 	A_MAX = Fmax_X / CHASER_MASS;
 
 	if(target_vel_X != 0){
@@ -986,12 +991,12 @@ int main(int argc, char** argv)
 	cl_right.waitForServer();
 	cepheus_robot::RightCatchObjectGoal right_goal;
 	right_goal.point_to_catch.header.frame_id = "/assist_robot";
-		
-/*
-	ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
-        cl_left.waitForServer();
-        cepheus_robot::LeftCatchObjectGoal left_goal;
-*/
+
+	/*
+	   ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
+	   cl_left.waitForServer();
+	   cepheus_robot::LeftCatchObjectGoal left_goal;
+	 */
 
 
 	//Trajectory point produced ,command velocity and command acceleration
@@ -1026,13 +1031,13 @@ int main(int argc, char** argv)
 	ros::Time init_time;
 	ros::Duration timer;
 
-	//int counter = 0;
+	int counter = 0;
 
 	bool inv_kin_successs = false;
 
 	while(!g_request_shutdown){
 
-		//counter++;
+		counter++;
 
 		if(!start_planning){
 
@@ -1122,7 +1127,7 @@ int main(int argc, char** argv)
 				}
 
 				printf("Current State: %s\n", cl_right.getState().toString().c_str());
-			
+
 			}
 			else{
 				ROS_WARN("The target is out of chaser's workspace!");
@@ -1140,33 +1145,56 @@ int main(int argc, char** argv)
 
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
-		//200 loops is 1 second
-		/*		if(counter = 200){
+		//1000 loops is 5 seconds
+		/*if(counter == 1000){
 
-				counter = 0;
+			counter = 0;
+
+			double obs_vel_X, obs_vel_Y;
+
+			ROS_INFO("Recalculating Target's Velocity");
+			ros::spinOnce();
+			observate_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
+
+			
+			double diff_X = fabs(obs_vel_X - target_vel_X);
+			double diff_Y = fabs(obs_vel_Y - target_vel_Y);
+
+			ROS_INFO("t_vel_X %lf , obs_vel_X %lf, t_vel_Y %lf , obs_vel_Y %lf, diff_X %lf diff_Y %lf", target_vel_X, obs_vel_X, target_vel_Y ,obs_vel_Y, diff_X, diff_Y);
+
+			if( (diff_X > 0.001) || (diff_Y > 0.001) ){
+
+				target_vel_X = obs_vel_X;
+				target_vel_Y = obs_vel_Y;
+
+				ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
+
+				ros::spinOnce();
 
 				target_init_pos.x = target_real_pos.x;
 				target_init_pos.y = target_real_pos.y;
 
-		//chaser_init_pos.x = chaser_real_pos.x;
-		//chaser_init_pos.y = chaser_real_pos.y;
-		chaser_init_pos.x = new_x;
-		chaser_init_pos.y = new_y;
+				chaser_init_pos.x = chaser_real_pos.x;
+				chaser_init_pos.y = chaser_real_pos.y;
+				//chaser_init_pos.x = new_x;
+				//chaser_init_pos.y = new_y;
 
+				//calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
+				setup_planning_parameters();
+				decide_plan_of_action();
 
+				//reset timers......?
+				ros::Time prev_time = ros::Time::now();
+				ros::Time init_time = ros::Time::now();
+			}	
 
-		calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
-		setup_planning_parameters();
-		decide_plan_of_action();
+			target_vel_X = obs_vel_X;
+                        target_vel_Y = obs_vel_Y;
 
-		//reset timers......?
-		ros::Time prev_time = ros::Time::now();
-		ros::Time init_time = ros::Time::now();
-
-		continue;
+			continue;
 		}
-		 */
 
+		*/
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
 		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
@@ -1177,9 +1205,6 @@ int main(int argc, char** argv)
 
 		if(new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y)
 			heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
-
-		
-
 
 		prev_pos.pose.position.x = new_x;
 		prev_pos.pose.position.y = new_y;
@@ -1195,8 +1220,8 @@ int main(int argc, char** argv)
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;
 		new_vel.twist.linear.y = new_vel_y;
-	
-	
+
+
 		if(dt.toSec() != 0.0)
 			new_vel.twist.angular.z = (heading - prev_heading) / dt.toSec();
 		else
