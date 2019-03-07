@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #include <ros/ros.h>
 #define RT_PRIORITY 95
@@ -64,6 +65,8 @@ DigitalFilter tar_yd_fir(10, 0.0);
 bool disable_ctrl_X = false;
 bool disable_ctrl_Y = false;
 
+//for no creating new path when you follow target with staedy vel and you ready to grab it
+bool update_path_X = true, update_path_Y = true;
 
 //Create the constraints for the experiment
 Geometric_Constraints constraints(1.897, 2.329, ROBOT_RADIUS, WS_RADIUS, 0.5);
@@ -77,7 +80,7 @@ Prf3 p3_X; Prf3 p3_Y;
 
 //Some time constants needed in the decision process of the planning
 const double TIME_TO_SMOOTH_ERROR = 0.5;//s
-const double TIME_TO_OBSERVE_TARGET = 1.0;//s
+const unsigned int TIME_TO_OBSERVE_TARGET = 200;//ms
 
 //values {1,2,3}
 //indcates which vel prof be used in each axis
@@ -97,6 +100,9 @@ double L_Y = 1;
 
 //The target's velcoty as observated form the chaser via the phase space system
 double target_vel_X = 0.0, target_vel_Y = 0.0;
+
+//The chaser's init velocity in the begginning of every planning
+double chaser_init_vel_X = 0.0, chaser_init_vel_Y = 0.0;
 
 geometry_msgs::Vector3 target_real_pos;
 geometry_msgs::Vector3 target_init_pos;
@@ -299,7 +305,7 @@ void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
 
 
 //---------------------------
-void observate_target_velocity(const double dt, double& t_vel_X, double& t_vel_Y){
+void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t_vel_Y){
 
 	static geometry_msgs::Vector3 target_prev_pos;
 
@@ -307,17 +313,23 @@ void observate_target_velocity(const double dt, double& t_vel_X, double& t_vel_Y
 	target_prev_pos.x = target_real_pos.x;
 	target_prev_pos.y = target_real_pos.y;
 
-	sleep(dt);
+	unsigned int usecs_to_sleep = ms * 1000;
+
+	//convert to secs to calculate velocity
+	double dt = (double)usecs_to_sleep/ (double)1000000;
+
+	//Sleep for microseconds
+	usleep(usecs_to_sleep);
 
 	ros::spinOnce();
 
-	if(dt > 0){
+	if(usecs_to_sleep > 0){
 		//ROS_INFO("trp %lf tpp %lf" ,target_real_pos.x ,  target_prev_pos.x);
 
 		t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
 		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
-		//ROS_WARN("Uncut velx %lf, uncut vely %lf",target_vel_X, target_vel_Y);
+		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
 		
 		//cut_digits(target_vel_X, 3);
 		//cut_digits(target_vel_Y, 3);
@@ -506,16 +518,17 @@ void setup_planning_parameters()
 void calc_vel_prof_1_params(const double& A_max,
 		const double& V_DES,
 		const double& INIT_CH,
+		const double& V0_CH,
 		const double& init_des,
 		Prf1& res)
 {
-	ROS_WARN("A_max %lf V_DES %lf INIT_CH %lf init_des %lf",A_max, V_DES, INIT_CH, init_des);
+	ROS_WARN("A_max %lf V_DES %lf INIT_CH %lf V0_CH %lf init_des %lf",A_max, V_DES, INIT_CH, V0_CH, init_des);
 
 	double t1,t2,xdes_target,xt1,vt1,xdes_chaser;
 
 	double a = A_max;
-	double b = -2.0 * V_DES;
-	double c = INIT_CH - init_des + 0.5 * pow(V_DES,2)/A_max;
+	double b = V0_CH - V_DES;
+	double c = INIT_CH - init_des + 0.5 * pow(V_DES - V0_CH,2)/A_max;
 
 	double delta = b*b - 4.0 * a * c;
 
@@ -567,15 +580,13 @@ void calc_vel_prof_1_params(const double& A_max,
 
 
 
-	t2 = 2.0 * t1 - V_DES / A_max;
-
+	t2 = 2.0 * t1 - (V_DES - V0_CH) / A_max;
 	xdes_target = V_DES * t2 + init_des;
-
-	xt1 = INIT_CH + 0.5*A_max*(t1*t1);
-	vt1 = A_max * t1;
+	xt1 = INIT_CH + V0_CH * t1 + 0.5*A_max*(t1*t1);
+	vt1 = V0_CH + A_max * t1;
 	xdes_chaser = xt1 + vt1 * (t2 - t1) - 0.5 * A_max * pow(t2 - t1,2);
 
-	res.set_vals(t1, t2, xdes_target, xt1, vt1, xdes_chaser);
+	res.set_vals(t1, t2, xdes_target, V0_CH, xt1, vt1, xdes_chaser);
 }
 
 void calc_vel_prof_2_params(const double& INIT_CH,
@@ -694,7 +705,7 @@ void decide_plan_of_action()
 
 	if(target_vel_X == 0.0){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
 		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
@@ -702,7 +713,7 @@ void decide_plan_of_action()
 	//target moving away
 	else if((chaser_init_pos.x <= des_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= des_pos.x && target_vel_X  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, des_pos.x, p1_X);
+		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
 		meet_point_x = p1_X.xdes_chaser;
 		velocity_profile_X = (short)VEL_PROF_1;
 		p1_X.print();
@@ -724,7 +735,7 @@ void decide_plan_of_action()
 	//Target almost still
 	if(target_vel_Y == 0.0){
 
-		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
 		meet_point_y = p1_Y.xdes_chaser;
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
@@ -734,7 +745,7 @@ void decide_plan_of_action()
 	//Target is moving away
 	else if((chaser_init_pos.y <= des_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= des_pos.y && target_vel_Y  < 0)){
 
-		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, des_pos.y, p1_Y);
+		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
 		meet_point_y = p1_Y.xdes_chaser;
 		velocity_profile_Y = (short)VEL_PROF_1;
 		p1_Y.print();
@@ -762,6 +773,7 @@ void decide_plan_of_action()
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		const double& INIT_CH,
+		const double& V0_CH,
 		const double& A_max,
 		const double& V_DES,
 		const Prf1& prof_params,
@@ -772,8 +784,8 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 
 	if (t <= prof_params.t1){
 		//ROS_INFO("Accelerate =>");
-		cmd_pos = INIT_CH + 0.5 * A_max * pow(t,2);
-		cmd_vel = A_max * t;//u0 = 0
+		cmd_pos = INIT_CH + V0_CH * t + 0.5 * A_max * pow(t,2);
+		cmd_vel = V0_CH + A_max * t;//u0 = 0
 		cmd_acc = A_max;
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
@@ -892,7 +904,12 @@ void set_commands(const double& t,
 
 	if(velocity_profile_X == (short)VEL_PROF_1){
 
-		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+		
+		if(t > p1_X.t2 && t <= p1_X.duration_with_active_ctrl){
+			update_path_X = false;
+		}
+	
 		if(t > p1_X.duration_with_active_ctrl){
 			disable_ctrl_X = true;
 		}
@@ -914,7 +931,12 @@ void set_commands(const double& t,
 
 	if(velocity_profile_Y == (short)VEL_PROF_1){
 
-		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+		
+	 	if(t > p1_Y.t2 && t <= p1_Y.duration_with_active_ctrl){
+                        update_path_Y = false;
+                }
+
 		if(t > p1_Y.duration_with_active_ctrl){
 			disable_ctrl_Y = true;
 		}
@@ -1015,6 +1037,9 @@ int main(int argc, char** argv)
 
 	bool new_path = true;
 	path.header.frame_id = "/map";
+
+
+	bool ws_warn = true;
 
 	//For enabling/disabling base controller
 	std_srvs::SetBool srv;
@@ -1130,7 +1155,10 @@ int main(int argc, char** argv)
 
 			}
 			else{
-				ROS_WARN("The target is out of chaser's workspace!");
+				if(ws_warn){
+					ROS_WARN("The target is out of chaser's workspace!");
+					ws_warn = false;
+				}
 			}			
 
 		}
@@ -1145,8 +1173,8 @@ int main(int argc, char** argv)
 
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
-		//1000 loops is 5 seconds
-		/*if(counter == 1000){
+		//400 loops is 2 seconds
+		if(counter == 400 && update_path_X && update_path_Y){
 
 			counter = 0;
 
@@ -1169,17 +1197,24 @@ int main(int argc, char** argv)
 
 				ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
 
+			        //store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+	                        chaser_init_pos.x = chaser_real_pos.x;
+        	                chaser_init_pos.y = chaser_real_pos.y;
+
+        	                //For simulation ONLY WITH RVIZ
+                        	//chaser_init_pos.x = new_x;
+                	        //chaser_init_pos.y = new_y;
+	
+        	                chaser_init_vel_X = new_vel_x;
+                	        chaser_init_vel_Y = new_vel_y;
+
+
 				ros::spinOnce();
 
 				target_init_pos.x = target_real_pos.x;
 				target_init_pos.y = target_real_pos.y;
 
-				chaser_init_pos.x = chaser_real_pos.x;
-				chaser_init_pos.y = chaser_real_pos.y;
-				//chaser_init_pos.x = new_x;
-				//chaser_init_pos.y = new_y;
 
-				//calculate_target_velocity(dt.toSec(), target_vel_X, target_vel_Y);
 				setup_planning_parameters();
 				decide_plan_of_action();
 
@@ -1194,7 +1229,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		*/
+		
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
 		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);

@@ -3,9 +3,9 @@
 	Classes for velocities profiles and goemetric constraints used in planner and constants regarding the robot
 */
 
-const double FMAX_THRUST = 0.06;//Newton
+const double FMAX_THRUST = 0.2;//Newton 20% duty cucle
 const double CHASER_MASS = 13.5;//kg
-const double WS_RADIUS = 0.47;//m
+const double WS_RADIUS = 0.32;//m
 const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
@@ -15,7 +15,7 @@ const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the ta
 #define VEL_PROF_3 3
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
-const double TIME_TO_DISABLE_CTRL = 3.0; //seconds
+const double TIME_TO_DISABLE_CTRL = 2.0; //seconds
 
 
 class Geometric_Constraints{
@@ -61,6 +61,7 @@ typedef struct Prf1{
         double t1;
         double t2;
         double xdes_target;
+	double v0_chaser;
         double xt1;
         double vt1;
         double xdes_chaser;
@@ -69,6 +70,7 @@ typedef struct Prf1{
         void set_vals(  double t1,
                         double t2,
                         double xdes_target,
+			double v0_chaser,
                         double xt1,
                         double vt1,
                         double xdes_chaser)
@@ -76,6 +78,7 @@ typedef struct Prf1{
                 this->t1 = t1;
                 this->t2 = t2;
                 this->xdes_target = xdes_target;
+		this->v0_chaser = v0_chaser;
                 this->xt1 = xt1;
                 this->vt1 = vt1;
                 this-> xdes_chaser =  xdes_chaser;
@@ -87,6 +90,7 @@ typedef struct Prf1{
                 ROS_INFO("Profile 1 Params:");
                 std::cout<<"\t t1: "<<t1<<std::endl;
                 std::cout<<"\t t2: "<<t2<<std::endl;
+		std::cout<<"\t v0_chaser: "<<v0_chaser<<std::endl;
                 std::cout<<"\t xt1: "<<xt1<<std::endl;
                 std::cout<<"\t vt1: "<<vt1<<std::endl;
                 std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
