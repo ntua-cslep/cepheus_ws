@@ -781,11 +781,14 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		double& cmd_vel,
 		double& cmd_acc)
 {
+	
 
 	if (t <= prof_params.t1){
 		//ROS_INFO("Accelerate =>");
+		//ROS_INFO("INIT_CH %lf", INIT_CH);
 		cmd_pos = INIT_CH + V0_CH * t + 0.5 * A_max * pow(t,2);
-		cmd_vel = V0_CH + A_max * t;//u0 = 0
+		//ROS_INFO("cmd_pos %lf", cmd_pos);
+		cmd_vel = V0_CH + A_max * t;
 		cmd_acc = A_max;
 	}
 	else if (t > prof_params.t1 && t <= prof_params.t2){
@@ -1198,15 +1201,17 @@ int main(int argc, char** argv)
 				ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
 
 			        //store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-	                        chaser_init_pos.x = chaser_real_pos.x;
-        	                chaser_init_pos.y = chaser_real_pos.y;
+	                        //chaser_init_pos.x = chaser_real_pos.x;
+        	                //chaser_init_pos.y = chaser_real_pos.y;
 
         	                //For simulation ONLY WITH RVIZ
-                        	//chaser_init_pos.x = new_x;
-                	        //chaser_init_pos.y = new_y;
+                        	chaser_init_pos.x = new_x;
+                	        chaser_init_pos.y = new_y;
 	
         	                chaser_init_vel_X = new_vel_x;
                 	        chaser_init_vel_Y = new_vel_y;
+
+				//ROS_WARN("chaser_init_vel_X %lf chaser_init_vel_Y %lf", chaser_init_vel_X, chaser_init_vel_Y);
 
 
 				ros::spinOnce();
@@ -1218,13 +1223,14 @@ int main(int argc, char** argv)
 				setup_planning_parameters();
 				decide_plan_of_action();
 
-				//reset timers......?
-				ros::Time prev_time = ros::Time::now();
-				ros::Time init_time = ros::Time::now();
+				//reset timers......
+				prev_time = ros::Time::now();
+				init_time = ros::Time::now();
 			}	
-
-			target_vel_X = obs_vel_X;
-                        target_vel_Y = obs_vel_Y;
+			
+			//commmented...not sure it is correct
+			//target_vel_X = obs_vel_X;
+                        //target_vel_Y = obs_vel_Y;
 
 			continue;
 		}
@@ -1255,6 +1261,8 @@ int main(int argc, char** argv)
 		//For velocity
 		new_vel.twist.linear.x = new_vel_x;
 		new_vel.twist.linear.y = new_vel_y;
+
+		//std::cout<<"new_vel_x "<<new_vel_x<<" new_vel_y"<<new_vel_y<<std::endl;
 
 
 		if(dt.toSec() != 0.0)
