@@ -208,16 +208,16 @@ void PhaseSpaceCallbackChaser(const geometry_msgs::TransformStamped::ConstPtr& m
 		chaser_init_pos.y = temp.transform.translation.y;
 		chaser_init_pos.z = yaw;
 
-		cut_digits(chaser_init_pos.x, 3);	
-		cut_digits(chaser_init_pos.y, 3);
+		//cut_digits(chaser_init_pos.x, 3);	
+		//cut_digits(chaser_init_pos.y, 3);
 
 
 		chaser_real_pos.x = temp.transform.translation.x;
 		chaser_real_pos.y = temp.transform.translation.y;
 		chaser_real_pos.z = yaw;
 
-		cut_digits(chaser_real_pos.x, 3);
-		cut_digits(chaser_real_pos.y, 3);
+		//cut_digits(chaser_real_pos.x, 3);
+		//cut_digits(chaser_real_pos.y, 3);
 
 
 		chaser_first_time = false;
@@ -228,11 +228,11 @@ void PhaseSpaceCallbackChaser(const geometry_msgs::TransformStamped::ConstPtr& m
 		chaser_real_pos.y = temp.transform.translation.y;
 		chaser_real_pos.z = yaw;
 
-		chaser_real_pos.x = ch_x_fir.filter(chaser_real_pos.x);
-		chaser_real_pos.y = ch_y_fir.filter(chaser_real_pos.y);
+		//chaser_real_pos.x = ch_x_fir.filter(chaser_real_pos.x);
+		//chaser_real_pos.y = ch_y_fir.filter(chaser_real_pos.y);
 
-		cut_digits(chaser_real_pos.x, 3);
-		cut_digits(chaser_real_pos.y, 3);
+		//cut_digits(chaser_real_pos.x, 3);
+		//cut_digits(chaser_real_pos.y, 3);
 
 	}
 
@@ -265,8 +265,8 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 		target_init_pos.y = temp.transform.translation.y;
 		target_init_pos.z = yaw;
 
-		cut_digits(target_init_pos.x, 3);
-		cut_digits(target_init_pos.y, 3);
+		//cut_digits(target_init_pos.x, 3);
+		//cut_digits(target_init_pos.y, 3);
 
 
 		target_pos_stamp = temp.header.stamp;
@@ -274,8 +274,8 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 		target_real_pos.y = temp.transform.translation.y;
 		target_real_pos.z = yaw;
 
-		cut_digits(target_real_pos.x, 3);
-		cut_digits(target_real_pos.y, 3);
+		//cut_digits(target_real_pos.x, 3);
+		//cut_digits(target_real_pos.y, 3);
 
 		target_first_time = false;
 	}
@@ -286,11 +286,11 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 		target_real_pos.y = temp.transform.translation.y;
 		target_real_pos.z = yaw;
 
-		target_real_pos.x = tar_x_fir.filter( target_real_pos.x );
-		target_real_pos.y = tar_y_fir.filter( target_real_pos.y );
+		//target_real_pos.x = tar_x_fir.filter( target_real_pos.x );
+		//target_real_pos.y = tar_y_fir.filter( target_real_pos.y );
 
-		cut_digits(target_real_pos.x, 3);
-		cut_digits(target_real_pos.y, 3);
+		//cut_digits(target_real_pos.x, 3);
+		//cut_digits(target_real_pos.y, 3);
 
 	}
 
@@ -316,7 +316,8 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 	unsigned int usecs_to_sleep = ms * 1000;
 
 	//convert to secs to calculate velocity
-	double dt = (double)usecs_to_sleep/ (double)1000000;
+	double dt = (double)ms/ (double)1000;
+
 
 	//Sleep for microseconds
 	usleep(usecs_to_sleep);
@@ -331,16 +332,16 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 
 		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
 		
-		//cut_digits(target_vel_X, 3);
-		//cut_digits(target_vel_Y, 3);
+		cut_digits(target_vel_X, 4);
+		cut_digits(target_vel_Y, 4);
 
 		//ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
 
-		if(t_vel_X < 0.001 && t_vel_X > -0.001){
+		if(t_vel_X < 0.0001 && t_vel_X > -0.0001){
 			t_vel_X = 0.0;
 		}
 
-		if(t_vel_Y < 0.001 && t_vel_Y > -0.001){
+		if(t_vel_Y < 0.00001 && t_vel_Y > -0.00001){
 			t_vel_Y = 0.0;
 		}
 
@@ -465,7 +466,7 @@ void calculate_target_velocity(double dt, double& target_vel_X, double& target_v
 
 void setup_planning_parameters()
 {
-	double Fmax_X = 2.0*cos(M_PI/6.0) * FMAX_THRUST;
+	double Fmax_X = 2.0*cos(M_PI/3.0) * FMAX_THRUST;
 	A_MAX = Fmax_X / CHASER_MASS;
 
 	if(target_vel_X != 0){
@@ -527,7 +528,7 @@ void calc_vel_prof_1_params(const double& A_max,
 	double t1,t2,xdes_target,xt1,vt1,xdes_chaser;
 
 	double a = A_max;
-	double b = V0_CH - V_DES;
+	double b = 2.0 * (V0_CH - V_DES);
 	double c = INIT_CH - init_des + 0.5 * pow(V_DES - V0_CH,2)/A_max;
 
 	double delta = b*b - 4.0 * a * c;
@@ -561,7 +562,7 @@ void calc_vel_prof_1_params(const double& A_max,
 			exit(2);
 		}
 
-		//ROS_WARN("a %lf b %lf c %lf  delta %lf s1 %lf s2 %lf t1 %lf",a,b,c, delta, s1,s2,t1);
+		ROS_WARN("a %lf b %lf c %lf  delta %lf s1 %lf s2 %lf t1 %lf",a,b,c, delta, s1,s2,t1);
 
 	}
 	else{
@@ -575,7 +576,7 @@ void calc_vel_prof_1_params(const double& A_max,
 			exit(3);
 		}
 
-		//ROS_WARN("delta %lf s1 %lf t1 %lf", delta, s1 ,t1);
+		ROS_WARN("delta %lf s1 %lf t1 %lf", delta, s1 ,t1);
 	}
 
 
@@ -1193,7 +1194,7 @@ int main(int argc, char** argv)
 
 			ROS_INFO("t_vel_X %lf , obs_vel_X %lf, t_vel_Y %lf , obs_vel_Y %lf, diff_X %lf diff_Y %lf", target_vel_X, obs_vel_X, target_vel_Y ,obs_vel_Y, diff_X, diff_Y);
 
-			if( (diff_X > 0.001) || (diff_Y > 0.001) ){
+			if( (diff_X > 0.005) || (diff_Y > 0.005) ){
 
 				target_vel_X = obs_vel_X;
 				target_vel_Y = obs_vel_Y;
