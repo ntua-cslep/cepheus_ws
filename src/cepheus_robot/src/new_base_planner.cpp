@@ -330,21 +330,21 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 		t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
 		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
-		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
+		ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
 		
-		cut_digits(target_vel_X, 4);
-		cut_digits(target_vel_Y, 4);
+		cut_digits(target_vel_X, 3);
+		cut_digits(target_vel_Y, 3);
 
-		//ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
+		ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
 
-		if(t_vel_X < 0.0001 && t_vel_X > -0.0001){
+		/*if(t_vel_X < 0.002 && t_vel_X > -0.002){
 			t_vel_X = 0.0;
 		}
 
-		if(t_vel_Y < 0.00001 && t_vel_Y > -0.00001){
+		if(t_vel_Y < 0.002 && t_vel_Y > -0.002){
 			t_vel_Y = 0.0;
 		}
-
+		*/
 
 		std::cout<<"Observated target vel_X: "<<t_vel_X<<std::endl;
 		std::cout<<"Observated target vel_Y: "<<t_vel_Y<<std::endl;
@@ -533,14 +533,21 @@ void calc_vel_prof_1_params(const double& A_max,
 
 	double delta = b*b - 4.0 * a * c;
 
+	bool two_roots = false;
+
+	//solutions 
+	double s, s1, s2;
+
 	if(delta < 0){
 		ROS_WARN("Cannot catch target. Delta < 0");
 		exit(1);
 	}
 	else if(delta > 0){    
 
-		double s1 = (-b + sqrt(delta)) / (2.0 * a);
-		double s2 = (-b - sqrt(delta)) / (2.0 * a);
+		two_roots = true;		
+
+		s1 = (-b + sqrt(delta)) / (2.0 * a);
+		s2 = (-b - sqrt(delta)) / (2.0 * a);
 
 
 		if(s1 > 0){
@@ -567,21 +574,42 @@ void calc_vel_prof_1_params(const double& A_max,
 	}
 	else{
 
-		double s1 = -b / (2.0 * a);
-		if(s1 > 0){
-			t1 = s1;
+		s = -b / (2.0 * a);
+		if(s > 0){
+			t1 = s;
 		}
 		else{
 			ROS_WARN("Cannot catch target. Double neg solution");
 			exit(3);
 		}
 
-		ROS_WARN("delta %lf s1 %lf t1 %lf", delta, s1 ,t1);
+		ROS_WARN("delta %lf s1 %lf t1 %lf", delta, s ,t1);
 	}
 
 
 
 	t2 = 2.0 * t1 - (V_DES - V0_CH) / A_max;
+
+	//Select the other root for t1, even if it is bigger than the first
+	//cause the problem does not a have a solution for that value of t1
+	if(t2 <= 0.0){ 
+		
+		if(two_roots){
+		
+			if(t1 == s1 && s2 > 0)
+				t1 = s2;
+			else if (t1 == s2 && s1 > 0)
+				t1 = s1;
+	
+			//...and recalculate t2
+			t2 = 2.0 * t1 - (V_DES - V0_CH) / A_max;
+		}
+		else{
+			ROS_WARN("Cannot catch target. t2 <= 0");
+                        exit(4);
+		}
+	}
+
 	xdes_target = V_DES * t2 + init_des;
 	xt1 = INIT_CH + V0_CH * t1 + 0.5*A_max*(t1*t1);
 	vt1 = V0_CH + A_max * t1;
