@@ -838,7 +838,7 @@ void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& g
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
                         
-			move_right_arm(q11, q21, q31, 4.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			move_right_arm(q11, q21, q31, 3.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			ready_to_grip_right = true;
                         result.success = true;
                         as.setSucceeded(result);
@@ -851,7 +851,7 @@ void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& g
 
                         ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q12,q22,q32);
 
-                        move_right_arm(q12, q22, q32, 4.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        move_right_arm(q12, q22, q32, 3.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			ready_to_grip_right = true;
                         result.success = true;
                         as.setSucceeded(result);

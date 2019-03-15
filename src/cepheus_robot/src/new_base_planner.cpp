@@ -330,12 +330,12 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 		t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
 		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
-		ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
+		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
 		
-		cut_digits(target_vel_X, 3);
-		cut_digits(target_vel_Y, 3);
+		cut_digits(t_vel_X, 3);
+		cut_digits(t_vel_Y, 3);
 
-		ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
+		//ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
 
 		/*if(t_vel_X < 0.002 && t_vel_X > -0.002){
 			t_vel_X = 0.0;
@@ -722,10 +722,10 @@ void calc_vel_prof_3_params(const double& A_MAX,
 }
 
 
-void decide_plan_of_action()
+void decide_plan_of_action_X()
 {
 	//for checking the table contraints
-	double meet_point_x, meet_point_y;
+	double meet_point_x;
 
 	//-----------FOR X AXIS------------
 
@@ -758,6 +758,11 @@ void decide_plan_of_action()
 		ROS_WARN("Prof 2 or 3");
 	}
 
+}
+
+void decide_plan_of_action_Y(){
+
+	double meet_point_y;
 
 	//------------FOR Y AXIS--------------
 	ROS_WARN("Prof Y: ");
@@ -922,7 +927,8 @@ void wait_to_smooth_error(const double dur){
 }
 
 
-void set_commands(const double& t,
+void set_commands(const double& t_X,
+		const double& t_Y, 	
 		double& new_x,
 		double& new_y,
 		double& new_vel_x,
@@ -936,13 +942,13 @@ void set_commands(const double& t,
 
 	if(velocity_profile_X == (short)VEL_PROF_1){
 
-		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+		produce_chaser_trj_points_and_vel_prof_1(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
 		
-		if(t > p1_X.t2 && t <= p1_X.duration_with_active_ctrl){
+		if(t_X > p1_X.t2 && t_X <= p1_X.duration_with_active_ctrl){
 			update_path_X = false;
 		}
 	
-		if(t > p1_X.duration_with_active_ctrl){
+		if(t_X > p1_X.duration_with_active_ctrl){
 	
 			disable_ctrl_X = true;
 		
@@ -953,7 +959,7 @@ void set_commands(const double& t,
 					one_time_X = false;
 				}
 				
-				new_x = last_chaser_pos_X + target_vel_X * t;
+				new_x = last_chaser_pos_X + target_vel_X * (t_X - p1_X.duration_with_active_ctrl);
 				new_vel_x = target_vel_X;
 				new_acc_x = 0.0;				
 			}
@@ -962,28 +968,28 @@ void set_commands(const double& t,
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.x, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
-		if(t > p2_X.duration_with_active_ctrl){
+		produce_chaser_trj_points_and_vel_prof_2(t_X, chaser_init_pos.x, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
+		if(t_X > p2_X.duration_with_active_ctrl){
 			disable_ctrl_X = true;
 		}
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.x, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
-		if(t > p3_X.duration_with_active_ctrl){
+		produce_chaser_trj_points_and_vel_prof_3(t_X, chaser_init_pos.x, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
+		if(t_X > p3_X.duration_with_active_ctrl){
 			disable_ctrl_X = true;
 		}
 	}
 
 	if(velocity_profile_Y == (short)VEL_PROF_1){
 
-		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+		produce_chaser_trj_points_and_vel_prof_1(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
 		
-	 	if(t > p1_Y.t2 && t <= p1_Y.duration_with_active_ctrl){
+	 	if(t_Y > p1_Y.t2 && t_Y <= p1_Y.duration_with_active_ctrl){
                         update_path_Y = false;
                 }
 
-		if(t > p1_Y.duration_with_active_ctrl){
+		if(t_Y > p1_Y.duration_with_active_ctrl){
 			
 			disable_ctrl_Y = true;
 
@@ -994,7 +1000,7 @@ void set_commands(const double& t,
                                         one_time_Y = false;
                                 }
 
-                                new_y = last_chaser_pos_Y + target_vel_Y * t;
+                                new_y = last_chaser_pos_Y + target_vel_Y *  (t_Y - p1_Y.duration_with_active_ctrl);
                                 new_vel_y = target_vel_Y;
                                 new_acc_y = 0.0;
                         }
@@ -1003,16 +1009,16 @@ void set_commands(const double& t,
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t, chaser_init_pos.y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
-		if(t > p2_Y.duration_with_active_ctrl){
+		produce_chaser_trj_points_and_vel_prof_2(t_Y, chaser_init_pos.y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
+		if(t_Y > p2_Y.duration_with_active_ctrl){
 			disable_ctrl_Y = true;
 		}
 
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
-		if(t > p3_Y.duration_with_active_ctrl){
+		produce_chaser_trj_points_and_vel_prof_3(t_Y, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
+		if(t_Y > p3_Y.duration_with_active_ctrl){
 			disable_ctrl_Y = true;
 		}
 
@@ -1111,10 +1117,20 @@ int main(int argc, char** argv)
 	tf::Quaternion qq;
 	ros::Rate loop_rate(200);
 
-	ros::Duration dt;
-	ros::Time prev_time;
-	ros::Time init_time;
-	ros::Duration timer;
+	//Global timer
+	ros::Time prev_time_glb;
+        ros::Time init_time_glb;
+	ros::Duration timer_glb;
+        ros::Duration dt;
+
+	//Timer for the planning in X axis
+	ros::Time init_time_X;
+	ros::Duration timer_X;
+
+	//Timer for the planning in Y axis
+        ros::Time init_time_Y;
+        ros::Duration timer_Y;
+
 
 	int counter = 0;
 
@@ -1142,12 +1158,18 @@ int main(int argc, char** argv)
 			wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
 			observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
 			setup_planning_parameters();
-			decide_plan_of_action();
+			decide_plan_of_action_X();
+			decide_plan_of_action_Y();
 
 			ROS_WARN("Planner is starting to produce the trajecory");
 
-			prev_time = ros::Time::now();
-			init_time = ros::Time::now();
+			prev_time_glb = ros::Time::now();
+			init_time_glb = ros::Time::now();
+
+                        init_time_X = ros::Time::now();
+			
+                        init_time_Y = ros::Time::now();
+
 
 			new_path = true;
 		}
@@ -1224,9 +1246,12 @@ int main(int argc, char** argv)
 		}
 
 
-		dt = ros::Time::now() - prev_time;
-		prev_time = ros::Time::now();
-		timer = ros::Time::now() - init_time;
+		dt = ros::Time::now() - prev_time_glb;
+		prev_time_glb = ros::Time::now();
+
+                timer_X = ros::Time::now() - init_time_X;
+                timer_Y = ros::Time::now() - init_time_Y;
+		timer_glb = ros::Time::now() - init_time_glb;
 
 		ros::spinOnce();
 
@@ -1234,7 +1259,7 @@ int main(int argc, char** argv)
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
 		//400 loops is 2 seconds
-		if(counter == 400 && update_path_X && update_path_Y){
+		if(counter == 400 ){
 
 			counter = 0;
 
@@ -1244,50 +1269,69 @@ int main(int argc, char** argv)
 			ros::spinOnce();
 			observate_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
 
-			
-			double diff_X = fabs(obs_vel_X - target_vel_X);
-			double diff_Y = fabs(obs_vel_Y - target_vel_Y);
+			if(update_path_X){
+		
+				double diff_X = fabs(obs_vel_X - target_vel_X);
 
-			ROS_INFO("t_vel_X %lf , obs_vel_X %lf, t_vel_Y %lf , obs_vel_Y %lf, diff_X %lf diff_Y %lf", target_vel_X, obs_vel_X, target_vel_Y ,obs_vel_Y, diff_X, diff_Y);
+                        	ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
 
-			if( (diff_X > 0.005) || (diff_Y > 0.005) ){
+                        	if( diff_X > 0.005 ){
 
-				target_vel_X = obs_vel_X;
-				target_vel_Y = obs_vel_Y;
+                                	target_vel_X = obs_vel_X;
 
-				ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
+                                	ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
 
-			        //store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-	                        //chaser_init_pos.x = chaser_real_pos.x;
-        	                //chaser_init_pos.y = chaser_real_pos.y;
+                                	//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+                                	//chaser_init_pos.x = chaser_real_pos.x;
+                                	//chaser_init_pos.y = chaser_real_pos.y;
 
-        	                //For simulation ONLY WITH RVIZ
-                        	chaser_init_pos.x = new_x;
-                	        chaser_init_pos.y = new_y;
-	
-        	                chaser_init_vel_X = new_vel_x;
-                	        chaser_init_vel_Y = new_vel_y;
+                                	//For simulation ONLY WITH RVIZ
+                                	chaser_init_pos.x = new_x;
+                                	chaser_init_vel_X = new_vel_x;
 
-				//ROS_WARN("chaser_init_vel_X %lf chaser_init_vel_Y %lf", chaser_init_vel_X, chaser_init_vel_Y);
+	                                ros::spinOnce();
 
+        	                        target_init_pos.x = target_real_pos.x;
 
-				ros::spinOnce();
+                	                setup_planning_parameters();
+                	               	decide_plan_of_action_X();
 
-				target_init_pos.x = target_real_pos.x;
-				target_init_pos.y = target_real_pos.y;
+                	                //reset timer for this axis
+                                	init_time_X = ros::Time::now();
+                        	}
 
+			}
 
-				setup_planning_parameters();
-				decide_plan_of_action();
+			if(update_path_Y){
 
-				//reset timers......
-				prev_time = ros::Time::now();
-				init_time = ros::Time::now();
-			}	
-			
-			//commmented...not sure it is correct
-			//target_vel_X = obs_vel_X;
-                        //target_vel_Y = obs_vel_Y;
+				double diff_Y = fabs(obs_vel_Y - target_vel_Y);
+
+                                ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
+
+                                if( diff_Y > 0.005 ){
+
+                                        target_vel_Y = obs_vel_Y;
+
+                                        ROS_INFO("Found change in target's velocity in Y axis! \n Recalculating path.....");
+
+                                        //store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+                                        //chaser_init_pos.y = chaser_real_pos.y;
+
+                                        //For simulation ONLY WITH RVIZ
+                                        chaser_init_pos.y = new_y;
+                                        chaser_init_vel_Y = new_vel_y;
+
+                                        ros::spinOnce();
+
+                                        target_init_pos.y = target_real_pos.y;
+
+                                        setup_planning_parameters();
+                                        decide_plan_of_action_Y();
+
+                                        //reset timer for this axis
+                                        init_time_Y = ros::Time::now();
+                                }
+			}
 
 			continue;
 		}
@@ -1295,7 +1339,7 @@ int main(int argc, char** argv)
 		
 
 		//Produce the cmd_pos, cmd_vel, cmd_acc
-		set_commands(timer.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
+		set_commands(timer_X.toSec(), timer_Y.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
 
 		//For position and orientation
 		new_pos.pose.position.x = new_x;
@@ -1347,6 +1391,8 @@ int main(int argc, char** argv)
 		path_pub.publish(path);
 
 		loop_rate.sleep();
+
+		//std::cout<<"timer_X"<<timer_X<<" timer_Y"<<timer_Y<<" timer_glb"<<timer_glb<<std::endl;
 	}
 
 }

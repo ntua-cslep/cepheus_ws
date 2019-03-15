@@ -5,7 +5,7 @@
 
 const double FMAX_THRUST = 0.17;//Newton 20% duty cucle
 const double CHASER_MASS = 13.5;//kg
-const double WS_RADIUS = 0.3569;//m
+const double WS_RADIUS = 0.385;//m
 const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
