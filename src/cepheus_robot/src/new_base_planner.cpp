@@ -540,7 +540,7 @@ void calc_vel_prof_1_params(const double& A_max,
 
 	if(delta < 0){
 		ROS_WARN("Cannot catch target. Delta < 0");
-		exit(1);
+		//exit(1);
 	}
 	else if(delta > 0){    
 
@@ -566,7 +566,7 @@ void calc_vel_prof_1_params(const double& A_max,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Two neg solutions < 0");
-			exit(2);
+			//exit(2);
 		}
 
 		ROS_WARN("a %lf b %lf c %lf  delta %lf s1 %lf s2 %lf t1 %lf",a,b,c, delta, s1,s2,t1);
@@ -580,7 +580,7 @@ void calc_vel_prof_1_params(const double& A_max,
 		}
 		else{
 			ROS_WARN("Cannot catch target. Double neg solution");
-			exit(3);
+			//exit(3);
 		}
 
 		ROS_WARN("delta %lf s1 %lf t1 %lf", delta, s ,t1);
@@ -832,9 +832,6 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		cmd_vel = V_DES;
 		cmd_acc = 0.0;
 	}
-	else{
-		//	ROS_WARN("PROF1 MUST DISABLE CTRL!");
-	}
 }
 
 void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
@@ -934,6 +931,9 @@ void set_commands(const double& t,
 		double& new_acc_y)
 {
 
+	static bool one_time_X = true, one_time_Y = true;
+	static double last_chaser_pos_X, last_chaser_pos_Y;
+
 	if(velocity_profile_X == (short)VEL_PROF_1){
 
 		produce_chaser_trj_points_and_vel_prof_1(t, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
@@ -943,7 +943,21 @@ void set_commands(const double& t,
 		}
 	
 		if(t > p1_X.duration_with_active_ctrl){
+	
 			disable_ctrl_X = true;
+		
+			if(!disable_ctrl_Y){
+
+				if(one_time_X){
+					last_chaser_pos_X = chaser_real_pos.x;
+					one_time_X = false;
+				}
+				
+				new_x = last_chaser_pos_X + target_vel_X * t;
+				new_vel_x = target_vel_X;
+				new_acc_x = 0.0;				
+			}
+		
 		}
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_2){
@@ -970,7 +984,21 @@ void set_commands(const double& t,
                 }
 
 		if(t > p1_Y.duration_with_active_ctrl){
+			
 			disable_ctrl_Y = true;
+
+			if(!disable_ctrl_X){
+
+                                if(one_time_Y){
+                                        last_chaser_pos_Y = chaser_real_pos.y;
+                                        one_time_Y = false;
+                                }
+
+                                new_y = last_chaser_pos_Y + target_vel_Y * t;
+                                new_vel_y = target_vel_Y;
+                                new_acc_y = 0.0;
+                        }
+	
 		}
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_2){
