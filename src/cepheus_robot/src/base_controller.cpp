@@ -142,7 +142,7 @@ class BaseController {
 
 		void setControllerGains(double _kp_lin, double _kp_ang, double _kd_lin, double _kd_ang) 
 		{
-			double ts_lin = 45.0;
+			double ts_lin = 20.0;
 			double wn_lin = 6.0/ts_lin;
 
 			double ts_ang = 20.0;

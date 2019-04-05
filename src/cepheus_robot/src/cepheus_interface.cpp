@@ -600,7 +600,7 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 }
 */
 
-
+/*
 void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm ){
    
     
@@ -742,7 +742,7 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 
         
 }
-
+*/
 //bool right_catch_object_one_time = true;
 
 //void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){

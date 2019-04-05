@@ -1079,7 +1079,7 @@ int main(int argc, char** argv)
 	cl_right.waitForServer();
 	cepheus_robot::RightCatchObjectGoal right_goal;
 	right_goal.point_to_catch.header.frame_id = "/assist_robot";
-
+	
 	/*
 	   ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
 	   cl_left.waitForServer();
@@ -1216,7 +1216,7 @@ int main(int argc, char** argv)
 
 				double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
 				double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-
+				
 				//command to catch object in interface
 				right_goal.point_to_catch.pose.position.x = x;
 				right_goal.point_to_catch.pose.position.y = y;
@@ -1234,7 +1234,7 @@ int main(int argc, char** argv)
 				}
 
 				printf("Current State: %s\n", cl_right.getState().toString().c_str());
-
+				
 			}
 			else{
 				if(ws_warn){
