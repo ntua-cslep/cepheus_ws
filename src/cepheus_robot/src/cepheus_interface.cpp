@@ -1031,6 +1031,7 @@ int main(int argc, char** argv)
 		robot.writeMotors();
 		robot.heartbeat();
 
+		//std::cout<<"rw_torque : "<<rw_torque<<std::endl;
 
 		if(rw_torque!=0.0) {
 			std_msgs::Float64 cmd;
