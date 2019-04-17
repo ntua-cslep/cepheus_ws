@@ -25,8 +25,11 @@ class Geometric_Constraints{
         double robot_ws;
         double assist_robot_length;//it's square
 
-        double constraint_for_x;//the constraint derived from the above
-        double constraint_for_y;
+	//derived from the above
+        double min_constraint_for_x;
+	double max_constraint_for_x;
+        double min_constraint_for_y;
+	double max_constraint_for_y;
 
         public:
 
@@ -39,18 +42,27 @@ class Geometric_Constraints{
         {
                 double abs_d = robot_radious + robot_ws + assist_robot_length;
 
-                constraint_for_x = table_length_x - abs_d;
-                constraint_for_y = table_length_y - abs_d;
+		min_constraint_for_x = abs_d;
+		min_constraint_for_y = abs_d;
+                max_constraint_for_x = table_length_x - abs_d;
+                max_constraint_for_y = table_length_y - abs_d;
 
         }
 
-        bool in_constraints(double des_x, double des_y){
+        bool in_constraints_for_X(double des_x){
 
-                if(des_x < constraint_for_x && des_y < constraint_for_y)
+                if((des_x > min_constraint_for_x) && (des_x < max_constraint_for_x)) 
                         return true;
                 else
                         return false;
+        }
 
+	bool in_constraints_for_Y(double des_y){
+
+                if((des_y > min_constraint_for_y) && (des_y < max_constraint_for_y))
+                        return true;
+                else
+                        return false;
         }
 };
 

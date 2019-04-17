@@ -593,107 +593,175 @@ void calc_vel_prof_3_params(const double& A_MAX,
 
 void decide_plan_of_action_X()
 {
-	//for checking the table contraints
-	double meet_point_x;
-
 	//-----------FOR X AXIS------------
 
-	//Target almost still
 	ROS_WARN("Prof X: ");
 
+	//Target almost still
 	if(target_vel_X == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
-		meet_point_x = p1_X.xdes_chaser;
-		velocity_profile_X = (short)VEL_PROF_1;
-		p1_X.print();
+
+		//check constraints
+		bool in_c_vp1 = constraints.in_constraints_for_X(p1_X.xdes_chaser);
+
+		if(!in_c_vp1){
+			 ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+        	         exit(10);
+		}
+		else{
+			velocity_profile_X = (short)VEL_PROF_1;
+			p1_X.print();
+		}
 	}
-	//target moving away
+	//Target moving away
 	else if((chaser_init_pos.x <= des_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= des_pos.x && target_vel_X  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
-		meet_point_x = p1_X.xdes_chaser;
-		velocity_profile_X = (short)VEL_PROF_1;
-		p1_X.print();
+		
+		//check constraints
+                bool in_c_vp1 = constraints.in_constraints_for_X(p1_X.xdes_chaser);
+
+                if(!in_c_vp1){
+                         ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+                         exit(10);
+                }
+                else{
+                        velocity_profile_X = (short)VEL_PROF_1;
+                        p1_X.print();
+                }
 	}
 
 	//Target is aproacing the chaser
-	//In order to decide the velocity profile for the movement of the chaser...
-	//...both durations for Prof 2 and Prof 3 will be calculated, with active ctrl
-	//...and will be chosen, the Prof with the shortest duration
+	//In order to decide the velocity profile for the movement of the chaser, both Vel Prof parameters will be calculated.
+	//Then the meeting point with the target will be compared with the constraints developed in 'base_planner_utilities.h'
+	//If both profiles satisfy the constraints ,both durations, wiht active ctrl, for Prof 2 and Prof 3 will be compared...
+	//...and the Prof with the shortest duration we be chosen
 	else{
 		//....Vel Prof 2 params
 		calc_vel_prof_2_params(chaser_init_pos.x, chaser_init_vel_X, des_pos.x, target_vel_X, p2_X);
 		//....Vel Prof 3 params
 		calc_vel_prof_3_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, L_X, p3_X);
 
-		//compare durations to choose profile
-
-		//Vel Prof 3	
-		if(p3_X.duration_with_active_ctrl <= p2_X.duration_with_active_ctrl){
-
-			meet_point_x = p3_X.xdes_chaser;
-			velocity_profile_X = (short)VEL_PROF_3;
-			p3_X.print();
-		}
-		//Vel Prof 2
-		else{
-			meet_point_x = p2_X.xdes_chaser;
-			velocity_profile_X = (short)VEL_PROF_2;
-			p2_X.print();
-		} 	 
+                //Check constraints
+                bool in_c_vp3 = constraints.in_constraints_for_X(p3_X.xdes_chaser);
+                bool in_c_vp2 = constraints.in_constraints_for_X(p2_X.xdes_chaser);
+                
+                
+                if(!in_c_vp3 && !in_c_vp2){
+                        ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+                        exit(10);
+                }
+                //Vel Prof 2
+                else if(in_c_vp2 && !in_c_vp3){
+                        velocity_profile_X = (short)VEL_PROF_2;
+                        p2_X.print();
+                }
+                //Vel Prof 3
+                else if(!in_c_vp2 && in_c_vp3){
+                        velocity_profile_X = (short)VEL_PROF_3;
+                        p3_X.print();
+                }
+                //compare durations to choose profile
+                else{
+                        //Vel Prof 3    
+                        if(p3_X.duration_with_active_ctrl <= p2_X.duration_with_active_ctrl){
+                                velocity_profile_X = (short)VEL_PROF_3;
+                                p3_X.print();
+                        }
+                        //Vel Prof 2
+                        else{
+                                velocity_profile_X = (short)VEL_PROF_2;
+                                p2_X.print();
+                        }
+                }
 	}
 }
 
 void decide_plan_of_action_Y(){
 
-	double meet_point_y;
-
 	//------------FOR Y AXIS--------------
+
 	ROS_WARN("Prof Y: ");
+
 	//Target almost still
 	if(target_vel_Y == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
-		meet_point_y = p1_Y.xdes_chaser;
-		velocity_profile_Y = (short)VEL_PROF_1;
-		p1_Y.print();
+		
+		//check constraints
+                bool in_c_vp1 = constraints.in_constraints_for_Y(p1_Y.xdes_chaser);
 
+                if(!in_c_vp1){
+                         ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+                         exit(10);
+                }
+                else{
+                        velocity_profile_Y = (short)VEL_PROF_1;
+                        p1_Y.print();
+                }
 	}
 
 	//Target is moving away
 	else if((chaser_init_pos.y <= des_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= des_pos.y && target_vel_Y  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
-		meet_point_y = p1_Y.xdes_chaser;
-		velocity_profile_Y = (short)VEL_PROF_1;
-		p1_Y.print();
 
+		//check constraints
+                bool in_c_vp1 = constraints.in_constraints_for_Y(p1_Y.xdes_chaser);
+
+                if(!in_c_vp1){
+                         ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+                         exit(10);
+                }
+                else{
+                        velocity_profile_Y = (short)VEL_PROF_1;
+                        p1_Y.print();
+                }
 	}
+	
 	//Target is aproacing the chaser
-	//In order to decide the velocity profile for the movement of the chaser...
-	//...both durations for Prof 2 and Prof 3 will be calculated, with active ctrl
-	//...and will be chosen, the Prof with the shortest duration
+        //In order to decide the velocity profile for the movement of the chaser, both Vel Prof parameters will be calculated.
+        //Then the meeting point with the target will be compared with the constraints developed in 'base_planner_utilities.h'
+        //If both profiles satisfy the constraints ,both durations, wiht active ctrl, for Prof 2 and Prof 3 will be compared...
+        //...and the Prof with the shortest duration we be chosen
 	else{
 		//....Vel Prof 2 params
 		calc_vel_prof_2_params(chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, target_vel_Y, p2_Y);
 		//....Vel Prof 3 params
 		calc_vel_prof_3_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, L_Y, p3_Y);
 
-		//compare durations to choose profile
+		//Check constraints
+		bool in_c_vp3 = constraints.in_constraints_for_Y(p3_Y.xdes_chaser);
+		bool in_c_vp2 = constraints.in_constraints_for_Y(p2_Y.xdes_chaser);
 
-		//Vel Prof 3    
-		if(p3_Y.duration_with_active_ctrl <= p2_Y.duration_with_active_ctrl){
 
-			meet_point_y = p3_Y.xdes_chaser;
-			velocity_profile_Y = (short)VEL_PROF_3;
-			p3_Y.print();
+		if(!in_c_vp3 && !in_c_vp2){
+			ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
+			exit(10);
 		}
 		//Vel Prof 2
+		else if(in_c_vp2 && !in_c_vp3){
+                        velocity_profile_Y = (short)VEL_PROF_2;
+                        p2_Y.print();
+		}
+		//Vel Prof 3
+		else if(!in_c_vp2 && in_c_vp3){
+                        velocity_profile_Y = (short)VEL_PROF_3;
+                        p3_Y.print();
+		}
+		//compare durations to choose profile
 		else{
-			meet_point_y = p2_Y.xdes_chaser;
-			velocity_profile_Y = (short)VEL_PROF_2;
-			p2_Y.print();
+                	//Vel Prof 3    
+                	if(p3_Y.duration_with_active_ctrl <= p2_Y.duration_with_active_ctrl){
+	                        velocity_profile_Y = (short)VEL_PROF_3;
+	                        p3_Y.print();
+	                }
+	                //Vel Prof 2
+	                else{
+	                        velocity_profile_Y = (short)VEL_PROF_2;
+	                        p2_Y.print();
+	                }
 		}
 	}
 }
