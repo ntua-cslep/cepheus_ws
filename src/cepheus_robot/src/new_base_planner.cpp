@@ -51,14 +51,6 @@ typedef actionlib::SimpleActionClient<cepheus_robot::RightCatchObjectAction> Act
 //typedef actionlib::SimpleActionClient<cepheus_robot::LeftCatchObjectAction> ActionClientLeft;
 
 
-DigitalFilter tar_x_fir(10, 0.0);
-DigitalFilter tar_y_fir(10, 0.0);
-DigitalFilter ch_x_fir(10, 0.0);
-DigitalFilter ch_y_fir(10, 0.0);
-
-DigitalFilter tar_xd_fir(10, 0.0);
-DigitalFilter tar_yd_fir(10, 0.0);
-
 
 //These flags will be true when the vel prof is over and the controller must be disabled
 //Both flags must be true in order to disable ctrl
@@ -95,10 +87,10 @@ double A_MAX_X, A_MAX_Y;
 
 //distance from target used in second profile in order to reverse the
 //orientation of the chaser's velocity
-double L_X = 1;
-double L_Y = 1;
+double L_X = 0.3;
+double L_Y = 0.3;
 
-//The target's velcoty as observated form the chaser via the phase space system
+//The target's velcoty as observed form the chaser via the phase space system
 double target_vel_X = 0.0, target_vel_Y = 0.0;
 
 //The chaser's init velocity in the begginning of every planning
@@ -127,45 +119,6 @@ void ctrl_C_Handler(int sig)
 //The path created by the planner stored for any use
 nav_msgs::Path path;
 
-//double theta_des = 0.0;
-/*
-   void update_des_pos(tf::TransformListener& des_pos_listener, tf::StampedTransform& des_pos_transform){
-
-   double roll, pitch, yaw;
-
-   try{
-   des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
-
-   tf::Quaternion q = des_pos_transform.getRotation();
-   tf::Matrix3x3 m(q);
-   m.getRPY(roll,pitch,yaw);
-
-//ROS_WARN("yaw %lf",yaw);
-
-theta_des = M_PI + yaw;		
-double mod = std::fmod(theta_des, 2.0 * M_PI);
-
-if(mod <= M_PI && mod >= 0 ){
-theta_des = mod;
-}
-else{
-theta_des = mod - 2.0 * M_PI;
-}
-
-
-des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
-des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
-//des_pos.x = des_pos_transform.getOrigin().x();
-//des_pos.y = des_pos_transform.getOrigin().y();
-
-
-//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
-}
-catch (tf::TransformException &ex) {
-ROS_ERROR("%s",ex.what());
-}
-}
- */
 
 //---Helper functions------
 
@@ -211,7 +164,6 @@ void PhaseSpaceCallbackChaser(const geometry_msgs::TransformStamped::ConstPtr& m
 		//cut_digits(chaser_init_pos.x, 3);	
 		//cut_digits(chaser_init_pos.y, 3);
 
-
 		chaser_real_pos.x = temp.transform.translation.x;
 		chaser_real_pos.y = temp.transform.translation.y;
 		chaser_real_pos.z = yaw;
@@ -227,9 +179,6 @@ void PhaseSpaceCallbackChaser(const geometry_msgs::TransformStamped::ConstPtr& m
 		chaser_real_pos.x = temp.transform.translation.x;
 		chaser_real_pos.y = temp.transform.translation.y;
 		chaser_real_pos.z = yaw;
-
-		//chaser_real_pos.x = ch_x_fir.filter(chaser_real_pos.x);
-		//chaser_real_pos.y = ch_y_fir.filter(chaser_real_pos.y);
 
 		//cut_digits(chaser_real_pos.x, 3);
 		//cut_digits(chaser_real_pos.y, 3);
@@ -286,9 +235,6 @@ void PhaseSpaceCallbackTarget(const geometry_msgs::TransformStamped::ConstPtr& m
 		target_real_pos.y = temp.transform.translation.y;
 		target_real_pos.z = yaw;
 
-		//target_real_pos.x = tar_x_fir.filter( target_real_pos.x );
-		//target_real_pos.y = tar_y_fir.filter( target_real_pos.y );
-
 		//cut_digits(target_real_pos.x, 3);
 		//cut_digits(target_real_pos.y, 3);
 
@@ -305,7 +251,7 @@ void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
 
 
 //---------------------------
-void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t_vel_Y){
+void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_vel_Y){
 
 	static geometry_msgs::Vector3 target_prev_pos;
 
@@ -331,20 +277,9 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
 		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
-		
+
 		cut_digits(t_vel_X, 3);
 		cut_digits(t_vel_Y, 3);
-
-		//ROS_WARN("Cut velx %lf, Cut vely %lf",target_vel_X, target_vel_Y);
-
-		/*if(t_vel_X < 0.002 && t_vel_X > -0.002){
-			t_vel_X = 0.0;
-		}
-
-		if(t_vel_Y < 0.002 && t_vel_Y > -0.002){
-			t_vel_Y = 0.0;
-		}
-		*/
 
 		std::cout<<"Observated target vel_X: "<<t_vel_X<<std::endl;
 		std::cout<<"Observated target vel_Y: "<<t_vel_Y<<std::endl;
@@ -353,115 +288,12 @@ void observate_target_velocity(const unsigned int ms, double& t_vel_X, double& t
 
 		des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
 		des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-		//des_pos.x = target_real_pos.x;
-		//des_pos.y = target_real_pos.y;
 
 		//std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
 		//std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
-
-
 	}
 }
 
-//NOT USED
-void calculate_target_velocity(double dt, double& target_vel_X, double& target_vel_Y){
-
-	static bool first_time = true;
-	static geometry_msgs::Vector3 target_prev_pos;
-	static ros::Time target_prev_pos_stamp;
-	double x,y,z;
-
-
-	if(first_time){
-
-		target_prev_pos.x = target_real_pos.x;
-		target_prev_pos.y = target_real_pos.y;
-		target_prev_pos_stamp = target_pos_stamp; 
-		first_time = false;
-	}
-
-
-	x = target_real_pos.x;
-	y = target_real_pos.y;
-
-
-	if(dt != 0){
-		target_vel_X = (x - target_prev_pos.x)/dt;
-		target_vel_Y = (y - target_prev_pos.y)/dt;
-		//Real vel
-		//std::cout<<target_pos_stamp.toSec()<<" "<<target_vel_X<<std::endl;
-
-		target_vel_X = tar_xd_fir.filter(target_vel_X);
-		target_vel_Y = tar_yd_fir.filter(target_vel_Y);
-		//Filtered vel
-		//std::cout<<" "<<target_vel_X<<std::endl;
-
-		cut_digits(target_vel_X, 2);
-		cut_digits(target_vel_Y, 2);
-
-		if(target_vel_X < 0.01 && target_vel_X > -0.01){
-			target_vel_X = 0.0;
-		}
-
-		if(target_vel_Y < 0.01 && target_vel_Y > -0.01){
-			target_vel_Y = 0.0;
-		}
-
-
-		//std::cout<<"vel X: "<<target_vel_X<<" , velY: "<<target_vel_Y<<std::endl;
-
-	}
-
-	target_prev_pos.x = x;
-	target_prev_pos.y = y;
-	target_prev_pos_stamp = target_pos_stamp; 
-
-	//Real pos
-	//std::cout<<target_pos_stamp.toSec()<<" "<<target_real_pos.x<<std::endl;
-	//Filtered pos
-	//std::cout<<target_pos_stamp.toSec()<<" "<<x<<std::endl;
-
-
-	//ROS_INFO("vel x: %lf, vel y: %lf", target_vel_X, target_vel_Y);
-
-	//Calculate the targets orientation
-	//Not in need cause we can grab it anywhare in the circle around it
-	/*
-	   double roll, pitch, yaw;
-
-	   try{
-	   des_pos_listener.lookupTransform("/map","/assist_robot", ros::Time(0), des_pos_transform);
-
-	   tf::Quaternion q = des_pos_transform.getRotation();
-	   tf::Matrix3x3 m(q);
-	   m.getRPY(roll,pitch,yaw);
-
-	//ROS_WARN("yaw %lf",yaw);
-
-	theta_des = M_PI + yaw;
-	double mod = std::fmod(theta_des, 2.0 * M_PI);
-
-	if(mod <= M_PI && mod >= 0 ){
-	theta_des = mod;
-	}
-	else{
-	theta_des = mod - 2.0 * M_PI;
-	}
-
-
-	//des_pos.x = des_pos_transform.getOrigin().x() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * cos(yaw);
-	//des_pos.y = des_pos_transform.getOrigin().y() + (WS_RADIUS + ROBOT_RADIUS + ASSIST_ROBOT_DIST_FROM_CENTER) * sin(yaw);
-	//des_pos.x = des_pos_transform.getOrigin().x();
-	//des_pos.y = des_pos_transform.getOrigin().y();
-
-
-	//ROS_WARN("des pos_x : %lf, des_pos_y %lf", des_pos.x, des_pos.y);
-	}
-	catch (tf::TransformException &ex) {
-	ROS_ERROR("%s",ex.what());
-	}
-	 */
-}
 
 
 void setup_planning_parameters()
@@ -593,20 +425,26 @@ void calc_vel_prof_1_params(const double& A_max,
 	//Select the other root for t1, even if it is bigger than the first
 	//cause the problem does not a have a solution for that value of t1
 	if(t2 <= 0.0){ 
-		
+
 		if(two_roots){
-		
+
 			if(t1 == s1 && s2 > 0)
 				t1 = s2;
 			else if (t1 == s2 && s1 > 0)
 				t1 = s1;
-	
+
 			//...and recalculate t2
 			t2 = 2.0 * t1 - (V_DES - V0_CH) / A_max;
+
+			if(t2 <= 0.0){
+				ROS_WARN("Cannot catch target. t2 <= 0 EVEN for 2nd solution of t1");
+				exit(4);
+			}
+
 		}
 		else{
 			ROS_WARN("Cannot catch target. t2 <= 0");
-                        exit(4);
+			exit(4);
 		}
 	}
 
@@ -619,30 +457,33 @@ void calc_vel_prof_1_params(const double& A_max,
 }
 
 void calc_vel_prof_2_params(const double& INIT_CH,
+		const double& V0_CH,
 		const double& INIT_TAR,
 		const double&  V_DES,
 		Prf2& res)
 {
 	double t1,a_ch,xdes_chaser;
 
-	t1 = 2.0 * (INIT_CH - INIT_TAR)/V_DES;
-	a_ch = V_DES/t1;
-	xdes_chaser = INIT_CH + 0.5 *a_ch*pow(t1,2);
+	t1 = 2.0 * (INIT_CH - INIT_TAR)/(V_DES - V0_CH);
+	a_ch = (V_DES - V0_CH)/t1;
+	xdes_chaser = INIT_CH + V0_CH*t1 + 0.5 *a_ch*pow(t1,2);
 
-	res.set_vals(t1, xdes_chaser, a_ch);
+	res.set_vals(t1, xdes_chaser, V0_CH, a_ch);
 }
 
 void calc_vel_prof_3_params(const double& A_MAX,
 		const double& V_DES,
 		const double& INIT_CH,
+		const double& V0_CH,
 		const double& INIT_TAR,
 		const double& L,
-		const double& init_des,
 		Prf3& res)
 {
 	double t1,t2,t3,a3,Xt1,Xt2,Vt1,xdes_chaser,xdes_target;
 
-
+	bool two_roots = false;
+	double s1,s2; //the two possible solutions
+	
 	double a_max;
 	if(V_DES > 0){
 		a_max = -A_MAX;
@@ -651,9 +492,9 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		a_max = A_MAX;
 	}
 
-	double a = a_max / 4.0;
-	double b = -V_DES;
-	double c = INIT_CH - INIT_TAR + L - pow(V_DES,2) / 2.0*a_max;
+	double a = a_max;
+	double b = 2.0*V0_CH - 2.0*V_DES;
+	double c = INIT_CH - INIT_TAR + (0.5 * pow(V0_CH,2)/a_max) - (V_DES * V0_CH/a_max) + L;
 
 	double delta = b*b - 4.0 * a * c;
 
@@ -663,22 +504,24 @@ void calc_vel_prof_3_params(const double& A_MAX,
 	} 
 	else if (delta > 0){   
 
-		double s1 = (-b + sqrt(delta)) / (2.0 * a);
-		double s2 = (-b - sqrt(delta)) / (2.0 * a);
+		two_roots = true;
+
+		s1 = (-b + sqrt(delta)) / (2.0 * a);
+		s2 = (-b - sqrt(delta)) / (2.0 * a);
 
 		if(s1 > 0){
 			if(s1 < s2){
-				t2 = s1;
+				t1 = s1;
 			}
 			else if(s2 > 0){
-				t2 = s2;
+				t1 = s2;
 			}
 			else{
-				t2 = s1;
+				t1 = s1;
 			}
 		}
 		else if(s2 > 0){
-			t2 = s2;
+			t1 = s2;
 		}
 		else{
 			ROS_WARN("Cannot catch target. Two neg solutions < 0");
@@ -691,7 +534,7 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		double s1 = -b / (2.0 * a);
 
 		if(s1 > 0){
-			t2 = s1;
+			t1 = s1;
 		}
 		else{
 			ROS_WARN("Cannot catch target. Double neg solution");
@@ -699,10 +542,36 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		}
 	}
 
+	t2 = V0_CH/a_max + 2.0 * t1;
+	t3 = ((-2.0 *L)/V_DES) + t2;
 
-	t1 = t2/2.0;
-	t3=(L - 0.5 * V_DES * t2)/(-0.5 * V_DES);
-	a3 = (L + V_DES * (t3 - t2))/(0.5 * pow(t3 - t2,2) );
+	//Select the other root for t1, even if it is bigger than the first
+	//cause the problem does not a have a solution for that value of t1
+	if((t2 <= 0.0) || (t3 <= 0.0)){
+
+		if(two_roots){
+
+			if(t1 == s1 && s2 > 0)
+				t1 = s2;
+			else if (t1 == s2 && s1 > 0)
+				t1 = s1;
+
+			//...and recalculate t2 and t3
+			t2 = V0_CH/a_max + 2.0 * t1;
+			t3 = ((-2.0 *L)/V_DES) + t2;
+
+			if((t2 <= 0.0) || (t3 <= 0.0)){
+				ROS_WARN("Cannot catch target. t2 <= 0 OR t3 <= 0 EVEN for 2nd solution of t1");
+				exit(4);
+			}
+		}
+		else{
+			ROS_WARN("Cannot catch target. t2 <= 0 OR t3 <= 0");
+			exit(4);
+		}
+	}
+
+	a3 = -0.5 * pow(V_DES,2)/L;
 
 	if(V_DES > 0){
 		a_max = -A_MAX;
@@ -711,14 +580,14 @@ void calc_vel_prof_3_params(const double& A_MAX,
 		a_max = A_MAX;
 	}
 
-	Vt1 = t1 * a_max;
-	Xt1 = INIT_CH + 0.5 * a_max * pow(t1,2);
+	Vt1 = V0_CH + a_max * t1;
+	Xt1 = INIT_CH + V0_CH * t1 + 0.5 * a_max * pow(t1,2);
 	Xt2 = Xt1 + Vt1 * (t2 - t1) - 0.5 * a_max * pow(t2 - t1,2);
-	xdes_chaser = INIT_TAR + V_DES * t3;
+	xdes_chaser = Xt2 + 0.5 * a3 * pow(t3 - t2,2);
 
-	xdes_target=V_DES*t3+init_des;
+	xdes_target = V_DES * t3 + INIT_TAR;
 
-	res.set_vals(t1, t2, t3, a3, Vt1, Xt1, Xt2, xdes_chaser, xdes_target);
+	res.set_vals(t1, t2, t3, a3, Vt1, Xt1, Xt2, xdes_chaser, V0_CH, xdes_target);
 }
 
 
@@ -748,16 +617,32 @@ void decide_plan_of_action_X()
 		p1_X.print();
 	}
 
-
-	// 	Target is aproacing the chaser
-	// In order to decide the velocity profile for the movement of the chaser
-	// we have to calculate the time needed for the target to reach the chaser
-	// if the time needed is smaller than a threshold we coose we have to choose the second profile 
-	// else the third
+	//Target is aproacing the chaser
+	//In order to decide the velocity profile for the movement of the chaser...
+	//...both durations for Prof 2 and Prof 3 will be calculated, with active ctrl
+	//...and will be chosen, the Prof with the shortest duration
 	else{
-		ROS_WARN("Prof 2 or 3");
-	}
+		//....Vel Prof 2 params
+		calc_vel_prof_2_params(chaser_init_pos.x, chaser_init_vel_X, des_pos.x, target_vel_X, p2_X);
+		//....Vel Prof 3 params
+		calc_vel_prof_3_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, L_X, p3_X);
 
+		//compare durations to choose profile
+
+		//Vel Prof 3	
+		if(p3_X.duration_with_active_ctrl <= p2_X.duration_with_active_ctrl){
+
+			meet_point_x = p3_X.xdes_chaser;
+			velocity_profile_X = (short)VEL_PROF_3;
+			p3_X.print();
+		}
+		//Vel Prof 2
+		else{
+			meet_point_x = p2_X.xdes_chaser;
+			velocity_profile_X = (short)VEL_PROF_2;
+			p2_X.print();
+		} 	 
+	}
 }
 
 void decide_plan_of_action_Y(){
@@ -785,24 +670,32 @@ void decide_plan_of_action_Y(){
 		p1_Y.print();
 
 	}
-
-	// 	Target is aproacing the chaser
-	// In order to decide the velocity profile for the movement of the chaser
-	// we have to calculate the time needed for the target to reach the chaser
-	// if the time needed is smaller than a threshold we coose we have to choose the second profile 
-	// else the third
+	//Target is aproacing the chaser
+	//In order to decide the velocity profile for the movement of the chaser...
+	//...both durations for Prof 2 and Prof 3 will be calculated, with active ctrl
+	//...and will be chosen, the Prof with the shortest duration
 	else{
-		ROS_WARN("Prof 2 or 3");
-	}
-	/*	
-		if( !(constraints.in_constraints(meet_point_x, meet_point_y)) ){
-		ROS_WARN("MEETING POINT OUT OF LIMITS! ABORTING.....");
-		exit(12);
+		//....Vel Prof 2 params
+		calc_vel_prof_2_params(chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, target_vel_Y, p2_Y);
+		//....Vel Prof 3 params
+		calc_vel_prof_3_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, L_Y, p3_Y);
+
+		//compare durations to choose profile
+
+		//Vel Prof 3    
+		if(p3_Y.duration_with_active_ctrl <= p2_Y.duration_with_active_ctrl){
+
+			meet_point_y = p3_Y.xdes_chaser;
+			velocity_profile_Y = (short)VEL_PROF_3;
+			p3_Y.print();
 		}
+		//Vel Prof 2
 		else{
-		ROS_WARN("CEPHEUS DECIDED: X-axis -> VEL_PROF: %d ,Y-axis -> VEL_PROF: %d chaser_init pos_X %lf chaser_init pos_Y %lf", velocity_profile_X, velocity_profile_Y, chaser_init_pos.x, chaser_init_pos.y);
+			meet_point_y = p2_Y.xdes_chaser;
+			velocity_profile_Y = (short)VEL_PROF_2;
+			p2_Y.print();
 		}
-	 */	 
+	}
 }
 
 void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
@@ -815,7 +708,7 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 		double& cmd_vel,
 		double& cmd_acc)
 {
-	
+
 
 	if (t <= prof_params.t1){
 		//ROS_INFO("Accelerate =>");
@@ -840,7 +733,8 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 }
 
 void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
-		const double&INIT_CH,
+		const double& INIT_CH,
+		const double& V0_CH,
 		const double& V_DES,
 		const Prf2& prof_params,
 		double& cmd_pos,
@@ -849,8 +743,8 @@ void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
 {
 
 	if (t <= prof_params.t1){
-		cmd_pos = INIT_CH + 0.5 * prof_params.a_ch * pow(t,2);
-		cmd_vel = prof_params.a_ch * t;
+		cmd_pos = INIT_CH + V0_CH*t + 0.5 * prof_params.a_ch * pow(t,2);
+		cmd_vel = V0_CH * prof_params.a_ch * t;
 		cmd_acc = prof_params.a_ch;
 	}
 	else if(t > prof_params.t1 && t <= prof_params.duration_with_active_ctrl){
@@ -858,13 +752,11 @@ void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
 		cmd_vel = V_DES;
 		cmd_acc = 0.0;
 	}
-	else{
-		//	ROS_WARN("PROF2 MUST DISABLE CTRL!");
-	}	
 }
 
 void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		const double& INIT_CH,
+		const double& V0_CH,
 		const double& A_MAX,
 		const double& V_DES,
 		const Prf3& prof_params,
@@ -884,9 +776,9 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 			a_max_axis = A_MAX;
 		}
 
-		cmd_pos = INIT_CH + 0.5 * a_max_axis * pow(t,2);
-
-
+		cmd_pos = INIT_CH + V0_CH*t + 0.5 * a_max_axis * pow(t,2);
+		cmd_vel = V0_CH + a_max_axis*t;
+		cmd_acc = a_max_axis;
 	}    
 	else if (t <= prof_params.t2){
 
@@ -898,18 +790,20 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		}
 
 		cmd_pos = prof_params.Xt1 + prof_params.Vt1 * (t - prof_params.t1) - 0.5 * a_max_axis * pow(t - prof_params.t1,2);
+		cmd_vel = prof_params.Vt1 - a_max_axis * (t - prof_params.t1);
+		cmd_acc = a_max_axis; 
 
 	}    
 	else if (t <= prof_params.t3){
 		cmd_pos = prof_params.Xt2 + 0.5 * prof_params.a3 * pow(t - prof_params.t2, 2);
+		cmd_vel = prof_params.a3 * (t - prof_params.t2); // 0 initial speed
+		cmd_acc = prof_params.a3;
 	}
 	else if(t > prof_params.t3 && t <= prof_params.duration_with_active_ctrl){
 		cmd_pos = prof_params.xdes_chaser + V_DES * (t - prof_params.t3);
+		cmd_vel = V_DES;
+		cmd_acc = 0.0;
 	}
-	else{
-		//	ROS_WARN("PROF3 MUST DISABLE CTRL!");
-	}
-
 }
 
 void wait_to_smooth_error(const double dur){
@@ -943,88 +837,161 @@ void set_commands(const double& t_X,
 	if(velocity_profile_X == (short)VEL_PROF_1){
 
 		produce_chaser_trj_points_and_vel_prof_1(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
-		
+
 		if(t_X > p1_X.t2 && t_X <= p1_X.duration_with_active_ctrl){
 			update_path_X = false;
 		}
-	
+
 		if(t_X > p1_X.duration_with_active_ctrl){
-	
+
 			disable_ctrl_X = true;
-		
+
 			if(!disable_ctrl_Y){
 
 				if(one_time_X){
 					last_chaser_pos_X = chaser_real_pos.x;
 					one_time_X = false;
 				}
-				
+
 				new_x = last_chaser_pos_X + target_vel_X * (t_X - p1_X.duration_with_active_ctrl);
 				new_vel_x = target_vel_X;
 				new_acc_x = 0.0;				
 			}
-		
 		}
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t_X, chaser_init_pos.x, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
-		if(t_X > p2_X.duration_with_active_ctrl){
-			disable_ctrl_X = true;
+		produce_chaser_trj_points_and_vel_prof_2(t_X, chaser_init_pos.x, chaser_init_vel_X, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
+
+		if(t_X > p2_X.t1 && t_X <= p2_X.duration_with_active_ctrl){
+			update_path_X = false;
 		}
+
+		if(t_X > p2_X.duration_with_active_ctrl){
+
+			disable_ctrl_X = true;
+
+			if(!disable_ctrl_Y){
+
+				if(one_time_X){
+					last_chaser_pos_X = chaser_real_pos.x;
+					one_time_X = false;
+				}
+
+				new_x = last_chaser_pos_X + target_vel_X * (t_X - p2_X.duration_with_active_ctrl);
+				new_vel_x = target_vel_X;
+				new_acc_x = 0.0;
+			}
+		}
+
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t_X, chaser_init_pos.x, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
-		if(t_X > p3_X.duration_with_active_ctrl){
-			disable_ctrl_X = true;
+		produce_chaser_trj_points_and_vel_prof_3(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
+
+		if(t_X > p3_X.t3 && t_X <= p3_X.duration_with_active_ctrl){
+			update_path_X = false;
 		}
+
+		if(t_X > p3_X.duration_with_active_ctrl){
+
+			disable_ctrl_X = true;
+
+			if(!disable_ctrl_Y){
+
+				if(one_time_X){
+					last_chaser_pos_X = chaser_real_pos.x;
+					one_time_X = false;
+				}
+
+				new_x = last_chaser_pos_X + target_vel_X * (t_X - p3_X.duration_with_active_ctrl);
+				new_vel_x = target_vel_X;
+				new_acc_x = 0.0;
+			}
+		}
+
+
 	}
 
 	if(velocity_profile_Y == (short)VEL_PROF_1){
 
 		produce_chaser_trj_points_and_vel_prof_1(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
-		
-	 	if(t_Y > p1_Y.t2 && t_Y <= p1_Y.duration_with_active_ctrl){
-                        update_path_Y = false;
-                }
+
+		if(t_Y > p1_Y.t2 && t_Y <= p1_Y.duration_with_active_ctrl){
+			update_path_Y = false;
+		}
 
 		if(t_Y > p1_Y.duration_with_active_ctrl){
-			
+
 			disable_ctrl_Y = true;
 
 			if(!disable_ctrl_X){
 
-                                if(one_time_Y){
-                                        last_chaser_pos_Y = chaser_real_pos.y;
-                                        one_time_Y = false;
-                                }
+				if(one_time_Y){
+					last_chaser_pos_Y = chaser_real_pos.y;
+					one_time_Y = false;
+				}
 
-                                new_y = last_chaser_pos_Y + target_vel_Y *  (t_Y - p1_Y.duration_with_active_ctrl);
-                                new_vel_y = target_vel_Y;
-                                new_acc_y = 0.0;
-                        }
-	
+				new_y = last_chaser_pos_Y + target_vel_Y *  (t_Y - p1_Y.duration_with_active_ctrl);
+				new_vel_y = target_vel_Y;
+				new_acc_y = 0.0;
+			}
+
 		}
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t_Y, chaser_init_pos.y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
-		if(t_Y > p2_Y.duration_with_active_ctrl){
-			disable_ctrl_Y = true;
+		produce_chaser_trj_points_and_vel_prof_2(t_Y, chaser_init_pos.y, chaser_init_vel_Y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
+
+		if(t_Y > p2_Y.t1 && t_Y <= p2_Y.duration_with_active_ctrl){
+			update_path_Y = false;
 		}
+
+		if(t_Y > p2_Y.duration_with_active_ctrl){
+
+			disable_ctrl_Y = true;
+
+			if(!disable_ctrl_X){
+
+				if(one_time_Y){
+					last_chaser_pos_Y = chaser_real_pos.y;
+					one_time_Y = false;
+				}
+
+				new_y = last_chaser_pos_Y + target_vel_Y *  (t_Y - p2_Y.duration_with_active_ctrl);
+				new_vel_y = target_vel_Y;
+				new_acc_y = 0.0;
+			}
+
+		}
+
 
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t_Y, chaser_init_pos.y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
-		if(t_Y > p3_Y.duration_with_active_ctrl){
-			disable_ctrl_Y = true;
+		produce_chaser_trj_points_and_vel_prof_3(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
+
+		if(t_Y > p3_Y.t3 && t_Y <= p3_Y.duration_with_active_ctrl){
+			update_path_Y = false;
 		}
 
+		if(t_Y > p3_Y.duration_with_active_ctrl){
+
+			disable_ctrl_Y = true;
+
+			if(!disable_ctrl_X){
+
+				if(one_time_Y){
+					last_chaser_pos_Y = chaser_real_pos.y;
+					one_time_Y = false;
+				}
+
+				new_y = last_chaser_pos_Y + target_vel_Y *  (t_Y - p3_Y.duration_with_active_ctrl);
+				new_vel_y = target_vel_Y;
+				new_acc_y = 0.0;
+			}
+		}
 	}
-
-
 }
 
 
@@ -1079,7 +1046,7 @@ int main(int argc, char** argv)
 	cl_right.waitForServer();
 	cepheus_robot::RightCatchObjectGoal right_goal;
 	right_goal.point_to_catch.header.frame_id = "/assist_robot";
-	
+
 	/*
 	   ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
 	   cl_left.waitForServer();
@@ -1119,17 +1086,17 @@ int main(int argc, char** argv)
 
 	//Global timer
 	ros::Time prev_time_glb;
-        ros::Time init_time_glb;
+	ros::Time init_time_glb;
 	ros::Duration timer_glb;
-        ros::Duration dt;
+	ros::Duration dt;
 
 	//Timer for the planning in X axis
 	ros::Time init_time_X;
 	ros::Duration timer_X;
 
 	//Timer for the planning in Y axis
-        ros::Time init_time_Y;
-        ros::Duration timer_Y;
+	ros::Time init_time_Y;
+	ros::Duration timer_Y;
 
 
 	int counter = 0;
@@ -1156,7 +1123,7 @@ int main(int argc, char** argv)
 			ROS_WARN("Planner is starting the observation and decision process...................");
 
 			wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
-			observate_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
+			observe_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
 			setup_planning_parameters();
 			decide_plan_of_action_X();
 			decide_plan_of_action_Y();
@@ -1166,9 +1133,9 @@ int main(int argc, char** argv)
 			prev_time_glb = ros::Time::now();
 			init_time_glb = ros::Time::now();
 
-                        init_time_X = ros::Time::now();
-			
-                        init_time_Y = ros::Time::now();
+			init_time_X = ros::Time::now();
+
+			init_time_Y = ros::Time::now();
 
 
 			new_path = true;
@@ -1216,7 +1183,7 @@ int main(int argc, char** argv)
 
 				double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
 				double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-				
+
 				//command to catch object in interface
 				right_goal.point_to_catch.pose.position.x = x;
 				right_goal.point_to_catch.pose.position.y = y;
@@ -1234,7 +1201,7 @@ int main(int argc, char** argv)
 				}
 
 				printf("Current State: %s\n", cl_right.getState().toString().c_str());
-				
+
 			}
 			else{
 				if(ws_warn){
@@ -1249,8 +1216,8 @@ int main(int argc, char** argv)
 		dt = ros::Time::now() - prev_time_glb;
 		prev_time_glb = ros::Time::now();
 
-                timer_X = ros::Time::now() - init_time_X;
-                timer_Y = ros::Time::now() - init_time_Y;
+		timer_X = ros::Time::now() - init_time_X;
+		timer_Y = ros::Time::now() - init_time_Y;
 		timer_glb = ros::Time::now() - init_time_glb;
 
 		ros::spinOnce();
@@ -1267,38 +1234,38 @@ int main(int argc, char** argv)
 
 			ROS_INFO("Recalculating Target's Velocity");
 			ros::spinOnce();
-			observate_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
+			observe_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
 
 			if(update_path_X){
-		
+
 				double diff_X = fabs(obs_vel_X - target_vel_X);
 
-                        	ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
+				ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
 
-                        	if( diff_X > 0.005 ){
+				if( diff_X > 0.005 ){
 
-                                	target_vel_X = obs_vel_X;
+					target_vel_X = obs_vel_X;
 
-                                	ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
+					ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
 
-                                	//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-                                	//chaser_init_pos.x = chaser_real_pos.x;
-                                	//chaser_init_pos.y = chaser_real_pos.y;
+					//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+					//chaser_init_pos.x = chaser_real_pos.x;
+					//chaser_init_pos.y = chaser_real_pos.y;
 
-                                	//For simulation ONLY WITH RVIZ
-                                	chaser_init_pos.x = new_x;
-                                	chaser_init_vel_X = new_vel_x;
+					//For simulation ONLY WITH RVIZ
+					chaser_init_pos.x = new_x;
+					chaser_init_vel_X = new_vel_x;
 
-	                                ros::spinOnce();
+					ros::spinOnce();
 
-        	                        target_init_pos.x = target_real_pos.x;
+					target_init_pos.x = target_real_pos.x;
 
-                	                setup_planning_parameters();
-                	               	decide_plan_of_action_X();
+					setup_planning_parameters();
+					decide_plan_of_action_X();
 
-                	                //reset timer for this axis
-                                	init_time_X = ros::Time::now();
-                        	}
+					//reset timer for this axis
+					init_time_X = ros::Time::now();
+				}
 
 			}
 
@@ -1306,89 +1273,92 @@ int main(int argc, char** argv)
 
 				double diff_Y = fabs(obs_vel_Y - target_vel_Y);
 
-                                ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
+				ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
 
-                                if( diff_Y > 0.005 ){
+				if( diff_Y > 0.005 ){
 
-                                        target_vel_Y = obs_vel_Y;
+					target_vel_Y = obs_vel_Y;
 
-                                        ROS_INFO("Found change in target's velocity in Y axis! \n Recalculating path.....");
+					ROS_INFO("Found change in target's velocity in Y axis! \n Recalculating path.....");
 
-                                        //store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-                                        //chaser_init_pos.y = chaser_real_pos.y;
+					//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+					//chaser_init_pos.y = chaser_real_pos.y;
 
-                                        //For simulation ONLY WITH RVIZ
-                                        chaser_init_pos.y = new_y;
-                                        chaser_init_vel_Y = new_vel_y;
+					//For simulation ONLY WITH RVIZ
+					chaser_init_pos.y = new_y;
+					chaser_init_vel_Y = new_vel_y;
 
-                                        ros::spinOnce();
+					ros::spinOnce();
 
-                                        target_init_pos.y = target_real_pos.y;
+					target_init_pos.y = target_real_pos.y;
 
-                                        setup_planning_parameters();
-                                        decide_plan_of_action_Y();
+					setup_planning_parameters();
+					decide_plan_of_action_Y();
 
-                                        //reset timer for this axis
-                                        init_time_Y = ros::Time::now();
-                                }
+					//reset timer for this axis
+					init_time_Y = ros::Time::now();
+				}
 			}
 
 			continue;
 		}
 
-		
+		//while the controller is enabled produce path
+		if(!disable_ctrl_X && !disable_ctrl_Y){		
 
-		//Produce the cmd_pos, cmd_vel, cmd_acc
-		set_commands(timer_X.toSec(), timer_Y.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
+			//Produce the cmd_pos, cmd_vel, cmd_acc
+			set_commands(timer_X.toSec(), timer_Y.toSec(), new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y);
 
-		//For position and orientation
-		new_pos.pose.position.x = new_x;
-		new_pos.pose.position.y = new_y;
+			//For position and orientation
+			new_pos.pose.position.x = new_x;
+			new_pos.pose.position.y = new_y;
 
-		if(new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y)
-			heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+			if(new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y)
+				heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
 
-		prev_pos.pose.position.x = new_x;
-		prev_pos.pose.position.y = new_y;
+			prev_pos.pose.position.x = new_x;
+			prev_pos.pose.position.y = new_y;
 
-		qq = tf::createQuaternionFromYaw(heading);
-		//qq = tf::createQuaternionFromYaw(theta_des);		
+			qq = tf::createQuaternionFromYaw(heading);
+			//qq = tf::createQuaternionFromYaw(theta_des);		
 
-		new_pos.pose.orientation.x = qq.x() ;
-		new_pos.pose.orientation.y = qq.y() ;
-		new_pos.pose.orientation.z = qq.z() ;
-		new_pos.pose.orientation.w = qq.w() ;
+			new_pos.pose.orientation.x = qq.x() ;
+			new_pos.pose.orientation.y = qq.y() ;
+			new_pos.pose.orientation.z = qq.z() ;
+			new_pos.pose.orientation.w = qq.w() ;
 
-		//For velocity
-		new_vel.twist.linear.x = new_vel_x;
-		new_vel.twist.linear.y = new_vel_y;
+			//For velocity
+			new_vel.twist.linear.x = new_vel_x;
+			new_vel.twist.linear.y = new_vel_y;
 
-		//std::cout<<"new_vel_x "<<new_vel_x<<" new_vel_y"<<new_vel_y<<std::endl;
+			//std::cout<<"new_vel_x "<<new_vel_x<<" new_vel_y"<<new_vel_y<<std::endl;
 
 
-		if(dt.toSec() != 0.0)
-			new_vel.twist.angular.z = (heading - prev_heading) / dt.toSec();
-		else
-			new_vel.twist.angular.z = 0.0;
+			if(dt.toSec() != 0.0)
+				new_vel.twist.angular.z = (heading - prev_heading) / dt.toSec();
+			else
+				new_vel.twist.angular.z = 0.0;
 
-		prev_heading = heading;		
+			prev_heading = heading;		
 
-		//std::cout<<"heading "<<heading<<std::endl;
+			//std::cout<<"heading "<<heading<<std::endl;
 
-		//For acceleration
-		new_acc.x = new_acc_x;
-		new_acc.y = new_acc_y;
-		new_acc.z = 0.0;
+			//For acceleration
+			new_acc.x = new_acc_x;
+			new_acc.y = new_acc_y;
+			new_acc.z = 0.0;
 
-		//Send commands to base controller
-		pos_pub.publish(new_pos);
-		vel_pub.publish(new_vel);
-		acc_pub.publish(new_acc);
+			//Send commands to base controller
+			pos_pub.publish(new_pos);
+			vel_pub.publish(new_vel);
+			acc_pub.publish(new_acc);
 
-		//For visualizing the path in rviz
-		path.poses.push_back(new_pos);
-		new_pos.header.stamp = ros::Time::now();	
-		path_pub.publish(path);
+			//For visualizing the path in rviz
+			path.poses.push_back(new_pos);
+			new_pos.header.stamp = ros::Time::now();	
+			path_pub.publish(path);
+
+		}
 
 		loop_rate.sleep();
 

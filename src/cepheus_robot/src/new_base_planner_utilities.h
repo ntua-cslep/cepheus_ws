@@ -10,13 +10,12 @@ const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
 
-#define VEL_PROF_1 1
-#define VEL_PROF_2 2
-#define VEL_PROF_3 3
+const short VEL_PROF_1 = 1;
+const short VEL_PROF_2 = 2;
+const short VEL_PROF_3 = 3;
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
 const double TIME_TO_DISABLE_CTRL = 3.0; //seconds
-
 
 class Geometric_Constraints{
 
@@ -105,14 +104,17 @@ typedef struct Prf2{
         double t1;
         double a_ch;
         double xdes_chaser;
+	double v0_chaser;
         double duration_with_active_ctrl;
 
         void set_vals(  double t1,
                         double xdes_chaser,
+			double v0_chaser,
                         double a_ch)
         {
                 this->t1 = t1;
                 this->xdes_chaser = xdes_chaser;
+		this->v0_chaser = v0_chaser;
                 this-> a_ch = a_ch;
                 this->duration_with_active_ctrl = t1 + TIME_TO_DISABLE_CTRL;
         }
@@ -122,6 +124,7 @@ typedef struct Prf2{
                 ROS_INFO("Profile 2 Params:");
                 std::cout<<"\t t1: "<<t1<<std::endl;
                 std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
+		std::cout<<"\t v0_chaser: "<<v0_chaser<<std::endl;
                 std::cout<<"\t a_ch: "<<a_ch<<std::endl;
 
                 std::cout<<"\t Total Time: "<<duration_with_active_ctrl<<"\n"<<std::endl;
@@ -139,6 +142,7 @@ typedef struct Prf3{
         double Xt1;
         double Xt2;
         double xdes_chaser;
+	double v0_chaser;
         double xdes_target;
         double duration_with_active_ctrl;
 
@@ -150,6 +154,7 @@ typedef struct Prf3{
                         double Xt1,
                         double Xt2,
                         double xdes_chaser,
+			double v0_chaser,
                         double xdes_target)
         {
                 this->t1 = t1;
@@ -160,6 +165,7 @@ typedef struct Prf3{
                 this->Xt2 = Xt2;
                 this->Vt1 = Vt1;
                 this-> xdes_chaser =  xdes_chaser;
+		this->v0_chaser = v0_chaser;
                 this->xdes_target = xdes_target;
                 this->duration_with_active_ctrl = t1 + (t2 - t1) + (t3 - t2) + TIME_TO_DISABLE_CTRL;
         }
@@ -175,10 +181,10 @@ typedef struct Prf3{
                 std::cout<<"\t Xt2: "<<Xt2<<std::endl;
                 std::cout<<"\t Vt1: "<<Vt1<<std::endl;
                 std::cout<<"\t xdes_chaser: "<<xdes_chaser<<std::endl;
+		std::cout<<"\t v0_chaser: "<<v0_chaser<<std::endl;
                 std::cout<<"\t xdes_target: "<<xdes_target<<std::endl;
 
                 std::cout<<"\t Total Time: "<<duration_with_active_ctrl<<"\n"<<std::endl;
-
         }
 
 }Prf3;
