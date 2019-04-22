@@ -87,8 +87,8 @@ double A_MAX_X, A_MAX_Y;
 
 //distance from target used in second profile in order to reverse the
 //orientation of the chaser's velocity
-double L_X = 0.3;
-double L_Y = 0.3;
+double L_X = 0.25;
+double L_Y = 0.25;
 
 //The target's velcoty as observed form the chaser via the phase space system
 double target_vel_X = 0.0, target_vel_Y = 0.0;
@@ -601,7 +601,7 @@ void decide_plan_of_action_X()
 	if(target_vel_X == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
-
+/*
 		//check constraints
 		bool in_c_vp1 = constraints.in_constraints_for_X(p1_X.xdes_chaser);
 
@@ -609,10 +609,10 @@ void decide_plan_of_action_X()
 			 ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
         	         exit(10);
 		}
-		else{
+		else{*/
 			velocity_profile_X = (short)VEL_PROF_1;
 			p1_X.print();
-		}
+		//}
 	}
 	//Target moving away
 	else if((chaser_init_pos.x <= des_pos.x && target_vel_X > 0) || (chaser_init_pos.x >= des_pos.x && target_vel_X  < 0)){
@@ -620,16 +620,16 @@ void decide_plan_of_action_X()
 		calc_vel_prof_1_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, p1_X);
 		
 		//check constraints
-                bool in_c_vp1 = constraints.in_constraints_for_X(p1_X.xdes_chaser);
+                /*bool in_c_vp1 = constraints.in_constraints_for_X(p1_X.xdes_chaser);
 
                 if(!in_c_vp1){
                          ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
                          exit(10);
                 }
-                else{
+                else{*/
                         velocity_profile_X = (short)VEL_PROF_1;
                         p1_X.print();
-                }
+                //}
 	}
 
 	//Target is aproacing the chaser
@@ -642,7 +642,7 @@ void decide_plan_of_action_X()
 		calc_vel_prof_2_params(chaser_init_pos.x, chaser_init_vel_X, des_pos.x, target_vel_X, p2_X);
 		//....Vel Prof 3 params
 		calc_vel_prof_3_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, L_X, p3_X);
-
+/*
                 //Check constraints
                 bool in_c_vp3 = constraints.in_constraints_for_X(p3_X.xdes_chaser);
                 bool in_c_vp2 = constraints.in_constraints_for_X(p2_X.xdes_chaser);
@@ -663,7 +663,7 @@ void decide_plan_of_action_X()
                         p3_X.print();
                 }
                 //compare durations to choose profile
-                else{
+                else{*/
                         //Vel Prof 3    
                         if(p3_X.duration_with_active_ctrl <= p2_X.duration_with_active_ctrl){
                                 velocity_profile_X = (short)VEL_PROF_3;
@@ -674,7 +674,7 @@ void decide_plan_of_action_X()
                                 velocity_profile_X = (short)VEL_PROF_2;
                                 p2_X.print();
                         }
-                }
+                //}
 	}
 }
 
@@ -688,7 +688,7 @@ void decide_plan_of_action_Y(){
 	if(target_vel_Y == 0.0){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
-		
+		/*
 		//check constraints
                 bool in_c_vp1 = constraints.in_constraints_for_Y(p1_Y.xdes_chaser);
 
@@ -696,17 +696,17 @@ void decide_plan_of_action_Y(){
                          ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
                          exit(10);
                 }
-                else{
+                else{*/
                         velocity_profile_Y = (short)VEL_PROF_1;
                         p1_Y.print();
-                }
+                //}
 	}
 
 	//Target is moving away
 	else if((chaser_init_pos.y <= des_pos.y && target_vel_Y > 0) || (chaser_init_pos.y >= des_pos.y && target_vel_Y  < 0)){
 
 		calc_vel_prof_1_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, p1_Y);
-
+/*
 		//check constraints
                 bool in_c_vp1 = constraints.in_constraints_for_Y(p1_Y.xdes_chaser);
 
@@ -714,10 +714,10 @@ void decide_plan_of_action_Y(){
                          ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
                          exit(10);
                 }
-                else{
+                else{*/
                         velocity_profile_Y = (short)VEL_PROF_1;
                         p1_Y.print();
-                }
+                //}
 	}
 	
 	//Target is aproacing the chaser
@@ -730,7 +730,7 @@ void decide_plan_of_action_Y(){
 		calc_vel_prof_2_params(chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, target_vel_Y, p2_Y);
 		//....Vel Prof 3 params
 		calc_vel_prof_3_params(A_MAX_Y, target_vel_Y, chaser_init_pos.y, chaser_init_vel_Y, des_pos.y, L_Y, p3_Y);
-
+/*
 		//Check constraints
 		bool in_c_vp3 = constraints.in_constraints_for_Y(p3_Y.xdes_chaser);
 		bool in_c_vp2 = constraints.in_constraints_for_Y(p2_Y.xdes_chaser);
@@ -751,7 +751,7 @@ void decide_plan_of_action_Y(){
                         p3_Y.print();
 		}
 		//compare durations to choose profile
-		else{
+		else{*/
                 	//Vel Prof 3    
                 	if(p3_Y.duration_with_active_ctrl <= p2_Y.duration_with_active_ctrl){
 	                        velocity_profile_Y = (short)VEL_PROF_3;
@@ -762,7 +762,7 @@ void decide_plan_of_action_Y(){
 	                        velocity_profile_Y = (short)VEL_PROF_2;
 	                        p2_Y.print();
 	                }
-		}
+		//}
 	}
 }
 
@@ -1167,6 +1167,8 @@ int main(int argc, char** argv)
 	ros::Duration timer_Y;
 
 
+	bool head_o_t = true;
+
 	int counter = 0;
 
 	bool inv_kin_successs = false;
@@ -1381,8 +1383,10 @@ int main(int argc, char** argv)
 			new_pos.pose.position.x = new_x;
 			new_pos.pose.position.y = new_y;
 
-			if(new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y)
+			if(head_o_t && new_x != prev_pos.pose.position.x && new_y != prev_pos.pose.position.y){
 				heading = atan2(new_y - prev_pos.pose.position.y ,new_x - prev_pos.pose.position.x);
+				head_o_t = false;
+			}
 
 			prev_pos.pose.position.x = new_x;
 			prev_pos.pose.position.y = new_y;
@@ -1401,11 +1405,13 @@ int main(int argc, char** argv)
 
 			//std::cout<<"new_vel_x "<<new_vel_x<<" new_vel_y"<<new_vel_y<<std::endl;
 
-
+			/*
 			if(dt.toSec() != 0.0)
 				new_vel.twist.angular.z = (heading - prev_heading) / dt.toSec();
 			else
 				new_vel.twist.angular.z = 0.0;
+			*/
+			new_vel.twist.angular.z = 0.0;
 
 			prev_heading = heading;		
 
