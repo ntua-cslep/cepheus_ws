@@ -40,7 +40,8 @@ class Geometric_Constraints{
                         double arl)
                 :table_length_x(x), table_length_y(y), robot_radious(r), robot_ws(ws), assist_robot_length(arl)
         {
-                double abs_d = robot_radious + robot_ws + assist_robot_length;
+	        //double abs_d = robot_radious + robot_ws + assist_robot_length;
+		double abs_d = robot_radious;
 
 		min_constraint_for_x = abs_d;
 		min_constraint_for_y = abs_d;
