@@ -471,14 +471,27 @@ bool calc_vel_prof_2_params(const double& INIT_CH,
 
 	t1 = 2.0 * (INIT_CH - INIT_TAR)/(V_DES - V0_CH);
 
-	if(t1 <= 0.0)
-		return false;
 
 	a_ch = (V_DES - V0_CH)/t1;
 	xdes_chaser = INIT_CH + V0_CH*t1 + 0.5 *a_ch*pow(t1,2);
+		
+	if(t1 <= 0.0){
+		ROS_WARN("NEGATIVE t1 vel prof 2");
+		return false;
+	} 
+
+
+	if(fabs(a_ch) > fabs(A_MAX)){
+		//ROS_WARN("ACC too bog vel prof 2");
+		if(a_ch > 0 )
+			a_ch = A_MAX;
+		else
+			a_ch = -A_MAX;		
+	}
+
 
 	res.set_vals(t1, xdes_chaser, V0_CH, a_ch);
-
+	//res.print();
 	return true;
 }
 
@@ -556,11 +569,12 @@ bool calc_vel_prof_3_params(const double& A_MAX,
 	}
 
 	t2 = V0_CH/a_max + 2.0 * t1;
+	 
 	t3 = ((-2.0 *L)/V_DES) + t2;
 
 	//Select the other root for t1, even if it is bigger than the first
 	//cause the problem does not a have a solution for that value of t1
-	if((t2 <= 0.0) || (t3 <= 0.0)){
+	if((t2 <= 0.0 || t3 <= 0.0)){
 
 		if(two_roots){
 
@@ -573,13 +587,13 @@ bool calc_vel_prof_3_params(const double& A_MAX,
 			t2 = V0_CH/a_max + 2.0 * t1;
 			t3 = ((-2.0 *L)/V_DES) + t2;
 
-			if((t2 <= 0.0) || (t3 <= 0.0)){
-				ROS_WARN("Cannot catch target. t2 <= 0 OR t3 <= 0 EVEN for 2nd solution of t1");
+			if((t2 <= 0.0 || t3 <= 0.0)){
+				ROS_WARN("Cannot catch target. t2 <= 0 or t3 <=0 EVEN for 2nd solution of t1");
 				return false;
 			}
 		}
 		else{
-			ROS_WARN("Cannot catch target. t2 <= 0 OR t3 <= 0");
+			ROS_WARN("Cannot catch target. t2 <= 0 ");
 			return false;
 		}
 	}
@@ -593,14 +607,32 @@ bool calc_vel_prof_3_params(const double& A_MAX,
 		a_max = A_MAX;
 	}
 
+
 	Vt1 = V0_CH + a_max * t1;
 	Xt1 = INIT_CH + V0_CH * t1 + 0.5 * a_max * pow(t1,2);
 	Xt2 = Xt1 + Vt1 * (t2 - t1) - 0.5 * a_max * pow(t2 - t1,2);
+
+
+	if(t3 <= 0.0){
+		ROS_WARN("NEGATIVE t3 vel prof 3");
+		return false;
+	}
+
+	if(fabs(a3) > fabs(A_MAX)){
+		ROS_WARN("ACC too bog vel prof 2");
+
+		if(a3 > 0 )
+                        a3 = A_MAX;
+                else
+                        a3 = -A_MAX;
+	}
+
 	xdes_chaser = Xt2 + 0.5 * a3 * pow(t3 - t2,2);
 
 	xdes_target = V_DES * t3 + INIT_TAR;
 
 	res.set_vals(t1, t2, t3, a3, Vt1, Xt1, Xt2, xdes_chaser, V0_CH, xdes_target);
+	//res.print();
 
 	return true;
 }
@@ -660,6 +692,12 @@ void decide_plan_of_action_X()
 		//....Vel Prof 3 params
 		rv_3 = calc_vel_prof_3_params(A_MAX_X, target_vel_X, chaser_init_pos.x, chaser_init_vel_X, des_pos.x, L_X, p3_X);
 
+		if(!rv_2 && !rv_3){
+			ROS_WARN("NO SOLUTION FOR VEL PROF 1 & 2. ABORTING.............");
+                        exit(10);
+		}
+
+		
 
                 //Check constraints
 		if(rv_3)
@@ -671,7 +709,7 @@ void decide_plan_of_action_X()
                 
                 if(!in_c_vp3 && !in_c_vp2){
                         ROS_WARN("MEETING POINT OUT OF CONSTRAINTS! ABORTING.............");
-                        //exit(10);
+                        exit(10);
                 }
                 //Vel Prof 2
                 else if(in_c_vp2 && !in_c_vp3){
@@ -1352,7 +1390,7 @@ int main(int argc, char** argv)
 
 				ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
 
-				if( diff_X > 0.005 ){
+				if( diff_X > 0.007 ){
 
 					target_vel_X = obs_vel_X;
 
@@ -1385,7 +1423,7 @@ int main(int argc, char** argv)
 
 				ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
 
-				if( diff_Y > 0.005 ){
+				if( diff_Y > 0.007 ){
 
 					target_vel_Y = obs_vel_Y;
 

@@ -3,8 +3,8 @@
 	Classes for velocities profiles and goemetric constraints used in planner and constants regarding the robot
 */
 
-const double FMAX_THRUST = 0.17;//Newton 20% duty cucle
-const double CHASER_MASS = 13.5;//kg
+const double FMAX_THRUST = 0.6;//Newton 20% duty cucle
+const double CHASER_MASS = 15.0;//kg
 const double WS_RADIUS = 0.385;//m
 const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
@@ -15,7 +15,7 @@ const short VEL_PROF_2 = 2;
 const short VEL_PROF_3 = 3;
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
-const double TIME_TO_DISABLE_CTRL = 3.0; //seconds
+const double TIME_TO_DISABLE_CTRL = 1.0; //seconds
 
 class Geometric_Constraints{
 
@@ -50,9 +50,26 @@ class Geometric_Constraints{
 
         }
 
+	double get_min_con_x(){
+		return min_constraint_for_x;
+	}
+	
+	double get_min_con_y(){
+                return min_constraint_for_y;
+        }
+
+	double get_max_con_x(){
+                return max_constraint_for_x;
+        }
+	
+	double get_max_con_y(){
+                return max_constraint_for_y;
+        }
+
+
         bool in_constraints_for_X(double des_x){
 
-                if((des_x > min_constraint_for_x) && (des_x < max_constraint_for_x)) 
+                if(/*(des_x > min_constraint_for_x) &&*/ (des_x < max_constraint_for_x)) 
                         return true;
                 else
                         return false;
@@ -60,7 +77,7 @@ class Geometric_Constraints{
 
 	bool in_constraints_for_Y(double des_y){
 
-                if((des_y > min_constraint_for_y) && (des_y < max_constraint_for_y))
+                if(/*(des_y > min_constraint_for_y) &&*/ (des_y < max_constraint_for_y))
                         return true;
                 else
                         return false;
