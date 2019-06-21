@@ -10,6 +10,7 @@ const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
 const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
 
+const short VEL_PROF_0 = 0;
 const short VEL_PROF_1 = 1;
 const short VEL_PROF_2 = 2;
 const short VEL_PROF_3 = 3;
