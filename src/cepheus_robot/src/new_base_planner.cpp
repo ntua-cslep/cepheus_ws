@@ -938,8 +938,11 @@ void set_commands(const double& t_X,
 	static double last_chaser_pos_X, last_chaser_pos_Y;
 
 	if(velocity_profile_X == (short)VEL_PROF_1){
-
-		produce_chaser_trj_points_and_vel_prof_1(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+		
+		if(t_X <= p1_X.t2 + p1_X.duration_with_active_ctrl){
+			produce_chaser_trj_points_and_vel_prof_1(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p1_X , new_x, new_vel_x, new_acc_x);
+			one_time_X = true;
+		}
 
 		if(t_X > p1_X.t2 && t_X <= p1_X.duration_with_active_ctrl){
 			update_path_X = false;
@@ -966,8 +969,11 @@ void set_commands(const double& t_X,
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t_X, chaser_init_pos.x, chaser_init_vel_X, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
+		if(t_X <= p2_X.t1 + p2_X.duration_with_active_ctrl){
+			produce_chaser_trj_points_and_vel_prof_2(t_X, chaser_init_pos.x, chaser_init_vel_X, target_vel_X, p2_X , new_x, new_vel_x, new_acc_x);
 
+			one_time_X = true;
+		}
 		if(t_X > p2_X.t1 && t_X <= p2_X.duration_with_active_ctrl){
 			update_path_X = false;
 		}
@@ -994,8 +1000,11 @@ void set_commands(const double& t_X,
 	}
 	else if(velocity_profile_X == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
+		if(t_X <= p3_X.t3 + p3_X.duration_with_active_ctrl){
+			produce_chaser_trj_points_and_vel_prof_3(t_X, chaser_init_pos.x, chaser_init_vel_X, A_MAX_X, target_vel_X, p3_X , new_x, new_vel_x, new_acc_x);
+			one_time_X = true;
 
+		}
 		if(t_X > p3_X.t3 && t_X <= p3_X.duration_with_active_ctrl){
 			update_path_X = false;
 		}
@@ -1030,7 +1039,11 @@ void set_commands(const double& t_X,
 
 	if(velocity_profile_Y == (short)VEL_PROF_1){
 
-		produce_chaser_trj_points_and_vel_prof_1(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+		if(t_Y <= p1_Y.t2 + p1_Y.duration_with_active_ctrl){
+
+			produce_chaser_trj_points_and_vel_prof_1(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p1_Y, new_y, new_vel_y, new_acc_y);
+			one_time_Y = true;
+		}
 
 		if(t_Y > p1_Y.t2 && t_Y <= p1_Y.duration_with_active_ctrl){
 			update_path_Y = false;
@@ -1058,7 +1071,11 @@ void set_commands(const double& t_X,
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_2){
 
-		produce_chaser_trj_points_and_vel_prof_2(t_Y, chaser_init_pos.y, chaser_init_vel_Y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
+		if(t_Y <= p2_Y.t1 + p2_Y.duration_with_active_ctrl){
+
+			produce_chaser_trj_points_and_vel_prof_2(t_Y, chaser_init_pos.y, chaser_init_vel_Y, target_vel_Y, p2_Y , new_y, new_vel_y, new_acc_y);
+			one_time_Y = true;
+		}
 
 		if(t_Y > p2_Y.t1 && t_Y <= p2_Y.duration_with_active_ctrl){
 			update_path_Y = false;
@@ -1088,8 +1105,11 @@ void set_commands(const double& t_X,
 	}
 	else if(velocity_profile_Y == (short)VEL_PROF_3){
 
-		produce_chaser_trj_points_and_vel_prof_3(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
+		if(t_Y <= p3_Y.t3 + p3_Y.duration_with_active_ctrl){
 
+			produce_chaser_trj_points_and_vel_prof_3(t_Y, chaser_init_pos.y, chaser_init_vel_Y, A_MAX_Y, target_vel_Y, p3_Y , new_y, new_vel_y, new_acc_y);
+			one_time_Y = true;
+		}
 		if(t_Y > p3_Y.t3 && t_Y <= p3_Y.duration_with_active_ctrl){
 			update_path_Y = false;
 		}
