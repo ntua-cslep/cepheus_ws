@@ -1153,6 +1153,34 @@ bool in_chaser_workspace(){
 }
 
 
+void check_if_can_grab(double new_vel_x, double new_vel_y){
+
+	double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);	
+	
+	double xdes = target_real_pos.x - CIRCLE_RADIUS * cos(theta);
+	double ydes = target_real_pos.y - CIRCLE_RADIUS * sin(theta);
+	
+	double xchaser = chaser_real_pos.x + ROBOT_RADIUS * cos(theta);
+	double ychaser = chaser_real_pos.y + ROBOT_RADIUS * sin(theta);	
+
+	double abs_dist = sqrt( pow(xdes - xchaser ,2) + pow(ydes - ychaser ,2) );
+
+	if(abs_dist <= WS_RADIUS){
+		//same sign
+		if( target_vel_X * new_vel_x > 0.0 && target_vel_Y * new_vel_y > 0.0 ){
+
+			double rel_vel_x = fabs(target_vel_X - new_vel_x);
+			double rel_vel_y = fabs(target_vel_Y - new_vel_y);
+
+			if(rel_vel_x <= 0.01 && rel_vel_y <= 0.01){
+				disable_ctrl_X = true;
+				disable_ctrl_Y = true;
+			}
+		}		
+	}
+}
+
+
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "new_base_planner_node", ros::init_options::NoSigintHandler);
@@ -1201,7 +1229,7 @@ int main(int argc, char** argv)
 
 
 	//Trajectory point produced ,command velocity and command acceleration
-	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y;
+	double new_x, new_y, new_vel_x, new_vel_y, new_acc_x, new_acc_y = 0.0;
 	geometry_msgs::PoseStamped new_pos;
 	geometry_msgs::PoseStamped prev_pos;	
 	geometry_msgs::TwistStamped new_vel;
@@ -1306,6 +1334,10 @@ int main(int argc, char** argv)
 			prev_pos.pose.position.x = chaser_init_pos.x;
 			prev_pos.pose.position.y = chaser_init_pos.y;
 		}
+
+		
+		//check if the distnce and the relative velocities are appropriate in order to grab the target
+		check_if_can_grab(new_vel_x, new_vel_y);
 
 		//both velocity profiles traj is over 
 		if(disable_ctrl_X && disable_ctrl_Y){
