@@ -79,7 +79,9 @@ const unsigned int TIME_TO_OBSERVE_TARGET = 200;//ms
 short velocity_profile_X = 0, velocity_profile_Y = 0;
 
 //The maximum acceleration of the chaser
-double A_MAX;
+double Fmax_X = 2.0*cos(M_PI/3.0) * FMAX_THRUST;
+double A_MAX = Fmax_X / CHASER_MASS;
+
 
 //The the acceleration in each axis
 //sign of acceleration depends on the direction
@@ -298,56 +300,36 @@ void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_v
 
 
 
-void setup_planning_parameters()
+void setup_planning_parameters(double& A_MAX_AXIS, 
+				double& L_AXIS,
+				double ch_init_pos,
+				double tar_init_pos,
+				double v_des_axis,
+				double v0_ch,
+				double L)
 {
-	double Fmax_X = 2.0*cos(M_PI/3.0) * FMAX_THRUST;
-	A_MAX = Fmax_X / CHASER_MASS;
+	if(v_des_axis != 0.0){
 
-	if(target_vel_X != 0){
-
-		if(target_vel_X > 0){
-			A_MAX_X = A_MAX;
+		if(v_des_axis > 0.0){
+			A_MAX_AXIS = A_MAX;
 		}
 		else{
-			A_MAX_X = -A_MAX;
+			A_MAX_AXIS = -A_MAX;
 		}
 
 	}
-	else if (chaser_init_pos.x < target_init_pos.x){
-		A_MAX_X = A_MAX;
+	else if (ch_init_pos < tar_init_pos){
+		A_MAX_AXIS = A_MAX;
 	}
 	else{
-		A_MAX_X = - A_MAX;
+		A_MAX_AXIS = - A_MAX;
 	}
-
-	if(target_vel_Y != 0){
-
-		if(target_vel_Y > 0){
-			A_MAX_Y = A_MAX;
-		}
-		else{
-			A_MAX_Y = -A_MAX;
-		}
-
-	}
-	else if (chaser_init_pos.y < target_init_pos.y){
-		A_MAX_Y = A_MAX;
-	}
-	else{
-		A_MAX_Y = -A_MAX;
-	}
-
 
 	//Commmmeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeent on thiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiis
-	if (chaser_init_pos.x > target_init_pos.x){
-		L_X = - fabs(L_X);
+	L_AXIS = L;
+	if (ch_init_pos > tar_init_pos){
+		L_AXIS = - L_AXIS;
 	}
-
-	if (chaser_init_pos.y > target_init_pos.y){
-		L_Y = - fabs(L_Y);
-	}
-
-	ROS_INFO("Planning params: A_MAX = %lf , A_MAX_X = %lf, A_MAX_Y = %lf  L_X = %lf , L_Y = %lf", A_MAX, A_MAX_X, A_MAX_Y, L_X, L_Y);
 }
 
 bool calc_vel_prof_1_params(const double& A_max,
@@ -1317,7 +1299,24 @@ int main(int argc, char** argv)
 
 			wait_to_smooth_error(TIME_TO_SMOOTH_ERROR);
 			observe_target_velocity(TIME_TO_OBSERVE_TARGET, target_vel_X, target_vel_Y);
-			setup_planning_parameters();
+			
+			setup_planning_parameters(A_MAX_X, 
+						L_X, 
+						chaser_init_pos.x,
+						target_init_pos.x,
+						target_vel_X,
+						chaser_init_vel_X,
+						L_X);
+			
+			setup_planning_parameters(A_MAX_Y, 
+                                                L_Y, 
+                                                chaser_init_pos.y,
+                                                target_init_pos.y,
+                                                target_vel_Y,
+                                                chaser_init_vel_Y,
+                                                L_Y);
+
+
 			decide_plan_of_action_X();
 			decide_plan_of_action_Y();
 
@@ -1467,7 +1466,14 @@ int main(int argc, char** argv)
 
 						target_init_pos.x = target_real_pos.x;
 
-						setup_planning_parameters();
+						setup_planning_parameters(A_MAX_X,
+	                                         			L_X,
+                                                			chaser_init_pos.x,
+                                                			target_init_pos.x,
+                                                			target_vel_X,
+                                                			chaser_init_vel_X,
+                                                			L_X);
+
 						decide_plan_of_action_X();
 
 						//reset timer for this axis
@@ -1499,7 +1505,14 @@ int main(int argc, char** argv)
 
 						target_init_pos.y = target_real_pos.y;
 
-						setup_planning_parameters();
+						setup_planning_parameters(A_MAX_Y,
+                                                                        L_Y,
+                                                                        chaser_init_pos.y,
+                                                                        target_init_pos.y,
+                                                                        target_vel_Y,
+                                                                        chaser_init_vel_Y,
+                                                                        L_Y);
+
 						decide_plan_of_action_Y();
 
 						//reset timer for this axis
