@@ -1156,10 +1156,10 @@ bool in_chaser_workspace(){
 void check_if_can_grab(double new_vel_x, double new_vel_y){
 
 	double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);	
-	
+
 	double xdes = target_real_pos.x - CIRCLE_RADIUS * cos(theta);
 	double ydes = target_real_pos.y - CIRCLE_RADIUS * sin(theta);
-	
+
 	double xchaser = chaser_real_pos.x + ROBOT_RADIUS * cos(theta);
 	double ychaser = chaser_real_pos.y + ROBOT_RADIUS * sin(theta);	
 
@@ -1180,6 +1180,23 @@ void check_if_can_grab(double new_vel_x, double new_vel_y){
 	}
 }
 
+
+bool check_if_desired_pos_too_close(double current_x, double current_y){
+
+	double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
+
+	double xdes = target_real_pos.x - CIRCLE_RADIUS * cos(theta);
+	double ydes = target_real_pos.y - CIRCLE_RADIUS * sin(theta);
+
+	double dist_des = sqrt( pow(des_pos.x - xdes ,2) + pow(des_pos.y - ydes ,2) );
+	double dist_abs = sqrt( pow(xdes - current_x ,2) + pow(ydes - current_y,2) ) - ROBOT_RADIUS/2.0;
+
+	if(dist_des >= dist_abs){
+		return true;
+	}		
+
+	return false;
+}
 
 int main(int argc, char** argv)
 {
@@ -1335,7 +1352,7 @@ int main(int argc, char** argv)
 			prev_pos.pose.position.y = chaser_init_pos.y;
 		}
 
-		
+
 		//check if the distnce and the relative velocities are appropriate in order to grab the target
 		check_if_can_grab(new_vel_x, new_vel_y);
 
@@ -1411,73 +1428,85 @@ int main(int argc, char** argv)
 			counter = 0;
 
 			double obs_vel_X, obs_vel_Y;
+			bool too_close;
 
 			ROS_INFO("Recalculating Target's Velocity");
 			ros::spinOnce();
 			observe_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
 
-			if(update_path_X){
+			too_close = check_if_desired_pos_too_close(new_x, new_y);
 
-				double diff_X = fabs(obs_vel_X - target_vel_X);
+			if(too_close){
 
-				ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
-
-				if( diff_X > 0.007 ){
-
-					target_vel_X = obs_vel_X;
-
-					ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
-
-					//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-					//chaser_init_pos.x = chaser_real_pos.x;
-					//chaser_init_pos.y = chaser_real_pos.y;
-
-					//For simulation ONLY WITH RVIZ
-					chaser_init_pos.x = new_x;
-					chaser_init_vel_X = new_vel_x;
-
-					ros::spinOnce();
-
-					target_init_pos.x = target_real_pos.x;
-
-					setup_planning_parameters();
-					decide_plan_of_action_X();
-
-					//reset timer for this axis
-					init_time_X = ros::Time::now();
-				}
-
+				velocity_profile_X = 0;
+				velocity_profile_Y = 0;	
 			}
+			else{
 
-			if(update_path_Y){
+				if(update_path_X){
 
-				double diff_Y = fabs(obs_vel_Y - target_vel_Y);
+					double diff_X = fabs(obs_vel_X - target_vel_X);
 
-				ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
+					ROS_INFO("t_vel_X %lf , obs_vel_X %lf, diff_X %lf" , target_vel_X, obs_vel_X, diff_X);
 
-				if( diff_Y > 0.007 ){
+					if( diff_X > 0.007 ){
 
-					target_vel_Y = obs_vel_Y;
+						target_vel_X = obs_vel_X;
 
-					ROS_INFO("Found change in target's velocity in Y axis! \n Recalculating path.....");
+						ROS_INFO("Found change in target's velocity! \n Recalculating path.....");
 
-					//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
-					//chaser_init_pos.y = chaser_real_pos.y;
+						//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+						//chaser_init_pos.x = chaser_real_pos.x;
+						//chaser_init_pos.y = chaser_real_pos.y;
 
-					//For simulation ONLY WITH RVIZ
-					chaser_init_pos.y = new_y;
-					chaser_init_vel_Y = new_vel_y;
+						//For simulation ONLY WITH RVIZ
+						chaser_init_pos.x = new_x;
+						chaser_init_vel_X = new_vel_x;
 
-					ros::spinOnce();
+						ros::spinOnce();
 
-					target_init_pos.y = target_real_pos.y;
+						target_init_pos.x = target_real_pos.x;
 
-					setup_planning_parameters();
-					decide_plan_of_action_Y();
+						setup_planning_parameters();
+						decide_plan_of_action_X();
 
-					//reset timer for this axis
-					init_time_Y = ros::Time::now();
+						//reset timer for this axis
+						init_time_X = ros::Time::now();
+					}
+
 				}
+
+				if(update_path_Y){
+
+					double diff_Y = fabs(obs_vel_Y - target_vel_Y);
+
+					ROS_INFO("t_vel_Y %lf , obs_vel_Y %lf, diff_Y %lf", target_vel_Y ,obs_vel_Y, diff_Y);
+
+					if( diff_Y > 0.007 ){
+
+						target_vel_Y = obs_vel_Y;
+
+						ROS_INFO("Found change in target's velocity in Y axis! \n Recalculating path.....");
+
+						//store the last velocity of the chaser ,in order to pass the init vel of the chaser when new path is calculated
+						//chaser_init_pos.y = chaser_real_pos.y;
+
+						//For simulation ONLY WITH RVIZ
+						chaser_init_pos.y = new_y;
+						chaser_init_vel_Y = new_vel_y;
+
+						ros::spinOnce();
+
+						target_init_pos.y = target_real_pos.y;
+
+						setup_planning_parameters();
+						decide_plan_of_action_Y();
+
+						//reset timer for this axis
+						init_time_Y = ros::Time::now();
+					}
+				}
+
 			}
 
 			continue;
