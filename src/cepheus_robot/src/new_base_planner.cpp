@@ -74,6 +74,9 @@ Prf3 p3_X; Prf3 p3_Y;
 const double TIME_TO_SMOOTH_ERROR = 0.5;//s
 const unsigned int TIME_TO_OBSERVE_TARGET = 200;//ms
 
+//The duration of the inverse kinematic process
+const double INV_KIN_DUR = 3.0;
+
 //values {1,2,3}
 //indcates which vel prof be used in each axis
 short velocity_profile_X = 0, velocity_profile_Y = 0;
@@ -96,6 +99,8 @@ double L_Y = 0.25;
 
 //The target's velcoty as observed form the chaser via the phase space system
 double target_vel_X = 0.0, target_vel_Y = 0.0;
+double rel_vel_x, rel_vel_y = 0.0;
+
 
 //The chaser's init velocity in the begginning of every planning
 double chaser_init_vel_X = 0.0, chaser_init_vel_Y = 0.0;
@@ -1172,7 +1177,8 @@ bool in_chaser_workspace(){
 }
 
 
-void check_if_can_grab(double new_vel_x, double new_vel_y){
+void check_if_can_grab(double new_vel_x, 
+			double new_vel_y){
 
 	double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);	
 
@@ -1188,10 +1194,10 @@ void check_if_can_grab(double new_vel_x, double new_vel_y){
 		//same sign
 		if( target_vel_X * new_vel_x > 0.0 && target_vel_Y * new_vel_y > 0.0 ){
 
-			double rel_vel_x = fabs(target_vel_X - new_vel_x);
-			double rel_vel_y = fabs(target_vel_Y - new_vel_y);
+			rel_vel_x = target_vel_X - new_vel_x;
+			rel_vel_y = target_vel_Y - new_vel_y;
 
-			if(rel_vel_x <= 0.01 && rel_vel_y <= 0.01){
+			if(fabs(rel_vel_x) <= 0.01 && fabs(rel_vel_y) <= 0.01){
 				disable_ctrl_X = true;
 				disable_ctrl_Y = true;
 			}
@@ -1417,8 +1423,8 @@ int main(int argc, char** argv)
 
 				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
-				double x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
-				double y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
+				double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
+				double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
 
 				//command to catch object in interface
 				right_goal.point_to_catch.pose.position.x = x;
