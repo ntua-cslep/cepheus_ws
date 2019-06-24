@@ -107,6 +107,9 @@ ros::Time target_pos_stamp;
 geometry_msgs::Vector3 chaser_init_pos;
 geometry_msgs::Vector3 chaser_real_pos;
 
+//Distance between eges of the two objects
+double xdes, ydes;
+
 //The goal pos to move the chaser to
 geometry_msgs::Vector3 des_pos;
 
@@ -1032,9 +1035,16 @@ void set_commands(const double& t_X,
 	}
 	//Vel prof 0...Move with target speed (time step 0.005 secs, as loop rate)
 	else{
-		new_x = new_x + target_vel_X * 0.005;
-		new_vel_x = target_vel_X;
-		new_acc_x = 0.0;
+		if(fabs(xdes - new_x) <= WS_RADIUS){
+			new_x = new_x + target_vel_X * 0.005;
+			new_vel_x = target_vel_X;
+			new_acc_x = 0.0;
+		}
+		else{
+			new_x = new_x - target_vel_X * 0.005;
+                        new_vel_x = -target_vel_X;
+                        new_acc_x = 0.0;
+		}
 	}
 
 	if(velocity_profile_Y == (short)VEL_PROF_1){
@@ -1135,9 +1145,16 @@ void set_commands(const double& t_X,
 	}
 	//Vel prof 0...Move with target speed (time step 0.005 secs, as loop rate)
 	else{
-		new_y = new_y + target_vel_Y * 0.005;
-		new_vel_y = target_vel_Y;
-		new_acc_y = 0.0;
+		if(fabs(ydes - new_y) <= WS_RADIUS){
+			new_y = new_y + target_vel_Y * 0.005;
+			new_vel_y = target_vel_Y;
+			new_acc_y = 0.0;
+		}
+		else{
+			new_y = new_y - target_vel_Y * 0.005;
+                        new_vel_y = -target_vel_Y;
+                        new_acc_y = 0.0;			
+		}
 	}
 
 }
@@ -1183,12 +1200,15 @@ void check_if_can_grab(double new_vel_x, double new_vel_y){
 }
 
 
-bool check_if_desired_pos_too_close(double current_x, double current_y){
+bool check_if_desired_pos_too_close(double current_x, 
+					double current_y,
+					double& xdes,
+					double& ydes){
 
 	double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
-	double xdes = target_real_pos.x - CIRCLE_RADIUS * cos(theta);
-	double ydes = target_real_pos.y - CIRCLE_RADIUS * sin(theta);
+	xdes = target_real_pos.x - CIRCLE_RADIUS * cos(theta);
+	ydes = target_real_pos.y - CIRCLE_RADIUS * sin(theta);
 
 	double dist_des = sqrt( pow(des_pos.x - xdes ,2) + pow(des_pos.y - ydes ,2) );
 	double dist_abs = sqrt( pow(xdes - current_x ,2) + pow(ydes - current_y,2) ) - ROBOT_RADIUS/2.0;
@@ -1441,8 +1461,8 @@ int main(int argc, char** argv)
 
 
 		//Calculate again the target's velocity every a ceratain amount of time in order to adjust the path if the velocity changes
-		//600 loops is 3 seconds
-		if(counter == 600 ){
+		//200 loops is 1 seconds
+		if(counter == 200 ){
 
 			counter = 0;
 
@@ -1453,12 +1473,15 @@ int main(int argc, char** argv)
 			ros::spinOnce();
 			observe_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
 
-			too_close = check_if_desired_pos_too_close(new_x, new_y);
+			too_close = check_if_desired_pos_too_close(new_x, new_y, xdes, ydes);
 
 			if(too_close){
 
 				velocity_profile_X = 0;
-				velocity_profile_Y = 0;	
+				velocity_profile_Y = 0;
+
+				target_vel_X = obs_vel_X;
+				target_vel_Y = obs_vel_Y;	
 			}
 			else{
 
