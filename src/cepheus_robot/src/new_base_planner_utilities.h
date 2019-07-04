@@ -3,7 +3,7 @@
 	Classes for velocities profiles and goemetric constraints used in planner and constants regarding the robot
 */
 
-const double FMAX_THRUST = 0.6;//Newton 20% duty cucle
+const double FMAX_THRUST = 0.25;//Newton 20% duty cucle
 const double CHASER_MASS = 15.0;//kg
 const double WS_RADIUS = 0.385;//m
 const double ROBOT_RADIUS = 0.15;//m

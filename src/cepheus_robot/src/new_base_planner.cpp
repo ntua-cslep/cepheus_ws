@@ -92,9 +92,9 @@ double A_MAX_X, A_MAX_Y;
 
 //distance from target used in second profile in order to reverse the
 //orientation of the chaser's velocity
-double L_X = 0.25;
+double L_X = 0.35;
 //double L_X = WS_RADIUS;
-double L_Y = 0.25;
+double L_Y = 0.35;
 //double L_Y = WS_RADIUS;
 
 //The target's velcoty as observed form the chaser via the phase space system
@@ -300,7 +300,7 @@ void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_v
 
 		des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
 		des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-
+		
 		//std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
 		//std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
 	}
@@ -1192,12 +1192,12 @@ void check_if_can_grab(double new_vel_x,
 
 	if(abs_dist <= WS_RADIUS){
 		//same sign
-		if( target_vel_X * new_vel_x > 0.0 && target_vel_Y * new_vel_y > 0.0 ){
+		if( target_vel_X * new_vel_x >= 0.0 && target_vel_Y * new_vel_y >= 0.0 ){
 
 			rel_vel_x = target_vel_X - new_vel_x;
 			rel_vel_y = target_vel_Y - new_vel_y;
 
-			if(fabs(rel_vel_x) <= 0.01 && fabs(rel_vel_y) <= 0.01){
+			if(fabs(rel_vel_x) <= 0.007 && fabs(rel_vel_y) <= 0.007){
 				disable_ctrl_X = true;
 				disable_ctrl_Y = true;
 			}
@@ -1245,7 +1245,7 @@ int main(int argc, char** argv)
 
 	ros::ServiceClient controller_srv_client = nh.serviceClient<std_srvs::SetBool>("controller_cmd");
 
-	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
+	//ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
 

@@ -230,7 +230,7 @@ void CepheusHW::init_right_shoulder(){
 
         double shoulder_out;
         double des_shoulder;
-
+/*
 	if(home_pos[RIGHT_SHOULDER]<0) {
 
 
@@ -255,13 +255,17 @@ void CepheusHW::init_right_shoulder(){
                         timer = ros::Time::now() - init_time;
                 }while(!isLimitReached(RIGHT_SHOULDER));
 
+		
+
                 ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
                 offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
-        	ROS_WARN("offset %lf", offset_pos[RIGHT_SHOULDER]);
+		
+		ROS_WARN("offset %lf", offset_pos[RIGHT_SHOULDER]);
 
 	}
         else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
-	
+*/
+	offset_pos[RIGHT_SHOULDER] = 0.0;	
 }
 
 
@@ -281,7 +285,7 @@ void CepheusHW::init_left_elbow(){
 		ros::Time init_time = ros::Time::now();
 		ros::Duration timer = ros::Time::now() - init_time;
 
-		//e_sum = 0.0;
+			//e_sum = 0.0;
 		do{
 
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
@@ -316,8 +320,8 @@ void CepheusHW::init_left_elbow(){
 
 void CepheusHW::init_right_elbow(){
         //Homing right elbow moving left shoulder
-        //and takina advantage of the movement transmission of the right arm
-
+        //and taking advantage of the movement transmission of the right arm
+/*
         double shoulder_out,elbow_out;
         double des_shoulder, des_elbow;
 
@@ -327,7 +331,7 @@ void CepheusHW::init_right_elbow(){
 
 
                 ros::Time init_time = ros::Time::now();
-                ros::Duration timer = ros::Time::now() - init_time;
+                ros::Duration timer;
 
                 //e_sum = 0.0;
                 do{
@@ -349,7 +353,8 @@ void CepheusHW::init_right_elbow(){
                         timer = ros::Time::now() - init_time;
 
                 }while(!isLimitReached(RIGHT_ELBOW));
-                
+
+
 		ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
                 offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
 		ROS_WARN("offset %lf", offset_pos[RIGHT_ELBOW]);
@@ -358,7 +363,8 @@ void CepheusHW::init_right_elbow(){
         }
         else
                 ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
-
+*/
+	offset_pos[RIGHT_ELBOW] = 0.0;
 }
 
 
@@ -1163,7 +1169,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
 	//ROS_WARN("pos[7] : %lf", pos[7]);
 
-	///ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
+	//ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
 
 	// Speed Calculation radians/sec
 	for(int i=0; i<8; i++)
