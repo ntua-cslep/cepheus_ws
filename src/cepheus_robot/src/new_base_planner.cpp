@@ -1173,7 +1173,7 @@ bool in_chaser_workspace(){
 
 	//ROS_WARN("dist %lf ws %lf", dist,WS_RADIUS);
 	//WS radius 10 cm bigger than the normal in order to be easier to cath the target if it moves a bit away
-	return (dist < 0.55);
+	return (dist <= (WS_RADIUS + 2)  );
 }
 
 
@@ -1245,7 +1245,7 @@ int main(int argc, char** argv)
 
 	ros::ServiceClient controller_srv_client = nh.serviceClient<std_srvs::SetBool>("controller_cmd");
 
-	//ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
+	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
 
@@ -1423,8 +1423,11 @@ int main(int argc, char** argv)
 
 				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
-				double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
-				double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
+				//double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
+				//double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
+
+				double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta));
+				double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta));
 
 				//command to catch object in interface
 				right_goal.point_to_catch.pose.position.x = x;
