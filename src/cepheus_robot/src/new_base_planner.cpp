@@ -1164,7 +1164,7 @@ void set_commands(const double& t_X,
 
 }
 
-
+/*
 bool in_chaser_workspace(){
 
 	ros::spinOnce();
@@ -1175,7 +1175,7 @@ bool in_chaser_workspace(){
 	//WS radius 10 cm bigger than the normal in order to be easier to cath the target if it moves a bit away
 	return (dist <= (WS_RADIUS + 2)  );
 }
-
+*/
 
 void check_if_can_grab(double new_vel_x, 
 			double new_vel_y){
@@ -1414,7 +1414,7 @@ int main(int argc, char** argv)
 			}
 
 			//check if target is in chaser's workspace
-			if(in_chaser_workspace() && !inv_kin_successs){
+			if(!inv_kin_successs){
 
 				ROS_WARN("The chaser will reach to grab the target!");
 
@@ -1423,6 +1423,7 @@ int main(int argc, char** argv)
 
 				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
+				//Include the relative movement of the 2 objects
 				//double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
 				//double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
 

@@ -67,7 +67,7 @@
             <arg name="turn_phase_space_on" value="true" />
         </include>
 
-	<!--node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" />
+	<!--node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" /-->
 	<node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" />
-	<node pkg="tf2_ros" type="static_transform_publisher" name="right_hand_base_broadcaster" args="0.172628 -0.091404 0 0 0 0 cepheus right_hand_base" /-->
+	<node pkg="tf2_ros" type="static_transform_publisher" name="right_hand_base_broadcaster" args="0.172628 -0.091404 0 0 0 0 cepheus right_hand_base" />
 </launch>
