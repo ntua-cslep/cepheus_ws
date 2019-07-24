@@ -74,6 +74,15 @@ Prf3 p3_X; Prf3 p3_Y;
 const double TIME_TO_SMOOTH_ERROR = 0.5;//s
 const unsigned int TIME_TO_OBSERVE_TARGET = 200;//ms
 
+//In order to check if can grab target
+const double REL_VEL_THRESHOLD = 0.006;
+
+//In order to make sure that the heading is good before the conreoller is disabled
+//Otherwise, the RW might try to correct the error, just a liitle before we disable the ctrl...
+//...causing the base of the robot to turn unexpectidly. 
+const double HEADING_ERROR_THRESHOLD = 0.05; 
+
+
 //The duration of the inverse kinematic process
 const double INV_KIN_DUR = 3.0;
 
@@ -261,6 +270,11 @@ void startChaseCallback(const std_msgs::Bool::ConstPtr& msg){
 	start_planning = msg->data;	
 }
 
+double error_in_heading = 0.0;
+
+void positionErrorCallback(const geometry_msgs::Vector3::ConstPtr& msg){
+	error_in_heading = msg->z;
+}
 
 //---------------------------
 void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_vel_Y){
@@ -517,7 +531,7 @@ bool calc_vel_prof_3_params(const double& A_MAX,
 
 	double delta = b*b - 4.0 * a * c;
 
-	if (delta < 0){
+if (delta < 0){
 		//ROS_WARN("Delta < 0");
 		return false;
 	} 
@@ -1196,10 +1210,14 @@ void check_if_can_grab(double new_vel_x,
 
 			rel_vel_x = target_vel_X - new_vel_x;
 			rel_vel_y = target_vel_Y - new_vel_y;
+			//rel vel constraints
+			if(fabs(rel_vel_x) <= REL_VEL_THRESHOLD && fabs(rel_vel_y) <= REL_VEL_THRESHOLD){
 
-			if(fabs(rel_vel_x) <= 0.007 && fabs(rel_vel_y) <= 0.007){
-				disable_ctrl_X = true;
-				disable_ctrl_Y = true;
+				//small rotational error constraint
+				if(error_in_heading <= HEADING_ERROR_THRESHOLD){
+					disable_ctrl_X = true;
+					disable_ctrl_Y = true;
+				}
 			}
 		}		
 	}
@@ -1248,6 +1266,9 @@ int main(int argc, char** argv)
 	ros::Subscriber phase_space_sub_target =  nh.subscribe("map_to_assist_robot", 1, PhaseSpaceCallbackTarget);
 	ros::Subscriber phase_space_sub_chaser =  nh.subscribe("map_to_cepheus", 1, PhaseSpaceCallbackChaser);
 	ros::Subscriber start_planning_sub =  nh.subscribe("start_chase", 1, startChaseCallback);
+
+	//For keeping track of the error, mainly in rotation
+	ros::Subscriber error_sub =  nh.subscribe("error", 1, positionErrorCallback);
 
 	ros::Publisher path_pub = nh.advertise<nav_msgs::Path>("new_path", 1000);
 

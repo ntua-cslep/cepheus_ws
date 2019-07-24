@@ -230,7 +230,7 @@ void CepheusHW::init_right_shoulder(){
 
         double shoulder_out;
         double des_shoulder;
-/*
+
 	if(home_pos[RIGHT_SHOULDER]<0) {
 
 
@@ -241,7 +241,7 @@ void CepheusHW::init_right_shoulder(){
 
                 timer = ros::Time::now() - init_time;
                 do{
-
+/*
                         des_shoulder = velocity_for_joint_init(30, (double)timer.toSec(), false);
 
                         update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
@@ -253,7 +253,8 @@ void CepheusHW::init_right_shoulder(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-                }while(!isLimitReached(RIGHT_SHOULDER));
+*/  
+              }while(!isLimitReached(RIGHT_SHOULDER));
 
 		
 
@@ -264,8 +265,8 @@ void CepheusHW::init_right_shoulder(){
 
 	}
         else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
-*/
-	offset_pos[RIGHT_SHOULDER] = 0.0;	
+
+	//offset_pos[RIGHT_SHOULDER] = 0.0;	
 }
 
 
@@ -321,7 +322,7 @@ void CepheusHW::init_left_elbow(){
 void CepheusHW::init_right_elbow(){
         //Homing right elbow moving left shoulder
         //and taking advantage of the movement transmission of the right arm
-/*
+
         double shoulder_out,elbow_out;
         double des_shoulder, des_elbow;
 
@@ -335,7 +336,7 @@ void CepheusHW::init_right_elbow(){
 
                 //e_sum = 0.0;
                 do{
-
+/*
                         des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
                         //des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
@@ -351,7 +352,7 @@ void CepheusHW::init_right_elbow(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-
+*/
                 }while(!isLimitReached(RIGHT_ELBOW));
 
 
@@ -363,8 +364,8 @@ void CepheusHW::init_right_elbow(){
         }
         else
                 ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
-*/
-	offset_pos[RIGHT_ELBOW] = 0.0;
+
+	//offset_pos[RIGHT_ELBOW] = 0.0;
 }
 
 
