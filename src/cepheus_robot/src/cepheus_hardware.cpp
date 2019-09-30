@@ -151,7 +151,7 @@ void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque
 double velocity_for_joint_init(double t2, double t, bool positive){
 
 	//7 degrees per second	
-	double vel_max_pos = (double)5/(double)180 * (double)M_PI;
+	double vel_max_pos = (double)4/(double)180 * (double)M_PI;
 	double vel_max_neg = (double)4/(double)180 * (double)M_PI;
 	double vel_max = 0.0;
 
@@ -241,7 +241,7 @@ void CepheusHW::init_right_shoulder(){
 
                 timer = ros::Time::now() - init_time;
                 do{
-/*
+
                         des_shoulder = velocity_for_joint_init(30, (double)timer.toSec(), false);
 
                         update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
@@ -253,7 +253,7 @@ void CepheusHW::init_right_shoulder(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-*/  
+  
               }while(!isLimitReached(RIGHT_SHOULDER));
 
 		
@@ -336,7 +336,7 @@ void CepheusHW::init_right_elbow(){
 
                 //e_sum = 0.0;
                 do{
-/*
+
                         des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
                         //des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
@@ -352,7 +352,7 @@ void CepheusHW::init_right_elbow(){
                         readLimitSwitches();
                         readEncoders(timer);
                         timer = ros::Time::now() - init_time;
-*/
+
                 }while(!isLimitReached(RIGHT_ELBOW));
 
 

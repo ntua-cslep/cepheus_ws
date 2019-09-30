@@ -1207,14 +1207,15 @@ void check_if_can_grab(double new_vel_x,
 	if(abs_dist <= WS_RADIUS){
 		//same sign
 		if( target_vel_X * new_vel_x >= 0.0 && target_vel_Y * new_vel_y >= 0.0 ){
-
+			std::cout<<"same sign"<<std::endl;
 			rel_vel_x = target_vel_X - new_vel_x;
 			rel_vel_y = target_vel_Y - new_vel_y;
 			//rel vel constraints
 			if(fabs(rel_vel_x) <= REL_VEL_THRESHOLD && fabs(rel_vel_y) <= REL_VEL_THRESHOLD){
-
+				std::cout<<"rel vel below thresh"<<std::endl;
 				//small rotational error constraint
 				if(error_in_heading <= HEADING_ERROR_THRESHOLD){
+					std::cout<<"heading error below thresh"<<std::endl;
 					disable_ctrl_X = true;
 					disable_ctrl_Y = true;
 				}
@@ -1445,11 +1446,11 @@ int main(int argc, char** argv)
 				double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
 				//Include the relative movement of the 2 objects
-				//double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
-				//double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
+				double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta)) + rel_vel_x * INV_KIN_DUR;
+				double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta)) + rel_vel_y * INV_KIN_DUR;
 
-				double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta));
-				double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta));
+				//double x = (target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta));
+				//double y = (target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta));
 
 				//command to catch object in interface
 				right_goal.point_to_catch.pose.position.x = x;
