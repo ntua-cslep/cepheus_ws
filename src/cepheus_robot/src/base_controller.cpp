@@ -148,7 +148,7 @@ class BaseController {
 			double ts_ang = 20.0;
                         double wn_ang = 6.0/ts_ang;
 
-			
+
 			double Kp_lin = pow(wn_lin, 2) * M(1,1);
 			double Kp_ang = pow(wn_ang, 2) * M(3,3);
 			double Kd_lin = 2.0 * wn_lin * M(1,1);
