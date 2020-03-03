@@ -3,12 +3,12 @@
 	Classes for velocities profiles and goemetric constraints used in planner and constants regarding the robot
 */
 
-const double FMAX_THRUST = 0.3;//Newton 20% duty cucle
+const double FMAX_THRUST = 0.15;//Newton 20% duty cucle
 const double CHASER_MASS = 15.0;//kg
-const double WS_RADIUS = 0.42;//m
+const double WS_RADIUS = 0.3;//m
 const double ROBOT_RADIUS = 0.15;//m
 const double ASSIST_ROBOT_DIST_FROM_CENTER = 0.4;//m
-const double CIRCLE_RADIUS = 0.4;//m radius of the circular object around the target
+const double CIRCLE_RADIUS = 0.35;//m radius of the circular object around the target
 
 const short VEL_PROF_0 = 0;
 const short VEL_PROF_1 = 1;
@@ -16,7 +16,7 @@ const short VEL_PROF_2 = 2;
 const short VEL_PROF_3 = 3;
 
 //the duration after the Tmeet, at which the base ctrl will be disabled and the arm will start moving to capture the target
-const double TIME_TO_DISABLE_CTRL = 1.0; //seconds
+const double TIME_TO_DISABLE_CTRL = 0.5; //seconds
 
 class Geometric_Constraints{
 

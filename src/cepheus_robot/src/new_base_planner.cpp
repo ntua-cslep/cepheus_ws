@@ -75,7 +75,7 @@ const double TIME_TO_SMOOTH_ERROR = 0.5;//s
 const unsigned int TIME_TO_OBSERVE_TARGET = 200;//ms
 
 //In order to check if can grab target
-const double REL_VEL_THRESHOLD = 0.006;
+const double REL_VEL_THRESHOLD = 0.01;
 
 //In order to make sure that the heading is good before the conreoller is disabled
 //Otherwise, the RW might try to correct the error, just a liitle before we disable the ctrl...
@@ -279,6 +279,7 @@ void positionErrorCallback(const geometry_msgs::Vector3::ConstPtr& msg){
 //---------------------------
 void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_vel_Y){
 
+
 	static geometry_msgs::Vector3 target_prev_pos;
 
 
@@ -299,25 +300,31 @@ void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_v
 	if(usecs_to_sleep > 0){
 		//ROS_INFO("trp %lf tpp %lf" ,target_real_pos.x ,  target_prev_pos.x);
 
-		t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
-		t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
+		t_vel_X = 0.0;
+		t_vel_Y = -0.01;
+		//t_vel_X = (target_real_pos.x - target_prev_pos.x)/dt;
+		//t_vel_Y = (target_real_pos.y - target_prev_pos.y)/dt;
 
 		//ROS_WARN("Uncut velx %lf, uncut vely %lf",t_vel_X, t_vel_Y);
 
-		cut_digits(t_vel_X, 3);
-		cut_digits(t_vel_Y, 3);
+		//cut_digits(t_vel_X, 3);
+		//cut_digits(t_vel_Y, 3);
 
 		std::cout<<"Observated target vel_X: "<<t_vel_X<<std::endl;
 		std::cout<<"Observated target vel_Y: "<<t_vel_Y<<std::endl;
 
 		double theta = atan2(target_real_pos.y - chaser_real_pos.y, target_real_pos.x - chaser_real_pos.x);
 
-		des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
-		des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
-		
+		//des_pos.x = target_real_pos.x - (WS_RADIUS + CIRCLE_RADIUS) * cos(theta);
+		//des_pos.y = target_real_pos.y - (WS_RADIUS + CIRCLE_RADIUS) * sin(theta);
+
+		des_pos.x = target_real_pos.x;
+		des_pos.y = target_real_pos.y;		
+
 		//std::cout<<"des_pos_X: "<<des_pos.x<<std::endl;
 		//std::cout<<"des_pos_Y: "<<des_pos.y<<std::endl;
 	}
+
 }
 
 
@@ -1202,8 +1209,11 @@ void check_if_can_grab(double new_vel_x,
 	double xchaser = chaser_real_pos.x + ROBOT_RADIUS * cos(theta);
 	double ychaser = chaser_real_pos.y + ROBOT_RADIUS * sin(theta);	
 
-	double abs_dist = sqrt( pow(xdes - xchaser ,2) + pow(ydes - ychaser ,2) );
+	//double abs_dist = sqrt( pow(xdes - xchaser ,2) + pow(ydes - ychaser ,2) );
+	double abs_dist = sqrt( pow(target_real_pos.x - chaser_real_pos.x ,2) + pow(target_real_pos.y - chaser_real_pos.y ,2) );
+	ROS_WARN("DIST : %lf", abs_dist);
 
+	/*
 	if(abs_dist <= WS_RADIUS){
 		//same sign
 		if( target_vel_X * new_vel_x >= 0.0 && target_vel_Y * new_vel_y >= 0.0 ){
@@ -1221,6 +1231,12 @@ void check_if_can_grab(double new_vel_x,
 				}
 			}
 		}		
+	}
+	*/
+
+	if((abs_dist <= 0.65) && (error_in_heading <= HEADING_ERROR_THRESHOLD)){
+		disable_ctrl_X = true;
+                disable_ctrl_Y = true;
 	}
 }
 
@@ -1279,15 +1295,16 @@ int main(int argc, char** argv)
 	ros::Publisher acc_pub = nh.advertise<geometry_msgs::Vector3>("planner_acc", 1);
 
 	//Send command to cepheus interface to start invert kinematics in order to catch the target
-	ros::Publisher left_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("left_arm_catch_object", 1);
-	ros::Publisher right_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("right_arm_catch_object", 1);
+	//ros::Publisher left_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("left_arm_catch_object", 1);
+	//ros::Publisher right_arm_grip_pub = nh.advertise<geometry_msgs::PointStamped>("right_arm_catch_object", 1);
 
 	//Action testing for right grip!!!!!!!!!!
+	/*
 	ActionClientRight cl_right("right_catch_object_action", true); // true -> don't need ros::spin()
 	cl_right.waitForServer();
 	cepheus_robot::RightCatchObjectGoal right_goal;
 	right_goal.point_to_catch.header.frame_id = "/assist_robot";
-
+	*/
 	/*
 	   ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
 	   cl_left.waitForServer();
@@ -1434,7 +1451,7 @@ int main(int argc, char** argv)
 			else{
 				ROS_ERROR("Failed to call Controller");
 			}
-
+			/*
 			//check if target is in chaser's workspace
 			if(!inv_kin_successs){
 
@@ -1476,7 +1493,8 @@ int main(int argc, char** argv)
 					ROS_WARN("The target is out of chaser's workspace!");
 					ws_warn = false;
 				}
-			}			
+			}
+			*/			
 
 		}
 
@@ -1505,6 +1523,7 @@ int main(int argc, char** argv)
 			ros::spinOnce();
 			observe_target_velocity(TIME_TO_OBSERVE_TARGET, obs_vel_X, obs_vel_Y);
 
+			/*
 			too_close = check_if_desired_pos_too_close(new_x, new_y, xdes, ydes);
 
 			if(too_close){
@@ -1515,7 +1534,7 @@ int main(int argc, char** argv)
 				target_vel_X = obs_vel_X;
 				target_vel_Y = obs_vel_Y;	
 			}
-			else{
+			else{*/
 
 				if(update_path_X){
 
@@ -1595,7 +1614,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-			}
+			//}
 
 			continue;
 		}
