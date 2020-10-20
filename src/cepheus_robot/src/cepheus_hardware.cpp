@@ -103,13 +103,13 @@ void CepheusHW::setHomePos(int i, float val)
 }
 
 /*void CepheusHW::setJointTorque(int sh,  int elb)
-  {
-  cmd[5] = elb * 0.010/TORQUE_REDUCE;
-//cmd[4] = sh * 0.0020/TORQUE_REDUCE;
-cmd[4] = sh * 0.00015/TORQUE_REDUCE;
+{
+	cmd[5] = elb * 0.010/TORQUE_REDUCE;
+	//cmd[4] = sh * 0.0020/TORQUE_REDUCE;
+	cmd[4] = sh * 0.00015/TORQUE_REDUCE;
 
-fflush(stdout);
-//ROS_WARN("shoulder: %f, elbow: %f\n",cmd[4],cmd[5]);
+	fflush(stdout);
+	//ROS_WARN("shoulder: %f, elbow: %f\n",cmd[4],cmd[5]);
 }*/
 
 void CepheusHW::setJointTorque(int sh,  int elb)
@@ -144,9 +144,9 @@ void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque
 
 //----New init with velocity controll
 
-//		   	               	
-//		   	               /	
-//the velocity function is like this: /
+//
+///	
+//the velocity function is like this:/
 //t2 is the duration of the accelaration
 double velocity_for_joint_init(double t2, double t, bool positive){
 
@@ -166,9 +166,9 @@ double velocity_for_joint_init(double t2, double t, bool positive){
 
 	vel_des = vel_max/t2 * t;
 	/*}
-	  else{
-	  vel_des = vel_max;
-	  }*/
+	else{
+		vel_des = vel_max;
+	}*/
 
 	//ROS_WARN("vel_des : %lf", vel_des);
 
@@ -182,13 +182,12 @@ double velocity_for_joint_init(double t2, double t, bool positive){
 //----------------------------------------------------------------
 
 
-void CepheusHW::init_left_shoulder(){
+void CepheusHW::init_left_shoulder() {
 
 	double shoulder_out, elbow_out;
 	double des_shoulder, des_elbow;
 
-	if(home_pos[LEFT_SHOULDER]>0) {
-
+	if(home_pos[LEFT_SHOULDER] > 0) {
 
 		ROS_INFO_STREAM("homing LEFT SHOULDER................");
 
@@ -196,14 +195,13 @@ void CepheusHW::init_left_shoulder(){
 		ros::Duration timer;
 
 		timer = ros::Time::now() - init_time;
-		do{
-
+		do {
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
 			des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
 			update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
-	                update_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
-        	        cmd[LEFT_ELBOW] = elbow_out;
+			update_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
+			cmd[LEFT_ELBOW] = elbow_out;
 			cmd[LEFT_SHOULDER] = shoulder_out;
 
 			writeMotors();
@@ -212,73 +210,65 @@ void CepheusHW::init_left_shoulder(){
 			readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
-		}
-		while(!isLimitReached(LEFT_SHOULDER));
+		} while(!isLimitReached(LEFT_SHOULDER));
 
-		
 		ROS_INFO_STREAM("homing of LEFT SHOULDER  succesful");
 		offset_pos[LEFT_SHOULDER] = home_pos[LEFT_SHOULDER] - pos[LEFT_SHOULDER];
 	}
-	else ROS_WARN_STREAM("No homing performed for LEFT SHOULDER because no home position setted");
-
-
+	else
+		ROS_WARN_STREAM("No homing performed for LEFT SHOULDER because no home position setted");
 }
 
 
 
-void CepheusHW::init_right_shoulder(){
+void CepheusHW::init_right_shoulder() {
 
-        double shoulder_out;
-        double des_shoulder;
+	double shoulder_out;
+	double des_shoulder;
 
-	if(home_pos[RIGHT_SHOULDER]<0) {
+	if (home_pos[RIGHT_SHOULDER] < 0) {
 
+		ROS_INFO_STREAM("homing RIGHT SHOULDER................");
 
-                ROS_INFO_STREAM("homing RIGHT SHOULDER................");
+		ros::Time init_time = ros::Time::now();
+		ros::Duration timer;
 
-                ros::Time init_time = ros::Time::now();
-                ros::Duration timer;
+		timer = ros::Time::now() - init_time;
+		do {
+			des_shoulder = velocity_for_joint_init(30, (double)timer.toSec(), false);
 
-                timer = ros::Time::now() - init_time;
-                do{
+			update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+			cmd[RIGHT_SHOULDER] = shoulder_out;
 
-                        des_shoulder = velocity_for_joint_init(30, (double)timer.toSec(), false);
+			writeMotors();
 
-                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
-                        cmd[RIGHT_SHOULDER] = shoulder_out;
+			heartbeat();
+			readLimitSwitches();
+			readEncoders(timer);
+			timer = ros::Time::now() - init_time;
+		}
+		while(!isLimitReached(RIGHT_SHOULDER));
 
-                        writeMotors();
-		
-                        heartbeat();
-                        readLimitSwitches();
-                        readEncoders(timer);
-                        timer = ros::Time::now() - init_time;
-  
-              }while(!isLimitReached(RIGHT_SHOULDER));
-
-		
-
-                ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
-                offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
+		ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
+		offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
 		
 		ROS_WARN("offset %lf", offset_pos[RIGHT_SHOULDER]);
-
 	}
-        else ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
-
+	else
+		ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
 	//offset_pos[RIGHT_SHOULDER] = 0.0;	
 }
 
 
 
-void CepheusHW::init_left_elbow(){
+void CepheusHW::init_left_elbow() {
 	//Homing left elbow moving left shoulder
 	//and takina advantage of the movement transmission of the left arm
 
 	double shoulder_out,elbow_out;
 	double des_shoulder, des_elbow;
 
-	if(home_pos[LEFT_ELBOW]>0) {
+	if (home_pos[LEFT_ELBOW] > 0) {
 
 		ROS_INFO_STREAM("homing LEFT ELBOW..............");
 
@@ -286,8 +276,8 @@ void CepheusHW::init_left_elbow(){
 		ros::Time init_time = ros::Time::now();
 		ros::Duration timer = ros::Time::now() - init_time;
 
-			//e_sum = 0.0;
-		do{
+		//e_sum = 0.0;
+		do {
 
 			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), false);
 			des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), true);
@@ -306,64 +296,57 @@ void CepheusHW::init_left_elbow(){
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
 		
-		}while(!isLimitReached(LEFT_ELBOW));
+		} while(!isLimitReached(LEFT_ELBOW));
 		
 		ROS_INFO_STREAM("homing of LEFT ELBOW  succesful");
 		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW];
-		
 	}
 	else
 		ROS_WARN_STREAM("No homing performed for LEFT ELBOW because no home position setted");
-
-
 }
 
 
-void CepheusHW::init_right_elbow(){
-        //Homing right elbow moving left shoulder
-        //and taking advantage of the movement transmission of the right arm
+void CepheusHW::init_right_elbow() {
+	//Homing right elbow moving left shoulder
+	//and taking advantage of the movement transmission of the right arm
 
-        double shoulder_out,elbow_out;
-        double des_shoulder, des_elbow;
+	double shoulder_out,elbow_out;
+	double des_shoulder, des_elbow;
 
-        if(home_pos[RIGHT_ELBOW]<0) {
+	if (home_pos[RIGHT_ELBOW] < 0) {
 
-                ROS_INFO_STREAM("homing RIGHT ELBOW..............");
+		ROS_INFO_STREAM("homing RIGHT ELBOW..............");
 
+		ros::Time init_time = ros::Time::now();
+		ros::Duration timer;
 
-                ros::Time init_time = ros::Time::now();
-                ros::Duration timer;
+		//e_sum = 0.0;
+		do{
+			des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
+			//des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
-                //e_sum = 0.0;
-                do{
+			update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
+			cmd[RIGHT_SHOULDER] = shoulder_out;
+			//update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
+			//cmd[RIGHT_ELBOW] = elbow_out;
 
-                        des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
-                        //des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
+			//ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);              
+			writeMotors();
 
-                        update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
-                        cmd[RIGHT_SHOULDER] = shoulder_out;
-                        //update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
-                        //cmd[RIGHT_ELBOW] = elbow_out;
+			heartbeat();
+			readLimitSwitches();
+			readEncoders(timer);
+			timer = ros::Time::now() - init_time;
 
-                        //ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);              
-                        writeMotors();
-
-                        heartbeat();
-                        readLimitSwitches();
-                        readEncoders(timer);
-                        timer = ros::Time::now() - init_time;
-
-                }while(!isLimitReached(RIGHT_ELBOW));
+		} while(!isLimitReached(RIGHT_ELBOW));
 
 
 		ROS_INFO_STREAM("homing of RIGHT ELBOW  succesful");
-                offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
+		offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] - pos[RIGHT_ELBOW];
 		ROS_WARN("offset %lf", offset_pos[RIGHT_ELBOW]);
-
-
-        }
-        else
-                ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
+	}
+	else
+		ROS_WARN_STREAM("No homing performed for RIGHT ELBOW because no home position setted");
 
 	//offset_pos[RIGHT_ELBOW] = 0.0;
 }
@@ -403,7 +386,7 @@ void CepheusHW::set_left_finger(double c){
 
 	ros::Rate loop_rate(200);
 
-	for(int i = LEFT_FINGER_MAX_ANGLE; i >= LEFT_FINGER_MIN_ANGLE; i--){
+	for (int i = LEFT_FINGER_MAX_ANGLE; i >= LEFT_FINGER_MIN_ANGLE; i--) {
 
 		cmd[LEFT_GRIPPER] = (double)i;
 		double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
@@ -421,7 +404,7 @@ void CepheusHW::set_left_wrist(double c){
 
 	ros::Rate loop_rate(200);
 
-	for(int i = LEFT_WRIST_INIT_ANGLE; i <= LEFT_WRIST_MAX_ANGLE; i++){
+	for (int i = LEFT_WRIST_INIT_ANGLE; i <= LEFT_WRIST_MAX_ANGLE; i++) {
 
 		cmd[LEFT_WRIST] = (double)i;
 		double div = (double)cmd[LEFT_WRIST]/(double)LEFT_WRIST_MAX_ANGLE;
@@ -434,24 +417,22 @@ void CepheusHW::set_left_wrist(double c){
 }
 
 
-void CepheusHW::command_right_wrist(){
+void CepheusHW::command_right_wrist() {
 
 	double a1,a2;
-	while(1){
+	while(1) {
 
 		scanf("%lf %lf",&a1,&a2);
 
 		if(a1 < a2){
 			ros::Rate loop_rate(200);
 
-			for(int i = a1; i <= a2; i++){
-
+			for (int i = a1; i <= a2; i++) {
 				cmd[RIGHT_WRIST] = (double)i;
 				double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
 				width[RIGHT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
 				write_right_wrist(width[RIGHT_WRIST]);
-
 				loop_rate.sleep();
 			}
 
@@ -459,40 +440,36 @@ void CepheusHW::command_right_wrist(){
 		else{
 			ros::Rate loop_rate(200);
 
-			for(int i = a1; i >= a2; i--){
-
+			for (int i = a1; i >= a2; i--) {
 				cmd[RIGHT_WRIST] = (double)i;
 				double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
 				width[RIGHT_WRIST] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
 
 				write_right_wrist(width[RIGHT_WRIST]);
-
 				loop_rate.sleep();
 			}
-
 		}
 	}
 }
 
 //The gripper opens full
-void CepheusHW::init_left_finger(){
+void CepheusHW::init_left_finger() {
 
 	ros::Rate loop_rate(200);
 
-	for(int i = LEFT_FINGER_INIT_ANGLE; i <= LEFT_FINGER_MAX_ANGLE; i++){
+	for (int i = LEFT_FINGER_INIT_ANGLE; i <= LEFT_FINGER_MAX_ANGLE; i++) {
 
 		cmd[LEFT_GRIPPER] = (double)i;
 		double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
 		width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
 		write_left_finger(width[LEFT_GRIPPER]);
-
 		loop_rate.sleep();
 	}
 }
 
 //The left wrist in middle position
-void CepheusHW::init_left_wrist(){
+void CepheusHW::init_left_wrist() {
 
 	ros::Rate loop_rate(200);
 
@@ -509,28 +486,27 @@ void CepheusHW::init_left_wrist(){
 
 
 //The gripper opens full
-void CepheusHW::init_right_finger(){
+void CepheusHW::init_right_finger() {
 
 	ros::Rate loop_rate(200);
 
-	for(int i = RIGHT_FINGER_INIT_ANGLE; i <= RIGHT_FINGER_MAX_ANGLE; i++){
+	for (int i = RIGHT_FINGER_INIT_ANGLE; i <= RIGHT_FINGER_MAX_ANGLE; i++) {
 
 		cmd[RIGHT_GRIPPER] = (double)i;
 		double div = (double)cmd[RIGHT_GRIPPER]/(double)RIGHT_FINGER_MAX_ANGLE;
 		width[RIGHT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
 		write_right_finger(width[RIGHT_GRIPPER]);
-
 		loop_rate.sleep();
 	}
 }
 
 //The right wrist in middle position
-void CepheusHW::init_right_wrist(){
+void CepheusHW::init_right_wrist() {
 
 	ros::Rate loop_rate(200);
 
-	for(int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_INIT_ANGLE; i++){
+	for (int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_INIT_ANGLE; i++) {
 
 		cmd[RIGHT_WRIST] = (double)i;
 		double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
@@ -541,28 +517,27 @@ void CepheusHW::init_right_wrist(){
 	}
 }
 
-void CepheusHW::set_right_finger(double c){
+void CepheusHW::set_right_finger(double c) {
 
 	ros::Rate loop_rate(200);
 
-	for(int i = RIGHT_FINGER_MAX_ANGLE; i >= RIGHT_FINGER_MIN_ANGLE; i--){
+	for(int i = RIGHT_FINGER_MAX_ANGLE; i >= RIGHT_FINGER_MIN_ANGLE; i--) {
 
 		cmd[RIGHT_GRIPPER] = (double)i;
 		double div = (double)cmd[RIGHT_GRIPPER]/(double)RIGHT_FINGER_MAX_ANGLE;
 		width[RIGHT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
 		write_right_finger(width[RIGHT_GRIPPER]);
-
 		loop_rate.sleep();
 	}
 }
 
 //The right wrist in middle position
-void CepheusHW::set_right_wrist(double c){
+void CepheusHW::set_right_wrist(double c) {
 
 	ros::Rate loop_rate(200);
 
-	for(int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_MAX_ANGLE; i++){
+	for(int i = RIGHT_WRIST_MIN_ANGLE; i <= RIGHT_WRIST_MAX_ANGLE; i++) {
 
 		cmd[RIGHT_WRIST] = (double)i;
 		double div = (double)cmd[RIGHT_WRIST]/(double)RIGHT_WRIST_MAX_ANGLE;
@@ -608,31 +583,31 @@ void CepheusHW::writeMotors()
 	for (int i=4; i<8; i++)
 	{
 
-		//if(i==RIGHT_ELBOW)
-		//	ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
+		// if(i==RIGHT_ELBOW)
+		// ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
 		// K = 0.0439, current -> torque
-		//current[i] = (cmd[i]/0.0439 );//cmd is in Nm
+		// current[i] = (cmd[i]/0.0439 );//cmd is in Nm
 
 		current[i] = (cmd[i]/0.0452 );
 
 		eff[i] = cmd[i];	// torque
-		//saturate to max current
+		// saturate to max current
 		if (current[i] >= max_current[i]) {
 			current[i] = max_current[i];
 			// max torque
-			//eff[i] = current[i]*0.0439;//eff is in Nm
+			// eff[i] = current[i]*0.0439;//eff is in Nm
 			eff[i] = current[i]*0.0452;//eff is in Nm
 		}
 		else if (current[i] <=-max_current[i]) {
 			current[i] =-max_current[i];
-			//eff[i] = current[i]*0.0439;//eff is in Nm
+			// eff[i] = current[i]*0.0439;//eff is in Nm
 			eff[i] = current[i]*0.0452;//eff is in Nm
 		}
 
 		if(current[i] == 0){
 			dir[i] = 0;
 			width[i] = (uint16_t)(current[i]*(PWM_MOTOR_RANGE/max_current[i]));
-			//width[i] = (uint16_t)(current[i]*(PWM_MOTOR_RANGE/max_current[i])) + PWM_MOTOR_MIN_DT;
+			// width[i] = (uint16_t)(current[i]*(PWM_MOTOR_RANGE/max_current[i])) + PWM_MOTOR_MIN_DT;
 
 		}
 		else if (current[i] > 0.0) 
@@ -645,14 +620,14 @@ void CepheusHW::writeMotors()
 			dir[i] = 1;
 			width[i] = (uint16_t)(-current[i]*(PWM_MOTOR_RANGE/max_current[i])) + PWM_MOTOR_MIN_DT;
 		}
-		//dir[i]= 1;
+		// dir[i]= 1;
 	}
 
 	//RC SERVOS
 	for (int i=8; i<12; i++)
 	{
 		//Left Finger(0-120 deg)
-		if(i==LEFT_GRIPPER){
+		if (i==LEFT_GRIPPER) {
 
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
 
@@ -665,7 +640,7 @@ void CepheusHW::writeMotors()
 				write_left_finger(width[i]);
 
 			}
-			else{
+			else {
 				width[i] = width[i];
 				ROS_WARN("Servo commanded out of range. Command Ignored");
 			}
@@ -673,22 +648,22 @@ void CepheusHW::writeMotors()
 
 		if(i==RIGHT_GRIPPER){
 
-                        if(cmd[i] >= 0 && cmd[i] <= RIGHT_FINGER_MAX_ANGLE ){
+			if(cmd[i] >= 0 && cmd[i] <= RIGHT_FINGER_MAX_ANGLE ){
 
-                                //ROS_WARN("div %f",div);
-                                //ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
+				//ROS_WARN("div %f",div);
+				//ROS_WARN("WM cmd %lf",cmd[LEFT_GRIPPER]);
 
-                                double div = (double)cmd[i]/(double)RIGHT_FINGER_MAX_ANGLE;
-                                width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
+				double div = (double)cmd[i]/(double)RIGHT_FINGER_MAX_ANGLE;
+				width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
-                                write_right_finger(width[i]);
-                        }
-                        else{
-                                width[i] = width[i];
-                                //ROS_WARN("Servo commanded out of range. Command Ignored");
-                        }
+				write_right_finger(width[i]);
+			}
+			else{
+				width[i] = width[i];
+				//ROS_WARN("Servo commanded out of range. Command Ignored");
+			}
 
-                }
+		}
 
 
 		//Left Wrist (0-120 deg)
@@ -712,23 +687,21 @@ void CepheusHW::writeMotors()
 
 		if(i==RIGHT_WRIST){
 
-                        if(cmd[i] >= 0 && cmd[i] <= RIGHT_WRIST_MAX_ANGLE ){
+			if(cmd[i] >= 0 && cmd[i] <= RIGHT_WRIST_MAX_ANGLE ){
 
-                                double div = (double)cmd[i]/(double)RIGHT_WRIST_MAX_ANGLE;
+				double div = (double)cmd[i]/(double)RIGHT_WRIST_MAX_ANGLE;
 
-                                //ROS_WARN("cmd %lf",cmd[i]);
-                                width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
-                                write_right_wrist(width[i]);
+				//ROS_WARN("cmd %lf",cmd[i]);
+				width[i] = (uint16_t)(div*PWM_WRIST_SERVO_RANGE + PWM_WRIST_SERVO_MIN_DT);
+				write_right_wrist(width[i]);
 
-                        }
-                        else {
-                                width[i] = width[i];
-                                ROS_WARN("Servo commanded out of range. Command Ignored");
-                        }
+			}
+			else {
+				width[i] = width[i];
+				ROS_WARN("Servo commanded out of range. Command Ignored");
+			}
 
-                }
-
-
+		}
 
 	}
 
@@ -771,10 +744,10 @@ void CepheusHW::writeMotors()
 
 	//Left wrist and gripper
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
-	  dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[10]);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
-	 */
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[10]);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
+	*/
 
 	/*
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]); //0.5ms
@@ -785,10 +758,10 @@ void CepheusHW::writeMotors()
 
 
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_C,  width[9]);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	  dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_D,  width[11]);//PWM_HOBBY_SERVO_RANGE/2 + PWM_HOBBY_SERVO_MIN_DT);
-	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
-	 */
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_D,  width[11]);//PWM_HOBBY_SERVO_RANGE/2 + PWM_HOBBY_SERVO_MIN_DT);
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	*/
 }
 
 void CepheusHW::heartbeat()
@@ -857,21 +830,21 @@ void CepheusHW::readLimitSwitches()
 	else limit[LEFT_ELBOW] = 0;
 
 	if(!(input&(1<<(int)LIMIT_R1)))
-        {
-                // ROS_INFO("%d",input&(1<<LIMIT_L2));
-                limit[RIGHT_SHOULDER] = 1;
+		{
+				// ROS_INFO("%d",input&(1<<LIMIT_L2));
+				limit[RIGHT_SHOULDER] = 1;
 		// may print if sensor not connected
-                ROS_WARN("limit 6 pressed");
-        }
-        else limit[RIGHT_SHOULDER] = 0;
+				ROS_WARN("limit 6 pressed");
+		}
+		else limit[RIGHT_SHOULDER] = 0;
 
 	/*if(!(input&(1<<(int)LIMIT_R2)))
-        {
-                ROS_INFO("%d",input&(1<<LIMIT_L2));
-                limit[RIGHT_ELBOW] = 1;
-                ROS_WARN("limit 7 pressed");
-        }
-        else limit[RIGHT_ELBOW] = 0;*/
+	{
+			ROS_INFO("%d",input&(1<<LIMIT_L2));
+			limit[RIGHT_ELBOW] = 1;
+			ROS_WARN("limit 7 pressed");
+	}
+	else limit[RIGHT_ELBOW] = 0;*/
 
 }
 
@@ -1203,8 +1176,8 @@ void CepheusHW::readEncoders(ros::Duration dt)
 		vel[4] = vel_new[4];  //left shoulder
 		vel[5] = vel_new[5];  //left elbow
 
-	        vel[6] = vel_new[6];  //right shoulder
-                vel[7] = vel_new[7];  //right elbow
+			vel[6] = vel_new[6];  //right shoulder
+				vel[7] = vel_new[7];  //right elbow
 
 
 
@@ -1887,4 +1860,3 @@ void CepheusHW::safeClose()
 
 	ROS_WARN("Hardware safely closed");
 }
-

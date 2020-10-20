@@ -171,7 +171,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 	}
 	else if(!left_shoulder_ctrl_started && ((msg->data).compare(CMD_START_LEFT_SHOULDER)== 0)){	
 
-
 		bool rv;
 
 		rv = loadController(n, std::string(LEFT_SHOULDER_CONTROLLER));
@@ -185,9 +184,9 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 		rv = startControllers(n, v);
 		if(rv)
-                        ROS_WARN("STARTED");
-                else
-                        ROS_WARN("could not start");
+			ROS_WARN("STARTED");
+		else
+			ROS_WARN("could not start");
 
 		//send OK response to interface
 		ros::Rate loop_rate(200);
@@ -203,120 +202,114 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		}
 
 		left_shoulder_ctrl_started = true;
-
-
-
 	}
 	else if(!left_elbow_ctrl_started && ((msg->data).compare(CMD_START_LEFT_ELBOW)== 0)){
 
 		bool rv;
 
-                rv = loadController(n, std::string(LEFT_ELBOW_CONTROLLER));
+		rv = loadController(n, std::string(LEFT_ELBOW_CONTROLLER));
 		if(rv)
-                        ROS_WARN("LOADED");
-                else
-                        ROS_WARN("could not load");
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
 
 
-                std::vector<std::string> v;
-                v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
-
+		std::vector<std::string> v;
+		v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
+		rv = startControllers(n, v);
 		
-                rv = startControllers(n, v);
 		if(rv)
-                        ROS_WARN("STARTED");
-                else
-                        ROS_WARN("could not start");
+			ROS_WARN("STARTED");
+		else
+			ROS_WARN("could not start");
 
 
-                //send OK response to interface
-                ros::Rate loop_rate(200);
-                int count = 0;
-                std_msgs::String res_msg;
-                res_msg.data = std::string(RESPONSE_LEFT_ELBOW);
-                while (count < MSG_NUM) {
+		//send OK response to interface
+		ros::Rate loop_rate(200);
+		int count = 0;
+		std_msgs::String res_msg;
+		res_msg.data = std::string(RESPONSE_LEFT_ELBOW);
+		
+		while (count < MSG_NUM) {
 
-                        ctl_pub.publish(res_msg);
+			ctl_pub.publish(res_msg);
+			loop_rate.sleep();
+			++count;
+		}
 
-                        loop_rate.sleep();
-                        ++count;
-                }
+		left_elbow_ctrl_started = true;
 
-                left_elbow_ctrl_started = true;
-
-        }
+	}
 	else if(!right_shoulder_ctrl_started && ((msg->data).compare(CMD_START_RIGHT_SHOULDER)== 0)){
 
-                bool rv;
+		bool rv;
 
-                rv = loadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
-                if(rv)
-                        ROS_WARN("LOADED");
-                else
-                        ROS_WARN("could not load");
+		rv = loadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
 
-                std::vector<std::string> v;
-                v.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
+		std::vector<std::string> v;
+		v.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
 
-                rv = startControllers(n, v);
-                if(rv)
-                        ROS_WARN("STARTED");
-                else
-                        ROS_WARN("could not start");
+		rv = startControllers(n, v);
+		if(rv)
+			ROS_WARN("STARTED");
+		else
+			ROS_WARN("could not start");
 
-                //send OK response to interface
-                ros::Rate loop_rate(200);
-                int count = 0;
-                std_msgs::String res_msg;
-                res_msg.data = std::string(RESPONSE_RIGHT_SHOULDER);
-                while (count < MSG_NUM) {
+		//send OK response to interface
+		ros::Rate loop_rate(200);
+		int count = 0;
+		std_msgs::String res_msg;
+		res_msg.data = std::string(RESPONSE_RIGHT_SHOULDER);
+		while (count < MSG_NUM) {
 
-                        ctl_pub.publish(res_msg);
+			ctl_pub.publish(res_msg);
+			loop_rate.sleep();
+			++count;
+		}
 
-                        loop_rate.sleep();
-                        ++count;
-                }
+		right_shoulder_ctrl_started = true;
 
-                right_shoulder_ctrl_started = true;
-
-        }
+	}
 	else if(!right_elbow_ctrl_started && ((msg->data).compare(CMD_START_RIGHT_ELBOW)== 0)){
 
-                bool rv;
+		bool rv;
 
-                rv = loadController(n, std::string(RIGHT_ELBOW_CONTROLLER));
-                if(rv)
-                        ROS_WARN("LOADED");
-                else
-                        ROS_WARN("could not load");
-
-
-                std::vector<std::string> v;
-                v.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
+		rv = loadController(n, std::string(RIGHT_ELBOW_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
 
 
-                rv = startControllers(n, v);
-                if(rv)
-                        ROS_WARN("STARTED");
-                else
-                        ROS_WARN("could not start");
+		std::vector<std::string> v;
+		v.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
 
 
-                //send OK response to interface
-                ros::Rate loop_rate(200);
-                int count = 0;
-                std_msgs::String res_msg;
-                res_msg.data = std::string(RESPONSE_RIGHT_ELBOW);
-                while (count < MSG_NUM) {
+		rv = startControllers(n, v);
+		if(rv)
+			ROS_WARN("STARTED");
+		else
+			ROS_WARN("could not start");
 
-                        ctl_pub.publish(res_msg);
 
-                        loop_rate.sleep();
-                        ++count;
-                }
+		//send OK response to interface
+		ros::Rate loop_rate(200);
+		int count = 0;
+		std_msgs::String res_msg;
+		res_msg.data = std::string(RESPONSE_RIGHT_ELBOW);
+		while (count < MSG_NUM) {
 
-                right_elbow_ctrl_started = true;
-        }
+			ctl_pub.publish(res_msg);
+			loop_rate.sleep();
+			++count;
+		}
+
+		right_elbow_ctrl_started = true;
+	}
 
 }
 

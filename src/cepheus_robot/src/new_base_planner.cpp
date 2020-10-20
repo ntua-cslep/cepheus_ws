@@ -328,14 +328,14 @@ void observe_target_velocity(const unsigned int ms, double& t_vel_X, double& t_v
 }
 
 
-
-void setup_planning_parameters(double& A_MAX_AXIS, 
-				double& L_AXIS,
-				double ch_init_pos,
-				double tar_init_pos,
-				double v_des_axis,
-				double v0_ch,
-				double L)
+void
+setup_planning_parameters(double& A_MAX_AXIS, 
+						double& L_AXIS,
+						double ch_init_pos,
+						double tar_init_pos,
+						double v_des_axis,
+						double v0_ch,
+						double L)
 {
 	if(v_des_axis != 0.0){
 
@@ -361,12 +361,13 @@ void setup_planning_parameters(double& A_MAX_AXIS,
 	}
 }
 
-bool calc_vel_prof_1_params(const double& A_max,
-		const double& V_DES,
-		const double& INIT_CH,
-		const double& V0_CH,
-		const double& init_des,
-		Prf1& res)
+bool
+calc_vel_prof_1_params(const double& A_max,
+					const double& V_DES,
+					const double& INIT_CH,
+					const double& V0_CH,
+					const double& init_des,
+					Prf1& res)
 {
 	ROS_WARN("CALC PROFILE 1");
 	//ROS_WARN("A_max %lf V_DES %lf INIT_CH %lf V0_CH %lf init_des %lf",A_max, V_DES, INIT_CH, V0_CH, init_des);
@@ -470,11 +471,12 @@ bool calc_vel_prof_1_params(const double& A_max,
 	res.set_vals(t1, t2, xdes_target, V0_CH, xt1, vt1, xdes_chaser);
 }
 
-bool calc_vel_prof_2_params(const double& INIT_CH,
-		const double& V0_CH,
-		const double& INIT_TAR,
-		const double&  V_DES,
-		Prf2& res)
+bool
+calc_vel_prof_2_params(const double& INIT_CH,
+					const double& V0_CH,
+					const double& INIT_TAR,
+					const double&  V_DES,
+					Prf2& res)
 {
 	double t1,a_ch,xdes_chaser;
 
@@ -509,13 +511,14 @@ bool calc_vel_prof_2_params(const double& INIT_CH,
 	return true;
 }
 
-bool calc_vel_prof_3_params(const double& A_MAX,
-		const double& V_DES,
-		const double& INIT_CH,
-		const double& V0_CH,
-		const double& INIT_TAR,
-		const double& L,
-		Prf3& res)
+bool
+calc_vel_prof_3_params(const double& A_MAX,
+					const double& V_DES,
+					const double& INIT_CH,
+					const double& V0_CH,
+					const double& INIT_TAR,
+					const double& L,
+					Prf3& res)
 {
 	ROS_WARN("CALC PROFILE 3");
 
@@ -830,15 +833,16 @@ void decide_plan_of_action_Y(){
 	}
 }
 
-void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
-		const double& INIT_CH,
-		const double& V0_CH,
-		const double& A_max,
-		const double& V_DES,
-		const Prf1& prof_params,
-		double& cmd_pos,
-		double& cmd_vel,
-		double& cmd_acc)
+void
+produce_chaser_trj_points_and_vel_prof_1 (const double& t,
+										const double& INIT_CH,
+										const double& V0_CH,
+										const double& A_max,
+										const double& V_DES,
+										const Prf1& prof_params,
+										double& cmd_pos,
+										double& cmd_vel,
+										double& cmd_acc)
 {
 
 
@@ -864,14 +868,15 @@ void  produce_chaser_trj_points_and_vel_prof_1 (const double& t,
 	}
 }
 
-void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
-		const double& INIT_CH,
-		const double& V0_CH,
-		const double& V_DES,
-		const Prf2& prof_params,
-		double& cmd_pos,
-		double& cmd_vel,
-		double& cmd_acc)
+void
+produce_chaser_trj_points_and_vel_prof_2 (const double& t,
+										const double& INIT_CH,
+										const double& V0_CH,
+										const double& V_DES,
+										const Prf2& prof_params,
+										double& cmd_pos,
+										double& cmd_vel,
+										double& cmd_acc)
 {
 
 	if (t <= prof_params.t1){
@@ -886,15 +891,16 @@ void produce_chaser_trj_points_and_vel_prof_2 (const double& t,
 	}
 }
 
-void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
-		const double& INIT_CH,
-		const double& V0_CH,
-		const double& A_MAX,
-		const double& V_DES,
-		const Prf3& prof_params,
-		double& cmd_pos,
-		double& cmd_vel,
-		double& cmd_acc)
+void
+produce_chaser_trj_points_and_vel_prof_3 (const double& t,
+										const double& INIT_CH,
+										const double& V0_CH,
+										const double& A_MAX,
+										const double& V_DES,
+										const Prf3& prof_params,
+										double& cmd_pos,
+										double& cmd_vel,
+										double& cmd_acc)
 {
 
 	double a_max_axis;
@@ -911,7 +917,7 @@ void produce_chaser_trj_points_and_vel_prof_3 (const double& t,
 		cmd_pos = INIT_CH + V0_CH*t + 0.5 * a_max_axis * pow(t,2);
 		cmd_vel = V0_CH + a_max_axis*t;
 		cmd_acc = a_max_axis;
-	}    
+	}
 	else if (t <= prof_params.t2){
 
 		if(V_DES > 0){
@@ -947,14 +953,14 @@ void wait_to_smooth_error(const double dur){
 		ros::spinOnce();
 		timer_norm = ros::Time::now() - init_time_norm;
 
-	}while(timer_norm.toSec() < dur);
+	} while(timer_norm.toSec() < dur);
 
 	target_first_time = chaser_first_time = true;
 }
 
 
 void set_commands(const double& t_X,
-		const double& t_Y, 	
+		const double& t_Y,
 		double& new_x,
 		double& new_y,
 		double& new_vel_x,
@@ -1068,8 +1074,8 @@ void set_commands(const double& t_X,
 		}
 		else{
 			new_x = new_x - target_vel_X * 0.005;
-                        new_vel_x = -target_vel_X;
-                        new_acc_x = 0.0;
+			new_vel_x = -target_vel_X;
+			new_acc_x = 0.0;
 		}
 	}
 
@@ -1178,8 +1184,8 @@ void set_commands(const double& t_X,
 		}
 		else{
 			new_y = new_y - target_vel_Y * 0.005;
-                        new_vel_y = -target_vel_Y;
-                        new_acc_y = 0.0;			
+			new_vel_y = -target_vel_Y;
+			new_acc_y = 0.0;			
 		}
 	}
 
@@ -1230,13 +1236,13 @@ void check_if_can_grab(double new_vel_x,
 					disable_ctrl_Y = true;
 				}
 			}
-		}		
+		}
 	}
 	*/
 
 	if((abs_dist <= 0.65) && (error_in_heading <= HEADING_ERROR_THRESHOLD)){
 		disable_ctrl_X = true;
-                disable_ctrl_Y = true;
+		disable_ctrl_Y = true;
 	}
 }
 
@@ -1260,6 +1266,7 @@ bool check_if_desired_pos_too_close(double current_x,
 
 	return false;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -1306,10 +1313,10 @@ int main(int argc, char** argv)
 	right_goal.point_to_catch.header.frame_id = "/assist_robot";
 	*/
 	/*
-	   ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
-	   cl_left.waitForServer();
-	   cepheus_robot::LeftCatchObjectGoal left_goal;
-	 */
+	ActionClientLeft cl_left("left_catch_object_action", true); // true -> don't need ros::spin()
+	cl_left.waitForServer();
+	cepheus_robot::LeftCatchObjectGoal left_goal;
+	*/
 
 
 	//Trajectory point produced ,command velocity and command acceleration
@@ -1393,13 +1400,13 @@ int main(int argc, char** argv)
 						chaser_init_vel_X,
 						L_X);
 			
-			setup_planning_parameters(A_MAX_Y, 
-                                                L_Y, 
-                                                chaser_init_pos.y,
-                                                target_init_pos.y,
-                                                target_vel_Y,
-                                                chaser_init_vel_Y,
-                                                L_Y);
+			setup_planning_parameters(A_MAX_Y,
+										L_Y,
+										chaser_init_pos.y,
+										target_init_pos.y,
+										target_vel_Y,
+										chaser_init_vel_Y,
+										L_Y);
 
 
 			decide_plan_of_action_X();
@@ -1561,12 +1568,12 @@ int main(int argc, char** argv)
 						target_init_pos.x = target_real_pos.x;
 
 						setup_planning_parameters(A_MAX_X,
-	                                         			L_X,
-                                                			chaser_init_pos.x,
-                                                			target_init_pos.x,
-                                                			target_vel_X,
-                                                			chaser_init_vel_X,
-                                                			L_X);
+													L_X,
+													chaser_init_pos.x,
+													target_init_pos.x,
+													target_vel_X,
+													chaser_init_vel_X,
+													L_X);
 
 						decide_plan_of_action_X();
 
@@ -1686,5 +1693,3 @@ int main(int argc, char** argv)
 	}
 
 }
-
-

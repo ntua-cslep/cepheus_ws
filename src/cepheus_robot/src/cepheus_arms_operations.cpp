@@ -6,60 +6,65 @@
 #include "cepheus_hardware.h"
 
 
-double produce_trajectory_point(double time, double movement_duration, double init_pos, double set_point){
-
+double
+produce_trajectory_point(double time,
+								double movement_duration,
+								double init_pos,
+								double set_point)
+{
 	double tj_p;
-
 	double a0 = init_pos;
 	double a1 = 0.0;
 	double a2 = (3.0/(double)pow(movement_duration,2)) * (double)(set_point - init_pos);
 	double a3 = - (2.0/(double)pow(movement_duration,3)) * (double)(set_point - init_pos);
 
 	tj_p = a0 + a1 * time + a2 * (double)pow(time,2) + a3 * (double)pow(time,3);
-
-
-	ROS_INFO("trajectory value: %f", tj_p);
+	// ROS_INFO("trajectory value: %f", tj_p);
 	return tj_p;
-
 }
 
 
-double produce_trajectory_point_wrist(double time, double movement_duration, double init_pos, double set_point){
+double
+produce_trajectory_point_wrist(double time,
+									double movement_duration,
+									double init_pos,
+									double set_point)
+{
 
-	if(set_point >= LEFT_WRIST_MIN_ANGLE && set_point <= LEFT_WRIST_MAX_ANGLE){
-
+	if (set_point >= LEFT_WRIST_MIN_ANGLE && set_point <= LEFT_WRIST_MAX_ANGLE) {
 		double tj_p;
-
 		double a0 = init_pos;
 		double a1 = 0.0;
 		double a2 = (3.0/(double)pow(movement_duration,2)) * (double)(set_point - init_pos);
 		double a3 = - (2.0/(double)pow(movement_duration,3)) * (double)(set_point - init_pos);
 
 		tj_p = a0 + a1 * time + a2 * (double)pow(time,2) + a3 * (double)pow(time,3);
-
 		return tj_p;
-
 	}
 	else
 		ROS_WARN("Command to left wrist out of range");
 }
 
-double produce_sin_trajectory(double width, double period, double t){
+double
+produce_sin_trajectory(double width, double period, double t){
 
 	double rv = width * sin((2.0 * M_PI) / period * t);
 	return rv;
 }
 
-double produce_sin_trajectory_wrist(double width, double period, double t){
+double
+produce_sin_trajectory_wrist(double width, double period, double t){
 
 	double rv = 60 + width * sin((2.0 * M_PI) / period * t);
 	return rv;
 }
 
-void moveLeftArmSin(controller_manager::ControllerManager& cm,
-			CepheusHW& robot,
-			ros::Publisher left_shoulder_pub,
-			ros::Publisher left_elbow_pub){
+void
+moveLeftArmSin(controller_manager::ControllerManager& cm,
+				CepheusHW& robot,
+				ros::Publisher left_shoulder_pub,
+				ros::Publisher left_elbow_pub)
+{
 
 	double movement_duration = 12;
 
@@ -110,16 +115,16 @@ void moveLeftArmSin(controller_manager::ControllerManager& cm,
 }
 
 
-void move_left_arm(double set_point_shoulder,
-		double set_point_elbow,
-		double set_point_wrist,
-		double movement_duration,
-		controller_manager::ControllerManager& cm,
-		CepheusHW& robot,
-                ros::Publisher left_shoulder_pub,
-                ros::Publisher left_elbow_pub){
-
-
+void
+move_left_arm(double set_point_shoulder,
+			double set_point_elbow,
+			double set_point_wrist,
+			double movement_duration,
+			controller_manager::ControllerManager& cm,
+			CepheusHW& robot,
+			ros::Publisher left_shoulder_pub,
+			ros::Publisher left_elbow_pub)
+{
 
 	ros::Time init_time = ros::Time::now();
 	ros::Duration timer;
@@ -168,92 +173,92 @@ void move_left_arm(double set_point_shoulder,
 		timer = ros::Time::now() - init_time;
 		loop_rate.sleep();
 	}
-
 }
 
-void move_right_arm(double set_point_shoulder,
-                double set_point_elbow,
-                double set_point_wrist,
-                double movement_duration,
-                controller_manager::ControllerManager& cm,
-                CepheusHW& robot,
-                ros::Publisher right_shoulder_pub,
-                ros::Publisher right_elbow_pub){
 
+void
+move_right_arm(double set_point_shoulder,
+				double set_point_elbow,
+				double set_point_wrist,
+				double movement_duration,
+				controller_manager::ControllerManager& cm,
+				CepheusHW& robot,
+				ros::Publisher right_shoulder_pub,
+				ros::Publisher right_elbow_pub)
+{
 
+	ros::Time init_time = ros::Time::now();
+	ros::Duration timer;
+	timer = ros::Time::now() - init_time;
 
-        ros::Time init_time = ros::Time::now();
-        ros::Duration timer;
-        timer = ros::Time::now() - init_time;
+	robot.readEncoders(timer);
 
-        robot.readEncoders(timer);
-
-        double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
-        double init_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
-        double init_pos_wrist = robot.getCmd(RIGHT_WRIST);
+	double curr_pos_shoulder, curr_pos_elbow, curr_pos_wrist;
+	double init_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
+	double init_pos_wrist = robot.getCmd(RIGHT_WRIST);
 	double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
 
-        ros::Rate loop_rate(200);
+	ros::Rate loop_rate(200);
 
-        std_msgs::Float64 cmd_pos_sh;
+	std_msgs::Float64 cmd_pos_sh;
 	std_msgs::Float64 cmd_pos_elb;
-        double wrist_cmd;
+	double wrist_cmd;
 
 	//robot.setCmd(RIGHT_SHOULDER, 0.0);
 	//robot.setCmd(RIGHT_ELBOW, 0.0);
 
-        while(timer.toSec() <= movement_duration){
+	while(timer.toSec() <= movement_duration){
 
-                robot.readEncoders(timer);
+		robot.readEncoders(timer);
 
-                curr_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
-        	curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
-	        curr_pos_wrist = robot.getCmd(RIGHT_WRIST);
+		curr_pos_shoulder = robot.getPos(RIGHT_SHOULDER);
+		curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
+		curr_pos_wrist = robot.getCmd(RIGHT_WRIST);
 
-                cmd_pos_sh.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
+		cmd_pos_sh.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
 		cmd_pos_elb.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
 		wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
 
-                right_elbow_pub.publish(cmd_pos_elb);
-                right_shoulder_pub.publish(cmd_pos_sh);
-                robot.setCmd(RIGHT_WRIST, wrist_cmd);
+		right_elbow_pub.publish(cmd_pos_elb);
+		right_shoulder_pub.publish(cmd_pos_sh);
+		robot.setCmd(RIGHT_WRIST, wrist_cmd);
 
-                cm.update(ros::Time::now(), timer);
-                robot.writeMotors();
-                robot.heartbeat();
+		cm.update(ros::Time::now(), timer);
+		robot.writeMotors();
+		robot.heartbeat();
 
-                ros::spinOnce();
+		ros::spinOnce();
 
-                timer = ros::Time::now() - init_time;
-                loop_rate.sleep();
-        }
-/*
+		timer = ros::Time::now() - init_time;
+		loop_rate.sleep();
+	}
 
+	/*
 	init_time = ros::Time::now();
-        timer = ros::Time::now() - init_time;
+	timer = ros::Time::now() - init_time;
 
 	robot.readEncoders(timer);
 
-        double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
-        while(timer.toSec() <= movement_duration){
+	double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
+	while(timer.toSec() <= movement_duration){
 
-                robot.readEncoders(timer);
-                curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
+		robot.readEncoders(timer);
+		curr_pos_elbow = robot.getPos(RIGHT_ELBOW);
 
-                cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
-                right_elbow_pub.publish(cmd_pos);
+		cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
+		right_elbow_pub.publish(cmd_pos);
 
-                robot.readEncoders(timer);
-                cm.update(ros::Time::now(), timer);
-                robot.writeMotors();
-                robot.heartbeat();
+		robot.readEncoders(timer);
+		cm.update(ros::Time::now(), timer);
+		robot.writeMotors();
+		robot.heartbeat();
 
-                ros::spinOnce();
+		ros::spinOnce();
 
-                timer = ros::Time::now() - init_time;
-                loop_rate.sleep();
-        }
-*/
+		timer = ros::Time::now() - init_time;
+		loop_rate.sleep();
+	}
+	*/
 }
 
 /*
@@ -271,21 +276,21 @@ void test_catch_object(double cmd_angle_to_catch, controller_manager::Controller
 
 	//Used in order to track the frame of the target
 	tf::TransformListener target_listener;
-	  tf::StampedTransform transform;
+	tf::StampedTransform transform;
 
-	  try{
-	  target_listener.lookupTransform("cepheus","gripper_target",
-	  ros::Time(0), transform);
-	  }
-	  catch (tf::TransformException &ex) {
-	  ROS_ERROR("%s",ex.what());
-	  }
-	 
+	try{
+		target_listener.lookupTransform("cepheus","gripper_target",
+		ros::Time(0), transform);
+	}
+		catch (tf::TransformException &ex) {
+		ROS_ERROR("%s",ex.what());
+	}
+
 	//position of target
 	
-	   double x = transform.getOrigin().x();
-	   double y = transform.getOrigin().y();
-	 
+	double x = transform.getOrigin().x();
+	double y = transform.getOrigin().y();
+
 
 	//Coordinates of target based on cepheus origin
 	//double x = 0.21;
@@ -300,8 +305,7 @@ void test_catch_object(double cmd_angle_to_catch, controller_manager::Controller
 
 	//Need to transform the above coordinates to the base of the left arm
 	x = x - 0.17268;
-	  y = y + 0.091404;
-	 
+	y = y + 0.091404;
 
 	double yn = y - l3  * cos(phi);
 	double xn = x - l3 * sin(phi);

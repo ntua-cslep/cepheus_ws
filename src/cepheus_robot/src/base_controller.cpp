@@ -125,19 +125,19 @@ class BaseController {
 			const double f2th = -M_PI/2;
 			const double f3th = -M_PI/6;
 
-			D << cos(f1th), cos(f2th), cos(f3th),
-			  sin(f1th), sin(f2th), sin(f3th),
-			  -r,        -r,         r;
+			D <<	cos(f1th),	cos(f2th),	cos(f3th),
+					sin(f1th),	sin(f2th),	sin(f3th),
+					-r,			-r,			r;
 
 			D_pinv.resize(4,3);
-			D_pinv <<   0.5774,  0.3333, -0.1405,
-			       0.0000, -0.6667, -0.1405,
-			       0.5774, -0.3333,  0.1405,
-			       -0.0000,  0.0000,  0.9368;
+			D_pinv <<	0.5774,		0.3333,		-0.1405,
+						0.0000,		-0.6667,	-0.1405,
+						0.5774,		-0.3333,	0.1405,
+						-0.0000,	0.0000,		0.9368;
 
-			D_pinv_noRW <<   0.5774,  0.3333, -2.2222,
-				    -0.0000, -0.6667, -2.2222,
-				    0.5774, -0.3333,  2.2222;
+			D_pinv_noRW <<	0.5774,		0.3333,		-2.2222,
+							-0.0000,	-0.6667,	-2.2222,
+							0.5774,		-0.3333,	2.2222;
 		}
 
 		void setControllerGains(double _kp_lin, double _kp_ang, double _kd_lin, double _kd_ang) 
@@ -146,7 +146,7 @@ class BaseController {
 			double wn_lin = 6.0/ts_lin;
 
 			double ts_ang = 20.0;
-                        double wn_ang = 6.0/ts_ang;
+			double wn_ang = 6.0/ts_ang;
 
 
 			double Kp_lin = pow(wn_lin, 2) * M(1,1);
@@ -155,13 +155,12 @@ class BaseController {
 			double Kd_ang = 2.0 * wn_ang * M(3,3);
 
 			Kp(0,0) = Kp_lin;
-                        Kp(1,1) = Kp_lin;
-                        Kp(2,2) = Kp_ang;
+			Kp(1,1) = Kp_lin;
+			Kp(2,2) = Kp_ang;
 
-                        Kd(0,0) = Kd_lin;
-                        Kd(1,1) = Kd_lin;
-                        Kd(2,2) = Kd_ang;
-			
+			Kd(0,0) = Kd_lin;
+			Kd(1,1) = Kd_lin;
+			Kd(2,2) = Kd_ang;
 		}
 
 		void hasReactionWheel(bool val)
@@ -375,7 +374,7 @@ void PhaseSpaceCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 }
 
 void remoteCallback(const geometry_msgs::Twist::ConstPtr& msg)
-{   
+{
 	geometry_msgs::Twist temp;
 	temp = *msg;
 	cmd_vel.x = temp.linear.x/100;
@@ -459,7 +458,7 @@ void plannerPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 }
 
 void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
-{   
+{
 
 	geometry_msgs::Vector3Stamped temp,temp_in_map;
 	geometry_msgs::TwistStamped tempTwist=*msg;
@@ -468,17 +467,17 @@ void plannerVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr& msg)
 	temp.vector.y = tempTwist.twist.linear.y;
 	temp.vector.z = 0.0;
 	temp.header.stamp = ros::Time(0);//::now() - ros::Duration(0.05);
-        
+		
 	cmd_vel.x = temp.vector.x;
-        cmd_vel.y = temp.vector.y;
-        cmd_vel.z = tempTwist.twist.angular.z;
+		cmd_vel.y = temp.vector.y;
+		cmd_vel.z = tempTwist.twist.angular.z;
 
 	//ROS_INFO_STREAM("cmd_vel_x " << cmd_vel.x << "cmd_vel_y " <<cmd_vel.y << "cmd_vel_z " << cmd_vel.z);
 	return;
 }
 
 void plannerAccelerationCallback(const geometry_msgs::Vector3::ConstPtr& msg)
-{   
+{
 	cmd_acc = *msg;
 	// ROS_INFO_STREAM("cmd_acc recieved");
 	return;

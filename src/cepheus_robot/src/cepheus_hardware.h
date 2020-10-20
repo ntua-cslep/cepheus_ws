@@ -1,4 +1,3 @@
-
 #include <errno.h>
 #include <error.h>
 #include <signal.h>
@@ -140,20 +139,20 @@ class CepheusHW : public hardware_interface::RobotHW
 		void init_right_shoulder();
 		void init_right_elbow();
 		void init_right_finger();
-                void init_right_wrist();
+		void init_right_wrist();
 		
 		void command_right_wrist();
 
 		void set_left_finger(double);
 		void set_left_wrist(double);
 		void set_right_finger(double);
-                void set_right_wrist(double);
+		void set_right_wrist(double);
 
 
 		void write_left_wrist(double);
 		void write_left_finger(double);
 		void write_right_wrist(double);
-                void write_right_finger(double);
+		void write_right_finger(double);
 
 		void update_shoulder(double, double, double&);
 		void update_elbow(double, double, double&);
@@ -163,8 +162,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		}
 
 		void set_right_fsr_value(uint8_t val){
-                        fsr_values[1] = val;
-                }
+			fsr_values[1] = val;
+		}
 
 
 		uint8_t get_left_fsr_val(){
@@ -172,8 +171,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		}
 
 		uint8_t get_right_fsr_val(){
-                        return fsr_values[1];
-                }
+			return fsr_values[1];
+		}
 
 
 		void set_manipulator_width(int manipulator, uint16_t width_val){
