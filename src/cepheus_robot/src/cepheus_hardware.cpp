@@ -474,7 +474,7 @@ void CepheusHW::command_right_wrist(){
 	}
 }
 
-//The gripper opens full  
+//The gripper opens full
 void CepheusHW::init_left_finger(){
 
 	ros::Rate loop_rate(200);
@@ -485,13 +485,13 @@ void CepheusHW::init_left_finger(){
 		double div = (double)cmd[LEFT_GRIPPER]/(double)LEFT_FINGER_MAX_ANGLE;
 		width[LEFT_GRIPPER] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
 
-		write_left_finger(width[LEFT_GRIPPER]);		
+		write_left_finger(width[LEFT_GRIPPER]);
 
 		loop_rate.sleep();
 	}
 }
 
-//The left wrist in middle position  
+//The left wrist in middle position
 void CepheusHW::init_left_wrist(){
 
 	ros::Rate loop_rate(200);
@@ -508,7 +508,7 @@ void CepheusHW::init_left_wrist(){
 }
 
 
-//The gripper opens full  
+//The gripper opens full
 void CepheusHW::init_right_finger(){
 
 	ros::Rate loop_rate(200);
@@ -525,7 +525,7 @@ void CepheusHW::init_right_finger(){
 	}
 }
 
-//The right wrist in middle position  
+//The right wrist in middle position
 void CepheusHW::init_right_wrist(){
 
 	ros::Rate loop_rate(200);
@@ -557,7 +557,7 @@ void CepheusHW::set_right_finger(double c){
 	}
 }
 
-//The right wrist in middle position  
+//The right wrist in middle position
 void CepheusHW::set_right_wrist(double c){
 
 	ros::Rate loop_rate(200);
@@ -576,7 +576,7 @@ void CepheusHW::set_right_wrist(double c){
 
 
 void CepheusHW::writeMotors()
-{  
+{
 	//ROS_INFO(" PWM_M_R  %d PWM_M_MIN %d\n",PWM_MOTOR_RANGE,PWM_MOTOR_MIN_DT);
 
 	//REACTION WHEEL
@@ -611,17 +611,22 @@ void CepheusHW::writeMotors()
 		//if(i==RIGHT_ELBOW)
 		//	ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
 		// K = 0.0439, current -> torque
-		current[i] = (cmd[i]/0.0439 );//cmd is in Nm
+		//current[i] = (cmd[i]/0.0439 );//cmd is in Nm
+
+		current[i] = (cmd[i]/0.0452 );
+
 		eff[i] = cmd[i];	// torque
 		//saturate to max current
 		if (current[i] >= max_current[i]) {
 			current[i] = max_current[i];
 			// max torque
-			eff[i] = current[i]*0.0439;//eff is in Nm
+			//eff[i] = current[i]*0.0439;//eff is in Nm
+			eff[i] = current[i]*0.0452;//eff is in Nm
 		}
 		else if (current[i] <=-max_current[i]) {
 			current[i] =-max_current[i];
-			eff[i] = current[i]*0.0439;//eff is in Nm
+			//eff[i] = current[i]*0.0439;//eff is in Nm
+			eff[i] = current[i]*0.0452;//eff is in Nm
 		}
 
 		if(current[i] == 0){
@@ -648,7 +653,7 @@ void CepheusHW::writeMotors()
 	{
 		//Left Finger(0-120 deg)
 		if(i==LEFT_GRIPPER){
-		
+
 			if(cmd[i] >= 0 && cmd[i] <= LEFT_FINGER_MAX_ANGLE ){
 
 				//ROS_WARN("div %f",div);
@@ -656,9 +661,9 @@ void CepheusHW::writeMotors()
 
 				double div = (double)cmd[i]/(double)LEFT_FINGER_MAX_ANGLE;
 				width[i] = (uint16_t)(div*PWM_FINGER_SERVO_RANGE + PWM_FINGER_SERVO_MIN_DT);
-		
+
 				write_left_finger(width[i]);
-				
+
 			}
 			else{
 				width[i] = width[i];
@@ -758,12 +763,12 @@ void CepheusHW::writeMotors()
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[4]");  
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[5]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[5]");
-	
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[6]);
+
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_C,  width[6]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
-	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_D,  width[7]);
+	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_D,  width[7]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
-	 
+
 	//Left wrist and gripper
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_C,  width[8]);
 	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[6]");
@@ -771,10 +776,12 @@ void CepheusHW::writeMotors()
 	  DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[7]");
 	 */
 
+	/*
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_A,  width[8]); //0.5ms
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_B,  width[10]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_Width()");
+	*/
 
 
 	/*dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_1, DM7820_PWM_OUTPUT_C,  width[9]);
@@ -820,9 +827,6 @@ void CepheusHW::readLimitSwitches()
 	uint16_t input;
 	dm7820_status = DM7820_StdIO_Get_Input (manipulator_board, DM7820_STDIO_PORT_0, &input);
 	DM7820_Return_Status(dm7820_status, "DM7820_StdIO_Get_Input()");
-			
-	//	ROS_INFO("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-
 
 	//printf("input:");
 	//print_binary(input);
@@ -836,41 +840,44 @@ void CepheusHW::readLimitSwitches()
 
 	if(!(input&(1<<(int)LIMIT_L1))) 
 	{
-		//printf("%d\n",input&(1<<LIMIT_L1));
+		// ROS_INFO("%d",input&(1<<LIMIT_L1));
 		limit[LEFT_SHOULDER] = 1;
-		//ROS_WARN("limit 4 pressed");
+		// may print if sensor not connected
+		ROS_WARN("limit 4 pressed");
 	}
 	else limit[LEFT_SHOULDER] = 0;
 
 	if(!(input&(1<<(int)LIMIT_L2))) 
 	{
-		//printf("%d\n",input&(1<<LIMIT_L2));
+		// ROS_INFO("%d",input&(1<<LIMIT_L2));
 		limit[LEFT_ELBOW] = 1;
-		//ROS_WARN("limit 5 pressed");
+		// may print if sensor not connected
+		ROS_WARN("limit 5 pressed");
 	}
 	else limit[LEFT_ELBOW] = 0;
-	
+
 	if(!(input&(1<<(int)LIMIT_R1)))
         {
-                //printf("%d\n",input&(1<<LIMIT_L2));
+                // ROS_INFO("%d",input&(1<<LIMIT_L2));
                 limit[RIGHT_SHOULDER] = 1;
-                //ROS_WARN("limit 6 pressed");
+		// may print if sensor not connected
+                ROS_WARN("limit 6 pressed");
         }
         else limit[RIGHT_SHOULDER] = 0;
 
-	if(!(input&(1<<(int)LIMIT_R2)))
+	/*if(!(input&(1<<(int)LIMIT_R2)))
         {
-                //printf("%d\n",input&(1<<LIMIT_L2));
+                ROS_INFO("%d",input&(1<<LIMIT_L2));
                 limit[RIGHT_ELBOW] = 1;
-                //ROS_WARN("limit 7 pressed");
+                ROS_WARN("limit 7 pressed");
         }
-        else limit[RIGHT_ELBOW] = 0;
+        else limit[RIGHT_ELBOW] = 0;*/
 
 }
 
 void CepheusHW::readEncoders(ros::Duration dt)
 {
-	//readLimitSwitches();
+	readLimitSwitches();
 	// read robots joint state
 	//Read encoder 0 channel A value
 	dm7820_status = DM7820_IncEnc_Get_Independent_Value(board, DM7820_INCENC_ENCODER_0, 
@@ -900,96 +907,96 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	// Channel 0A Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 0A");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_1_ovf++;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 0A");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_1_ovf--;
 
 	encoder_1 = (int64_t)encoder_1_val + UINT16_MAX*encoder_1_ovf;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0A");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 0A positive overflow status not cleared");
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0A");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 0A negative overflow status not cleared");
 
 
 	// Channel 0B Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 0B");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_2_ovf++;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 0B");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_2_ovf--;
 
 	encoder_2 = (int64_t)encoder_2_val + UINT16_MAX*encoder_2_ovf;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 0B");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 0B positive overflow status not cleared");
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 0B");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 0B negative overflow status not cleared");
 
 
 	// Channel 1A Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 1A");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_3_ovf++;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 1A");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_3_ovf--;
 
 	encoder_3 = (int64_t)encoder_3_val + UINT16_MAX*encoder_3_ovf;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1A");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 1A positive overflow status not cleared");
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1A");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 1A negative overflow status not cleared");
 
 
 	// Channel 1B Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 1B");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_4_ovf++;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 1B");
-	if (encoder_status) 
+	if (encoder_status)
 		encoder_4_ovf--;
 
 	encoder_4 = (int64_t)encoder_4_val + UINT16_MAX*encoder_4_ovf;
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Positive overflow clear channel 1B");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 1B positive overflow status not cleared");
 
 	dm7820_status = DM7820_IncEnc_Get_Status(board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "negative overflow clear channel 1B");
-	if (encoder_status)  
+	if (encoder_status)
 		error(EXIT_FAILURE, 0, "ERROR: Channel 1B negative overflow status not cleared");
 
 	/**************************************************************************/
@@ -1154,23 +1161,35 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	pos[3]=  (double)encoder_4*2*M_PI/(4000) + offset_pos[3];
 
 	// 121027.38703744316 rads = ? 
-	// rad = (encoder / (encoding type * CPT) * 2 * pi) / (reducer transmission ratio)
+	// rad = (encoder / (encoding type * CPT) * 2 * pi) / (reducer transmission ratio)  => !!!!encoding_type * CPT * reduction / 2*pi!!!
 	// CPT (counts per turn) = 1000 [depends on motor]
 	// encoding type = 4 [depends on motor]
 	// reducer transmission ratio = 190  [190:1 = 12167/64]
-	pos[4]=  (double)(encoder_5/121027.38703744316) + offset_pos[4];
-	pos[5]=  (double)(encoder_6/121027.38703744316) - (double)(encoder_5/121027.38703744316) + offset_pos[5];
+
+	//New maxon motors (DCX22L EBKL 24V) with reduction 185.93:1, enc_type = 4, CPT=1000
+
+
+	//pos[4]=  (double)(encoder_5/121027.38703744316) + offset_pos[4]; (old motors with 190:1 reduction)
+	pos[4]=  (double)(encoder_5/118366.714) + offset_pos[4];//for new motors (silver)
+
+	pos[5]=  (double)(encoder_6/118366.714) + offset_pos[5];//for new motors (silver)
+
+	//pos[5]=  (double)(encoder_6/121027.38703744316) - (double)(encoder_5/121027.38703744316) + offset_pos[5];
 	//pos[5]=  (double)(encoder_6/121027.38703744316) - pos[4] + offset_pos[5];
 	//printf("offset:%f\n",offset_pos[5]);
 	//pos[5]=  (double)(encoder_6/121027.38703744316) + (double)(encoder_5/121027.38703744316) + offset_pos[5];
-	pos[6]=  (double)(encoder_7/121027.38703744316) + offset_pos[6];
-	//pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
-	pos[7]=  (double)(encoder_8/121027.38703744316) - (double)(encoder_7/121027.38703744316) + offset_pos[7];
+	//pos[6]=  (double)(encoder_7/121027.38703744316) + offset_pos[6];
 
+	// pos 6 now reaction wheel 2020 update
+	pos[6] = (double)encoder_7*2*M_PI/(4095) + offset_pos[6];
+	//pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
+	//pos[7]=  (double)(encoder_8/121027.38703744316) - (double)(encoder_7/121027.38703744316) + offset_pos[7];
+	pos[7]=  (double)(encoder_8/118366.714) + offset_pos[7]; //for new motors (silver) 2020
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
 	//ROS_WARN("pos[7] : %lf", pos[7]);
 
-	//ROS_INFO("POS: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", pos[0], pos[1], pos[2], pos[3] ,pos[4] ,pos[5] ,pos[6] ,pos[7]);
+	ROS_INFO("readEncoders: spare motor test: %f, reaction wheel: %f,", pos[5], pos[6]);
+
 
 	// Speed Calculation radians/sec
 	for(int i=0; i<8; i++)

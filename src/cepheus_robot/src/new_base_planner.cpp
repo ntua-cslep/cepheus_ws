@@ -44,10 +44,10 @@
 #include "new_base_planner_utilities.h"
 
 //For the grip action testing
-#include <cepheus_robot/RightCatchObjectAction.h>
+//#include <cepheus_robot/RightCatchObjectAction.h>
 //#include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/client/simple_action_client.h>
-typedef actionlib::SimpleActionClient<cepheus_robot::RightCatchObjectAction> ActionClientRight;
+//typedef actionlib::SimpleActionClient<cepheus_robot::RightCatchObjectAction> ActionClientRight;
 //typedef actionlib::SimpleActionClient<cepheus_robot::LeftCatchObjectAction> ActionClientLeft;
 
 

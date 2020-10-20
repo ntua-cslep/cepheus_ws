@@ -24,11 +24,11 @@ FILE *latency_fp;
 #include <tf/transform_listener.h>
 #include "cepheus_hardware.h"
 
-#include <cepheus_robot/RightCatchObjectAction.h>  
+//#include <cepheus_robot/RightCatchObjectAction.h>  
 //include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/server/simple_action_server.h>
 
-typedef actionlib::SimpleActionServer<cepheus_robot::RightCatchObjectAction> ActionServerRightArm;
+//typedef actionlib::SimpleActionServer<cepheus_robot::RightCatchObjectAction> ActionServerRightArm;
 //typedef actionlib::SimpleActionServer<cepheus_robot::LeftCatchObjectAction> ActionServerLeftArm;
 
 #define SH_DUR 2
@@ -744,9 +744,9 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 }
 */
 //bool right_catch_object_one_time = true;
-
-//void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){
-void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm){ 
+/*
+void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){
+//void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm){ 
    
 		cepheus_robot::RightCatchObjectResult result;
  
@@ -868,7 +868,7 @@ void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& g
 
         //}
 }
-
+*/
 
 int main(int argc, char** argv) 
 {
@@ -950,8 +950,8 @@ int main(int argc, char** argv)
 	//ros::Subscriber right_arm_catch_object_sub =  nh.subscribe<geometry_msgs::PointStamped>("right_arm_catch_object", 1, boost::bind(&rightArmInvKinCallback, _1, boost::ref(cm)));
 
 	//Action for fripping test
-	ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmInvKinCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
-  	as_right.start();
+	//ActionServerRightArm as_right (nh, "right_catch_object_action", boost::bind(&rightArmInvKinCallback, _1, boost::ref(as_right), boost::ref(cm)), false);
+  	//as_right.start();
 
 	//ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
         //as_left.start();
@@ -985,19 +985,20 @@ int main(int argc, char** argv)
 	
 	start_standard_controllers(nh, cm, loop_rate);
 	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
-	init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+	//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 
 	sleep(1);
-
-	move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-
+	//Move Right Hand to Ready to Grab Position
+	//move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	//move_right_arm(M_PI, M_PI/2.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	//move_left_arm(M_PI, M_PI/2.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 
 	ROS_WARN("About to enter normal spinning...");
 	ros::AsyncSpinner spinner(3);
 	spinner.start();
 
 	ros::Time curr_time;
-	ros::Duration time_step;	
+	ros::Duration time_step;
 
 	bool first_time = true;
 
@@ -1021,12 +1022,14 @@ int main(int argc, char** argv)
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
-
+		
+		/*
 		if(ready_to_grip_left)
 			left_fsr_update();
 
 		if(ready_to_grip_right)
                 	right_fsr_update();
+		*/
 
 		robot.writeMotors();
 		robot.heartbeat();

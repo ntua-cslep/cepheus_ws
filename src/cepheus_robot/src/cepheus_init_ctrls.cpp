@@ -119,7 +119,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 
 
         //INITIALIZE THE LEFT ELBOW
-        robot.init_left_elbow();
+        //robot.init_left_elbow();
 
         msg.data = std::string(CMD_START_LEFT_ELBOW);
         ctl_pub.publish(msg);
@@ -134,6 +134,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
         }
 
 
+	/*
         init_spinner.start();
         while(!left_elbow_ctrl_started)
         {
@@ -147,9 +148,10 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
                 loop_rate.sleep();
         }
         init_spinner.stop();
+	*/
 
         //INITIALIZE THE LEFT SHOULDER
-        robot.init_left_shoulder();
+        //robot.init_left_shoulder();
         msg.data = std::string(CMD_START_LEFT_SHOULDER);
 
         count = 0;
@@ -161,6 +163,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
                 ++count;
         }
 
+	/*
         init_spinner.start();
 
         while(!left_shoulder_ctrl_started)
@@ -181,10 +184,10 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
         }
 
         init_spinner.stop();
-
+	*/
         //Initialize the left finger and the wrist
-        robot.init_left_finger();
-        robot.init_left_wrist();
+        //robot.init_left_finger();
+        //robot.init_left_wrist();
 
 }
 
