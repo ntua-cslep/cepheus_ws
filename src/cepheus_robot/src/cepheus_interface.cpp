@@ -24,7 +24,7 @@ FILE *latency_fp;
 #include <tf/transform_listener.h>
 #include "cepheus_hardware.h"
 
-//#include <cepheus_robot/RightCatchObjectAction.h>  
+//#include <cepheus_robot/RightCatchObjectAction.h>
 //include <cepheus_robot/LeftCatchObjectAction.h>
 #include <actionlib/server/simple_action_server.h>
 
@@ -253,7 +253,7 @@ void left_fsr_update()
 	static double gripper_last_angle = 0.0;
 	static double new_angle = 0.0;
 	double d_theta = 0.0;
-	uint16_t width_val = 0;	
+	uint16_t width_val = 0;
 	double div = 0.0;
 	double pi_out = 0.0;
 	static ros::Time init_time;
@@ -274,8 +274,8 @@ void left_fsr_update()
 		//PI out (Kp * error + Ki * sum(error))
 		error_sum += error;
 		count ++;
-		double avg = (double)error_sum/(double)count; 
-		ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);	
+		double avg = (double)error_sum/(double)count;
+		ROS_WARN("AVG = %lf error_sum %d count %d",avg,error_sum, count);
 		//For protection from overheating, if the fsr does not sense the target as expected ,so the error is not decreasing
 		dur =  ros::Time::now() - init_time;
 		if (dur.toSec() >= (double)DURATION_NO_GRIP && avg <= (double) -FSR_AVG_THRESHOLD ) {
@@ -298,7 +298,7 @@ void left_fsr_update()
 		}
 		else if (fsr_val > 0 && fsr_val < F_DES){
 			d_theta = fsr_trend_line(true, abs(pi_out));
-		}	
+		}
 		else if (fsr_val >= F_DES) {
 			d_theta = fsr_trend_line(false, abs(pi_out));
 		}
@@ -382,6 +382,40 @@ void right_fsr_update()
 }
 
 
+bool initFirstJoint(std_srvs::Empty::Request &req,
+         	std_srvs::Empty::Response &res)
+{
+	ROS_WARN("initialize first joint Called !");
+	robot.setOffsetLeftShoulder();
+	return true;
+}
+
+bool initSecondJoint(std_srvs::Empty::Request &req,
+                std_srvs::Empty::Response &res)
+{
+        ROS_WARN("initialize second joint Called !");
+
+        robot.setOffsetLeftElbow();
+        return true;
+}
+
+bool initThirdJoint(std_srvs::Empty::Request &req,
+                std_srvs::Empty::Response &res)
+{
+        ROS_WARN("initialize third joint Called !");
+        robot.setOffsetRightElbow();
+        return true;
+}
+
+/*
+bool leftElbowGoZero(std_srvs::Empty::Request &req,
+                std_srvs::Empty::Response &res,
+		const controller_manager::ControllerManager &cm)
+{
+	move_left_arm(0.0, 0.0, 110.0, 24.0, *cm, robot, left_shoulder_pub, left_elbow_pub);
+        return true;
+}
+*/
 
 int main(int argc, char** argv) 
 {
@@ -394,26 +428,26 @@ int main(int argc, char** argv)
 	setpriority(PRIO_PROCESS, 0, 19);
 
 	double rate;
-	ros::param::param<double>("~loop_rate", rate, 500); 
+	ros::param::param<double>("~loop_rate", rate, 500);
 	ros::Rate loop_rate(rate);
 
 	double l1_limit_pos, l2_limit_pos, r1_limit_pos, r2_limit_pos;
 	double max_thrust;
 	double rw_max_torque, rw_max_speed, rw_max_power, rw_total_inertia;
-	
+
 	//in order to be able to know if feedback about the succesfull grip of the target have to be sent back to planner
 	//exists because this node have to be able to operate correctly with or without a planner
 	bool use_with_chase_planner;
 
 	ros::param::param<double>("~thruster_force", max_thrust, 1.5); //the thrust of an open thruster in Newtons
 	//ros::param::param<double>("~max_motor_current", max_cur, 1.72); //the max current of the motor
-	ros::param::param<double>("~rw_max_torque", rw_max_torque, 0.5); 
-	ros::param::param<double>("~rw_max_speed",  rw_max_speed, 100); 
-	ros::param::param<double>("~rw_max_power",  rw_max_power, 60); 
+	ros::param::param<double>("~rw_max_torque", rw_max_torque, 0.5);
+	ros::param::param<double>("~rw_max_speed",  rw_max_speed, 100);
+	ros::param::param<double>("~rw_max_power",  rw_max_power, 60);
 	ros::param::param<double>("~rw_total_inertia", rw_total_inertia, 0.00197265);
 
-	ros::param::param<double>("~left_shoulder_limit_pos", l1_limit_pos, 2.4); 
-	ros::param::param<double>("~left_elbow_limit_pos", l2_limit_pos, 1.4); 
+	ros::param::param<double>("~left_shoulder_limit_pos", l1_limit_pos, 2.4);
+	ros::param::param<double>("~left_elbow_limit_pos", l2_limit_pos, 1.4);
 	ros::param::param<double>("~right_shoulder_limit_pos", r1_limit_pos, -2.4);
 	ros::param::param<double>("~right_elbow_limit_pos", r2_limit_pos, -1.4);
 
@@ -455,7 +489,7 @@ int main(int argc, char** argv)
 	ros::Subscriber left_gripper_sub =  nh.subscribe("left_gripper_cmd", 1, leftGripperCallback);
 
 	//ros::Subscriber move_left_arm_sub =  nh.subscribe<std_msgs::Float64MultiArray>("move_left_arm", 1, boost::bind(&moveLeftArmCallback, _1,  boost::ref(cm)));
-	
+
 	ros::Subscriber left_gripper_action_sub =  nh.subscribe("left_gripper_action", 1, leftGripperActionCallback);
 	ros::Subscriber right_gripper_action_sub =  nh.subscribe("right_gripper_action", 1, rightGripperActionCallback);
 
@@ -467,8 +501,8 @@ int main(int argc, char** argv)
 	//as_right.start();
 
 	//ActionServerLeftArm as_left (nh, "left_catch_object_action", boost::bind(&leftArmCatchObjectCallback, _1, boost::ref(as_left), boost::ref(cm)), false);
-		//as_left.start();
-			
+	//as_left.start();
+
 
 	//ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_velocity_controller/command", 1);
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);
@@ -482,7 +516,7 @@ int main(int argc, char** argv)
 
 	ros::Time prev_time = ros::Time::now();
 
-	robot.setHomePos(4, l1_limit_pos); 
+	robot.setHomePos(4, l1_limit_pos);
 	robot.setHomePos(5, l2_limit_pos);
 	robot.setHomePos(6, r1_limit_pos);
 	robot.setHomePos(7, r2_limit_pos);
@@ -495,7 +529,7 @@ int main(int argc, char** argv)
 	//}
 
 	//Initialize the  arms and start the ros controllers
-	
+
 	start_standard_controllers(nh, cm, loop_rate);
 	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
 	//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
@@ -505,6 +539,15 @@ int main(int argc, char** argv)
 	//move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 	//move_right_arm(M_PI, M_PI/2.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 	//move_left_arm(M_PI, M_PI/2.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+
+
+
+	// ros::ServiceServer init_first_and_third_joints_service = nh.advertiseService("init_first_and_third_joints", initFirstAndThirdJoints);
+	ros::ServiceServer init_first_joint_service = nh.advertiseService("init_first_joint", initFirstJoint);
+	ros::ServiceServer init_second_joint_service = nh.advertiseService("init_second_joint", initSecondJoint);
+	ros::ServiceServer init_third_joint_service = nh.advertiseService("init_third_joint", initThirdJoint);
+	//ros::ServiceServer go_to_zero_service = nh.advertiseService("left_elbow_go_zero", boost::bind(leftElbowGoZero, _1, _2, boost::ref(cm)));
+
 
 	ROS_WARN("About to enter normal spinning...");
 	ros::AsyncSpinner spinner(3);
@@ -534,7 +577,7 @@ int main(int argc, char** argv)
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
-		
+
 		/*
 		if(ready_to_grip_left)
 			left_fsr_update();
@@ -554,7 +597,7 @@ int main(int argc, char** argv)
 			torque_pub.publish(cmd);
 			rw_last_vel = robot.getVel(0);
 			rw_cur_vel = rw_last_vel;
-		} 
+		}
 		else {
 			rw_cur_vel = robot.getVel(0);
 			double error = rw_last_vel - rw_cur_vel;
@@ -565,7 +608,7 @@ int main(int argc, char** argv)
 
 		loop_rate.sleep();
 	}
-	
+
 	robot.safeClose();
 
 	//fclose(latency_fp);
@@ -690,17 +733,17 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 
 		//to rad
 		//double phi = ((yaw_to_deg + 270.0)/180.0) * M_PI;
-		
 
-		
+
+
 		double phi = atan2(y, x);
 
 		//Need to transform the above coordinates to the base of the left arm
 		//x = x - 0.17268;
 		//y = y + 0.091404;
-		 
+
 		double q31 ,q32;
-		q31 = q32 = 0.0;		
+		q31 = q32 = 0.0;
 
 		//double yn = y - l3  * cos(phi);
 		//double xn = x - l3 * sin(phi);
@@ -716,7 +759,7 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 		//For q1
 
 		//q11
-		double a = -l1 - l2 * cos(q21); 
+		double a = -l1 - l2 * cos(q21);
 		double b = -l2 * sin(q21);
 		double c = -yn;
 		double d = -l2 * sin(q21);
@@ -742,7 +785,7 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 		double q12 = atan2(s12, c12);
 
 		//double q31 = phi - q11 - q21;
-		//double q32 = phi - q12 - q22;	
+		//double q32 = phi - q12 - q22;
 
 		double tuple1[3];
 		double tuple2[3];
@@ -768,7 +811,7 @@ void leftArmCatchObjectCallback(const cepheus_robot::LeftCatchObjectGoalConstPtr
 
 			ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
 			move_left_arm(q11, q21, q31, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
-			
+
 			//in order to invoke the fsr update callback in the master loop
 			ready_to_grip_left = true;
 			as.setSucceeded();
@@ -801,17 +844,17 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 				
 		//theta2 needs to be from -90 deg to 0 deg
 				//TO DO...ADD COMMMEEEEENTS
-	
+
 				//The lengths of the joint of the left arm
 				double l1 = 0.181004;   //shoulder
 				double l2 = 0.1605;     //elbow
 				double l3 = 0.069;     //wrist
-	
+
 				//Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
-	
+
 				tf::TransformListener listener;
 				geometry_msgs::PoseStamped transform;
-	
+
 				try{
 			sleep(5);
 						listener.transformPose("/right_hand_base", goal->point_to_catch, transform);
@@ -820,7 +863,7 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 						ROS_ERROR("%s",ex.what());
 						ros::Duration(1.0).sleep();
 				}
-	
+
 				double x = transform.pose.position.x - 0.06;
 				double y = transform.pose.position.y;
 
@@ -876,7 +919,7 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 				double q12 = atan2(s12, c12);
 
 				//double q31 = phi - q11 - q21;
-				//double q32 = phi - q12 - q22; 
+				//double q32 = phi - q12 - q22;
 
 				double tuple1[3];
 				double tuple2[3];
@@ -933,33 +976,33 @@ void rightArmCatchObjectCallback(const cepheus_robot::RightCatchObjectGoalConstP
 						ROS_WARN("Out of right arm workspace");
 				}
 
-		
+
 }
 */
 //bool right_catch_object_one_time = true;
 /*
 void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, controller_manager::ControllerManager& cm){
-//void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm){ 
-   
+//void rightArmInvKinCallback(const cepheus_robot::RightCatchObjectGoalConstPtr& goal, ActionServerRightArm& as ,controller_manager::ControllerManager& cm){
+
 		cepheus_robot::RightCatchObjectResult result;
- 
+
 		//if(right_catch_object_one_time){
 				//right_catch_object_one_time = false;
-	
+
 				//theta2 needs to be from -90 deg to 0 deg
 				//TO DO...ADD COMMMEEEEENTS
-	
+
 				//The lengths of the joint of the left arm
 				double l1 = 0.181004;   //shoulder
 				double l2 = 0.1605;     //elbow
 				double l3 = 0.069;     //wrist
-		double CIRCLE_RADIUS = 0.4;    
+		double CIRCLE_RADIUS = 0.4;
 
 				//Used in order to transform the point to grip inj the left hand base, in order to calculate inverse kinematics
-	
+
 				tf::TransformListener listener;
 		tf::StampedTransform transform;
-	
+
 				try{
 			listener.waitForTransform("/right_hand_base", "/assist_robot", ros::Time(0), ros::Duration(2.0));
 						listener.lookupTransform("/right_hand_base", "/assist_robot", ros::Time(0),transform);
@@ -968,8 +1011,8 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
 						ROS_ERROR("%s",ex.what());
 						ros::Duration(1.0).sleep();
 				}
-	
-	
+
+
 				//some cm before the target
 				double x = transform.getOrigin().x();
 				double y = transform.getOrigin().y();
@@ -1030,12 +1073,12 @@ void rightArmInvKinCallback(const geometry_msgs::PointStamped::ConstPtr& point, 
 						//q11 = q11 - M_PI/2.0;
 
 						ROS_WARN("Solution, q1= %lf,  q2= %lf,  q3= %lf",q11,q21,q31);
-						
+
 			move_right_arm(q11, q21, q31, 3.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			ready_to_grip_right = true;
 						result.success = true;
 						as.setSucceeded(result);
-			
+
 				}
 				else if((-M_PI/3.0 <= q32 && q32 <= M_PI/3.0) && (-2.0 * M_PI/3.0 <= q22 && q22 <= 2.0*M_PI/3.0) && (- 2.0 * M_PI / 3.0 <= q12 && q12 <= 0.0)){
 						//solution is tuple2

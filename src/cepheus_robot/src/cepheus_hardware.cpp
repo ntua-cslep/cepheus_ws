@@ -7,6 +7,35 @@
 #define SH_SMALL_FRICT 0.02
 #define ELB_MIN_FRICT 0.02
 
+/////////Mavridis///////////
+///Used by init_joints service to init left elbow
+void CepheusHW::setOffsetLeftElbow(){
+
+	if (offset_pos[LEFT_ELBOW])
+		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW] + offset_pos[LEFT_ELBOW];
+	else
+		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW];
+}
+////////////////////////////////////////////
+
+
+void CepheusHW::setOffsetLeftShoulder(){
+
+	if (offset_pos[LEFT_SHOULDER])
+		offset_pos[LEFT_SHOULDER] = home_pos[LEFT_SHOULDER] + pos[LEFT_SHOULDER] + offset_pos[LEFT_SHOULDER];
+	else
+		offset_pos[LEFT_SHOULDER] = home_pos[LEFT_SHOULDER] + pos[LEFT_SHOULDER];
+}
+
+void CepheusHW::setOffsetRightElbow(){
+
+	if (offset_pos[RIGHT_ELBOW])
+		offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] + pos[RIGHT_ELBOW] + offset_pos[RIGHT_ELBOW];
+	else
+		offset_pos[RIGHT_ELBOW] = home_pos[RIGHT_ELBOW] + pos[RIGHT_ELBOW];
+}
+
+/////////////////////////////////////////////
 
 void print_binary(uint16_t x)
 {
@@ -25,7 +54,7 @@ void CepheusHW::setThrustPwm(double *thrust, double min_duty, double max_duty)
 
 	for(int i=0; i<4; i++)
 	{
-		// Calculate the correct duty cycle 
+		// Calculate the correct duty cycle
 		// and the pin to output the pulse
 		if(thrust[i] >= 0)
 		{
@@ -38,7 +67,7 @@ void CepheusHW::setThrustPwm(double *thrust, double min_duty, double max_duty)
 		}
 		else
 		{
-			//0 is  the max duty for inverted   
+			//0 is  the max duty for inverted
 			if (thrust[i] > -max_thrust)
 				duty[i] = 1 + (thrust[i]/max_thrust);
 			else
@@ -50,16 +79,16 @@ void CepheusHW::setThrustPwm(double *thrust, double min_duty, double max_duty)
 		//ensure that PWM is inside the limit 0-1 and has deadband areas removed
 		if (dir[i] == 1)
 		{
-			if (duty[i] > max_duty) 
+			if (duty[i] > max_duty)
 				duty[i]=1;
-			else if (duty[i] < min_duty) 
+			else if (duty[i] < min_duty)
 				duty[i]=0;
 		}
 		else if (dir[i] == 2)
 		{
 			if ( (1 - duty[i]) > max_duty )
 				duty[i]=0;
-			else if ( (1 - duty[i]) < min_duty ) 
+			else if ( (1 - duty[i]) < min_duty )
 				duty[i]=1;
 		}
 		else
@@ -145,12 +174,12 @@ void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque
 //----New init with velocity controll
 
 //
-///	
+///
 //the velocity function is like this:/
 //t2 is the duration of the accelaration
 double velocity_for_joint_init(double t2, double t, bool positive){
 
-	//7 degrees per second	
+	//7 degrees per second
 	double vel_max_pos = (double)4/(double)180 * (double)M_PI;
 	double vel_max_neg = (double)4/(double)180 * (double)M_PI;
 	double vel_max = 0.0;
@@ -251,12 +280,12 @@ void CepheusHW::init_right_shoulder() {
 
 		ROS_INFO_STREAM("homing of RIGHT SHOULDER  succesful");
 		offset_pos[RIGHT_SHOULDER] = home_pos[RIGHT_SHOULDER] - pos[RIGHT_SHOULDER];
-		
+
 		ROS_WARN("offset %lf", offset_pos[RIGHT_SHOULDER]);
 	}
 	else
 		ROS_WARN_STREAM("No homing performed for RIGHT SHOULDER because no home position setted");
-	//offset_pos[RIGHT_SHOULDER] = 0.0;	
+	//offset_pos[RIGHT_SHOULDER] = 0.0;
 }
 
 
@@ -287,17 +316,17 @@ void CepheusHW::init_left_elbow() {
 			update_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
 			cmd[LEFT_ELBOW] = elbow_out;
 
-			//ROS_WARN("cmd4 : %lf" , cmd[4]);              
+			//ROS_WARN("cmd4 : %lf" , cmd[4]);
 			writeMotors();
 
 			heartbeat();
-			
+
 			readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
-		
+
 		} while(!isLimitReached(LEFT_ELBOW));
-		
+
 		ROS_INFO_STREAM("homing of LEFT ELBOW  succesful");
 		offset_pos[LEFT_ELBOW] = home_pos[LEFT_ELBOW] - pos[LEFT_ELBOW];
 	}
@@ -330,7 +359,7 @@ void CepheusHW::init_right_elbow() {
 			//update_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
 			//cmd[RIGHT_ELBOW] = elbow_out;
 
-			//ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);              
+			//ROS_WARN("cmd7 : %lf" , cmd[RIGHT_ELBOW]);
 			writeMotors();
 
 			heartbeat();
@@ -381,7 +410,7 @@ void CepheusHW::write_right_finger(double width){
 }
 
 
-//The gripper opens full  
+//The gripper opens full
 void CepheusHW::set_left_finger(double c){
 
 	ros::Rate loop_rate(200);
@@ -399,7 +428,7 @@ void CepheusHW::set_left_finger(double c){
 }
 
 
-//The gripper opens full  
+//The gripper opens full
 void CepheusHW::set_left_wrist(double c){
 
 	ros::Rate loop_rate(200);
@@ -721,7 +750,7 @@ void CepheusHW::writeMotors()
 
 	// Set output PWM width
 	dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_A,  width[0]);
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[0]");   
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[0]");
 	dm7820_status = DM7820_PWM_Set_Width(board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[1]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[1]");
 	/*
@@ -733,7 +762,7 @@ void CepheusHW::writeMotors()
 
 	// Set output PWM width
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_A,  width[4]);
-	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[4]");  
+	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[4]");
 	dm7820_status = DM7820_PWM_Set_Width(manipulator_board, DM7820_PWM_MODULATOR_0, DM7820_PWM_OUTPUT_B,  width[5]);
 	DM7820_Return_Status(dm7820_status, "DM7820_PWM_Set_motor_Width[5]");
 
@@ -811,16 +840,16 @@ void CepheusHW::readLimitSwitches()
 	//print_binary(input&(1<<(int)LIMIT_L2));
 	//printf("%d\n", input&(1<<(int)LIMIT_L2) );
 
-	if(!(input&(1<<(int)LIMIT_L1))) 
+	if(!(input&(1<<(int)LIMIT_L1)))
 	{
 		// ROS_INFO("%d",input&(1<<LIMIT_L1));
 		limit[LEFT_SHOULDER] = 1;
 		// may print if sensor not connected
-		ROS_WARN("limit 4 pressed");
+		//ROS_WARN("limit 4 pressed");
 	}
 	else limit[LEFT_SHOULDER] = 0;
 
-	if(!(input&(1<<(int)LIMIT_L2))) 
+/*	if(!(input&(1<<(int)LIMIT_L2)))
 	{
 		// ROS_INFO("%d",input&(1<<LIMIT_L2));
 		limit[LEFT_ELBOW] = 1;
@@ -828,38 +857,38 @@ void CepheusHW::readLimitSwitches()
 		ROS_WARN("limit 5 pressed");
 	}
 	else limit[LEFT_ELBOW] = 0;
-
+*/
 	if(!(input&(1<<(int)LIMIT_R1)))
 		{
 				// ROS_INFO("%d",input&(1<<LIMIT_L2));
 				limit[RIGHT_SHOULDER] = 1;
 		// may print if sensor not connected
-				ROS_WARN("limit 6 pressed");
+		//		ROS_WARN("limit 6 pressed");
 		}
 		else limit[RIGHT_SHOULDER] = 0;
 
-	/*if(!(input&(1<<(int)LIMIT_R2)))
+	if(!(input&(1<<(int)LIMIT_R2)))
 	{
-			ROS_INFO("%d",input&(1<<LIMIT_L2));
+			//ROS_INFO("%d",input&(1<<LIMIT_L2));
 			limit[RIGHT_ELBOW] = 1;
-			ROS_WARN("limit 7 pressed");
+			//ROS_WARN("limit 7 pressed");
 	}
-	else limit[RIGHT_ELBOW] = 0;*/
+	else limit[RIGHT_ELBOW] = 0;
 
 }
 
 void CepheusHW::readEncoders(ros::Duration dt)
 {
-	readLimitSwitches();
+	//readLimitSwitches();
 	// read robots joint state
 	//Read encoder 0 channel A value
-	dm7820_status = DM7820_IncEnc_Get_Independent_Value(board, DM7820_INCENC_ENCODER_0, 
+	dm7820_status = DM7820_IncEnc_Get_Independent_Value(board, DM7820_INCENC_ENCODER_0,
 			DM7820_INCENC_CHANNEL_A,
 			&encoder_1_val);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Get_Independent_Value()");
 
 	//Read encoder 0 channel B value
-	dm7820_status = DM7820_IncEnc_Get_Independent_Value(board, DM7820_INCENC_ENCODER_0, 
+	dm7820_status = DM7820_IncEnc_Get_Independent_Value(board, DM7820_INCENC_ENCODER_0,
 			DM7820_INCENC_CHANNEL_B,
 			&encoder_2_val);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Get_Independent_Value()");
@@ -978,13 +1007,13 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 	// read robots joint state
 	//Read encoder 0 channel A value
-	dm7820_status = DM7820_IncEnc_Get_Independent_Value(manipulator_board, DM7820_INCENC_ENCODER_0, 
+	dm7820_status = DM7820_IncEnc_Get_Independent_Value(manipulator_board, DM7820_INCENC_ENCODER_0,
 			DM7820_INCENC_CHANNEL_A,
 			&encoder_5_val);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Get_Independent_Value()");
 
 	//Read encoder 0 channel B value
-	dm7820_status = DM7820_IncEnc_Get_Independent_Value(manipulator_board, DM7820_INCENC_ENCODER_0, 
+	dm7820_status = DM7820_IncEnc_Get_Independent_Value(manipulator_board, DM7820_INCENC_ENCODER_0,
 			DM7820_INCENC_CHANNEL_B,
 			&encoder_6_val);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Get_Independent_Value()");
@@ -1019,7 +1048,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_0, DM7820_INCENC_STATUS_CHANNEL_A_NEGATIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read negative overflow channel 0A");
-	if (encoder_status){ 
+	if (encoder_status){
 
 		encoder_5_ovf--;
 
@@ -1096,7 +1125,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	// Channel 1B Handling of encoder value overflow
 	dm7820_status = DM7820_IncEnc_Get_Status(manipulator_board, DM7820_INCENC_ENCODER_1, DM7820_INCENC_STATUS_CHANNEL_B_POSITIVE_ROLLOVER, &encoder_status);
 	DM7820_Return_Status(dm7820_status, "Read positive overflow channel 1B");
-	if (encoder_status){ 
+	if (encoder_status){
 
 		encoder_8_ovf++;
 
@@ -1133,7 +1162,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	pos[2]=  (double)encoder_3*2*M_PI/(4000) + offset_pos[2];
 	pos[3]=  (double)encoder_4*2*M_PI/(4000) + offset_pos[3];
 
-	// 121027.38703744316 rads = ? 
+	// 121027.38703744316 rads = ?
 	// rad = (encoder / (encoding type * CPT) * 2 * pi) / (reducer transmission ratio)  => !!!!encoding_type * CPT * reduction / 2*pi!!!
 	// CPT (counts per turn) = 1000 [depends on motor]
 	// encoding type = 4 [depends on motor]
@@ -1143,9 +1172,9 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 
 	//pos[4]=  (double)(encoder_5/121027.38703744316) + offset_pos[4]; (old motors with 190:1 reduction)
-	pos[4]=  (double)(encoder_5/118366.714) + offset_pos[4];//for new motors (silver)
+	pos[4]= - ( (double)(encoder_5/118366.714) + offset_pos[4] );//for new motors (silver)
 
-	pos[5]=  (double)(encoder_6/118366.714) + offset_pos[5];//for new motors (silver)
+	pos[5]= (double)(encoder_6/118366.714) + offset_pos[5];//for new motors (silver)
 
 	//pos[5]=  (double)(encoder_6/121027.38703744316) - (double)(encoder_5/121027.38703744316) + offset_pos[5];
 	//pos[5]=  (double)(encoder_6/121027.38703744316) - pos[4] + offset_pos[5];
@@ -1157,11 +1186,11 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	pos[6] = (double)encoder_7*2*M_PI/(4095) + offset_pos[6];
 	//pos[7]=  (double)(encoder_8/121027.38703744316) + offset_pos[7] - pos[6];
 	//pos[7]=  (double)(encoder_8/121027.38703744316) - (double)(encoder_7/121027.38703744316) + offset_pos[7];
-	pos[7]=  (double)(encoder_8/118366.714) + offset_pos[7]; //for new motors (silver) 2020
+	pos[7]= - ( (double)(encoder_8/118366.714) + offset_pos[7] ); //for new motors (silver) 2020
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
-	//ROS_WARN("pos[7] : %lf", pos[7]);
+	ROS_INFO("(1)pos[4]: %lf  | (2)pos[5]: %lf  | (3)pos[7]: %lf", pos[4], pos[5], pos[7]);
 
-	ROS_INFO("readEncoders: spare motor test: %f, reaction wheel: %f,", pos[5], pos[6]);
+	//ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, rs: %f", pos[4], pos[5], pos[6], pos[7]);
 
 
 	// Speed Calculation radians/sec
@@ -1182,7 +1211,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 
 		// for (int j=0; j<(FIR_LENGTH-1); j++)
-		//   vel_fir[j][i] = vel_fir[j+1][i]; 
+		//   vel_fir[j][i] = vel_fir[j+1][i];
 
 		// vel_fir[FIR_LENGTH-1][i] = vel_new[i];
 
@@ -1197,7 +1226,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	//ROS_INFO("VEL: 1: %f, 2: %f, 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f", vel[0], vel[1], vel[2], vel[3] ,vel[4] ,vel[5] ,vel[6] ,vel[7]);
 }
 
-void CepheusHW::setParam(double *max_cur, double f_thrust) 
+void CepheusHW::setParam(double *max_cur, double f_thrust)
 {
 	this->max_thrust = f_thrust;
 	for(int i=0; i<8; i++) {
@@ -1216,7 +1245,7 @@ double CepheusHW::getVel(int idx)
 	return vel[idx];
 }
 
-CepheusHW::CepheusHW() 
+CepheusHW::CepheusHW()
 {
 	//Panagiotis Mavridis
 	//Initialzing the force sensor values to 0
@@ -1306,7 +1335,7 @@ CepheusHW::CepheusHW()
 
 	//INCREMENTAL ENCODERS 0 & 1
 	//disable encoders for safety
-	dm7820_status = DM7820_IncEnc_Enable(board, DM7820_INCENC_ENCODER_0, 0x00); 
+	dm7820_status = DM7820_IncEnc_Enable(board, DM7820_INCENC_ENCODER_0, 0x00);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Enable()");
 
 	dm7820_status = DM7820_IncEnc_Enable(board, DM7820_INCENC_ENCODER_1, 0x00);
@@ -1435,7 +1464,7 @@ CepheusHW::CepheusHW()
 
 	//INCREMENTAL ENCODERS 0 & 1
 	//disable encoders for safety
-	dm7820_status = DM7820_IncEnc_Enable(manipulator_board, DM7820_INCENC_ENCODER_0, 0x00); 
+	dm7820_status = DM7820_IncEnc_Enable(manipulator_board, DM7820_INCENC_ENCODER_0, 0x00);
 	DM7820_Return_Status(dm7820_status, "DM7820_IncEnc_Enable()");
 
 	dm7820_status = DM7820_IncEnc_Enable(manipulator_board, DM7820_INCENC_ENCODER_1, 0x00);
@@ -1636,7 +1665,7 @@ CepheusHW::CepheusHW()
 
 	/***Programmable clock 0 initialization***/
 
-	//Disable PRGmble clock 0 
+	//Disable PRGmble clock 0
 	dm7820_status = DM7820_PrgClk_Set_Mode(board, DM7820_PRGCLK_CLOCK_0, DM7820_PRGCLK_MODE_DISABLED);
 	DM7820_Return_Status(dm7820_status, "DM7820_PrgClk_Set_Mode()");
 	//maybe output init
@@ -1753,7 +1782,7 @@ CepheusHW::CepheusHW()
 
 	/***Programmable clock 0 initialization***/
 
-	//Disable PRGmble clock 0 
+	//Disable PRGmble clock 0
 	dm7820_status = DM7820_PrgClk_Set_Mode(manipulator_board, DM7820_PRGCLK_CLOCK_0, DM7820_PRGCLK_MODE_DISABLED);
 	DM7820_Return_Status(dm7820_status, "DM7820_PrgClk_Set_Mode()");
 	//maybe output init
@@ -1824,7 +1853,7 @@ CepheusHW::CepheusHW()
 	 *************************************************************************/
 
 	//strobe outputs for heartbeat signal
-	strobe=0; 
+	strobe=0;
 	dm7820_status = DM7820_StdIO_Strobe_Mode (manipulator_board, DM7820_STDIO_STROBE_1, 1);
 	DM7820_Return_Status(dm7820_status, "DM7820_StdIO_Strobe_Mode()");
 	dm7820_status = DM7820_StdIO_Strobe_Mode (manipulator_board, DM7820_STDIO_STROBE_2, 1);
@@ -1838,8 +1867,8 @@ CepheusHW::CepheusHW()
 	output_value=0;
 }
 
-void CepheusHW::safeClose() 
-{ 
+void CepheusHW::safeClose()
+{
 	double thrust[4];
 
 	for(int i=0;i<4;i++) 
@@ -1849,7 +1878,7 @@ void CepheusHW::safeClose()
 	for(int i=0; i<8; i++){
 		cmd[i]=0;
 	}
-	writeMotors();  
+	writeMotors();
 	setThrustPwm(thrust, 0.05, 0.95);
 
 	dm7820_status = DM7820_General_Close_Board(board);

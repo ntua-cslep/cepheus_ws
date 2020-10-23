@@ -191,6 +191,9 @@ class CepheusHW : public hardware_interface::RobotHW
 			return pos[i];
 		}
 
+		void setOffsetLeftElbow();
+		void setOffsetRightElbow();
+		void setOffsetLeftShoulder();
 
 	private:
 		bool homing(int, float);
