@@ -101,7 +101,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+/*	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
 	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
 
 	std_msgs::Float64 set_point_msg;
@@ -117,10 +117,10 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 	ros::Time update_time = ros::Time::now();
 	ros::Time prev_time = update_time;
 
-
+*/
 	//INITIALIZE THE LEFT ELBOW
-	//robot.init_left_elbow();
-
+	robot.init_left_elbow();
+/*
 	msg.data = std::string(CMD_START_LEFT_ELBOW);
 	ctl_pub.publish(msg);
 
@@ -133,7 +133,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 		++count;
 	}
 
-
+*/
 /*
 	init_spinner.start();
 	while(!left_elbow_ctrl_started)
@@ -152,7 +152,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 
 	//INITIALIZE THE LEFT SHOULDER
 	//robot.init_left_shoulder();
-	msg.data = std::string(CMD_START_LEFT_SHOULDER);
+/*	msg.data = std::string(CMD_START_LEFT_SHOULDER);
 
 	count = 0;
 	while (count < MSG_NUM) {
@@ -162,7 +162,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 		loop_rate.sleep();
 		++count;
 	}
-
+*/
 /*
 	init_spinner.start();
 
@@ -214,7 +214,7 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 	ros::Time prev_time = update_time;
 
 	//INITIALIZE THE RIGHT ELBOW
-	robot.init_right_elbow();
+	//robot.init_right_elbow();
 	msg.data = std::string(CMD_START_RIGHT_ELBOW);
 	ctl_pub.publish(msg);
 
@@ -240,10 +240,16 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 
 		loop_rate.sleep();
 	}
-	init_spinner.stop();
 
+
+
+	
+
+
+	init_spinner.stop();
+/*
 	//INITIALIZE THE RIGHT SHOULDER
-	robot.init_right_shoulder();
+	//robot.init_right_shoulder();
 	msg.data = std::string(CMD_START_RIGHT_SHOULDER);
 	ctl_pub.publish(msg);
 
@@ -274,7 +280,7 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 
 		loop_rate.sleep();
 	}
-
+*/
 	init_spinner.stop();
 
 	robot.init_right_finger();

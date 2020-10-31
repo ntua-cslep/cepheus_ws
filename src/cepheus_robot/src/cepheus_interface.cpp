@@ -407,15 +407,18 @@ bool initThirdJoint(std_srvs::Empty::Request &req,
         return true;
 }
 
-/*
-bool leftElbowGoZero(std_srvs::Empty::Request &req,
-                std_srvs::Empty::Response &res,
-		const controller_manager::ControllerManager &cm)
+bool zero_called = false;
+
+void leftElbowGoZero(const std_msgs::Bool::ConstPtr &msg,
+		controller_manager::ControllerManager &cm)
 {
-	move_left_arm(0.0, 0.0, 110.0, 24.0, *cm, robot, left_shoulder_pub, left_elbow_pub);
-        return true;
+	if(!zero_called){
+		move_left_arm(0.5, 0.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+        	// zero_called = true;
+	}
+
 }
-*/
+
 
 int main(int argc, char** argv) 
 {
@@ -464,13 +467,14 @@ int main(int argc, char** argv)
 
 	double max_cur[8];
 	max_cur[0] = 1.72;
-	max_cur[1] = 3.1;
-	max_cur[2] = 3.1;
-	max_cur[3] = 3.1;
-	max_cur[4] = 3.1;
-	max_cur[5] = 3.1;
-	max_cur[6] = 3.1;
-	max_cur[7] = 3.1;
+	// 2020 updates, prev: 3.1 all (1 to 7)
+	max_cur[1] = 3.31;
+	max_cur[2] = 3.31;
+	max_cur[3] = 3.31;
+	max_cur[4] = 3.31;
+	max_cur[5] = 3.31;
+	max_cur[6] = 3.31;
+	max_cur[7] = 3.31;
 
 	robot.setParam(max_cur, max_thrust);
 
@@ -531,13 +535,22 @@ int main(int argc, char** argv)
 	//Initialize the  arms and start the ros controllers
 
 	start_standard_controllers(nh, cm, loop_rate);
-	//init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
+	// init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
 	//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+
+/*	std_msgs::Float64 stay_pos;
+	stay_pos.data = robot.getPos(RIGHT_ELBOW);
+	right_elbow_pub.publish(stay_pos);
+	// stay_pos.data = robot.getPos(LEFT_ELBOW);
+	// left_elbow_pub.publish(stay_pos);
+	// stay_pos.data = robot.getPos(LEFT_SHOULDER);
+        // left_shoulder_pub.publish(stay_pos);
+	robot.writeMotors();*/
 
 	sleep(1);
 	//Move Right Hand to Ready to Grab Position
 	//move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-	//move_right_arm(M_PI, M_PI/2.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	//move_right_arm(M_PI, M_PI/3.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 	//move_left_arm(M_PI, M_PI/2.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 
 
@@ -546,7 +559,7 @@ int main(int argc, char** argv)
 	ros::ServiceServer init_first_joint_service = nh.advertiseService("init_first_joint", initFirstJoint);
 	ros::ServiceServer init_second_joint_service = nh.advertiseService("init_second_joint", initSecondJoint);
 	ros::ServiceServer init_third_joint_service = nh.advertiseService("init_third_joint", initThirdJoint);
-	//ros::ServiceServer go_to_zero_service = nh.advertiseService("left_elbow_go_zero", boost::bind(leftElbowGoZero, _1, _2, boost::ref(cm)));
+	ros::Subscriber go_to_zero_service = nh.subscribe<std_msgs::Bool>("left_elbow_go_zero", 1, boost::bind(&leftElbowGoZero, _1, boost::ref(cm)));
 
 
 	ROS_WARN("About to enter normal spinning...");
@@ -567,6 +580,23 @@ int main(int argc, char** argv)
 		if (first_time) {
 			prev_time = curr_time;
 			first_time = false;
+			//** start - 2020 pelekoudas changes **//
+			std_msgs::Float64 stay_pos;
+       			stay_pos.data = robot.getPos(RIGHT_ELBOW);
+        		right_elbow_pub.publish(stay_pos);
+        		stay_pos.data = robot.getPos(LEFT_ELBOW);
+        		left_elbow_pub.publish(stay_pos);
+        		stay_pos.data = robot.getPos(LEFT_SHOULDER);
+        		left_shoulder_pub.publish(stay_pos);
+        		robot.writeMotors();
+			init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
+			robot.readEncoders(time_step);
+			stay_pos.data = robot.getPos(LEFT_SHOULDER);
+			left_shoulder_pub.publish(stay_pos);
+			stay_pos.data = robot.getPos(LEFT_ELBOW);
+                        left_elbow_pub.publish(stay_pos);
+                        robot.writeMotors();
+			//** end - 2020 pelekoudas changes **//
 		}
 
 		time_step = curr_time - prev_time;

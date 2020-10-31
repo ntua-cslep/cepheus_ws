@@ -219,6 +219,8 @@ move_right_arm(double set_point_shoulder,
 		cmd_pos_elb.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
 		wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
 
+		std::cout<<cmd_pos_elb.data<<std::endl;
+
 		right_elbow_pub.publish(cmd_pos_elb);
 		right_shoulder_pub.publish(cmd_pos_sh);
 		robot.setCmd(RIGHT_WRIST, wrist_cmd);
@@ -288,7 +290,7 @@ void test_catch_object(double cmd_angle_to_catch, controller_manager::Controller
 
 	//position of target
 	
-	double x = transform.getOrigin().x();
+	double x/ = transform.getOrigin().x();
 	double y = transform.getOrigin().y();
 
 

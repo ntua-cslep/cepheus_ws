@@ -16,7 +16,7 @@
 		<param name="left_shoulder_limit_pos" value="1.366786" />
 
 		<!--param name="left_elbow_limit_pos" value="1.658" /-->
-		<param name="left_elbow_limit_pos" value="2.354547" />
+		<param name="left_elbow_limit_pos" value="2.22" />
 		<param name="right_shoulder_limit_pos" value="-2.453" />
 		<!--param name="right_elbow_limit_pos" value="-1.6231" /-->
 		<param name="right_elbow_limit_pos" value="-1.675" />
@@ -25,7 +25,7 @@
 	</node>
 
 	<node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen" required="true">
-		<param name="controllers_to_spawn" value="joint_state_publisher reaction_wheel_effort_controller left_elbow_position_controller"/>
+		<param name="controllers_to_spawn" value="joint_state_publisher	reaction_wheel_effort_controller right_elbow_position_controller right_shoulder_position_controller left_shoulder_position_controller left_elbow_position_controller"/>
 	</node>
 	
 	<!--node pkg="rosserial_python" type="serial_node.py" name="serial_node">
