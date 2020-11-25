@@ -93,6 +93,68 @@ void start_standard_controllers(ros::NodeHandle& nh, controller_manager::Control
 
 }
 
+// 2020 keep it simple -- start //
+
+void init_left_elbow_and_start_controller(ros::NodeHandle& nh,
+										controller_manager::ControllerManager& cm,
+										CepheusHW& robot,
+										ros::Publisher left_elbow_pub,
+										ros::Rate& loop_rate)
+{
+
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+	std_msgs::String msg;
+
+	robot.init_left_elbow();
+
+	msg.data = std::string(CMD_START_LEFT_ELBOW);
+	ctl_pub.publish(msg);
+}
+
+
+void init_left_shoulder_and_start_controller(ros::NodeHandle& nh,
+										controller_manager::ControllerManager& cm,
+										CepheusHW& robot,
+										ros::Publisher left_shoulder_pub,
+										ros::Rate& loop_rate)
+{
+
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+	std_msgs::String msg;
+
+	robot.init_left_shoulder();
+	
+	msg.data = std::string(CMD_START_LEFT_SHOULDER);
+	ctl_pub.publish(msg);
+}
+
+
+void init_right_elbow_and_start_controller(ros::NodeHandle& nh,
+										controller_manager::ControllerManager& cm,
+										CepheusHW& robot,
+										ros::Publisher right_elbow_pub,
+										ros::Rate& loop_rate)
+{
+
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+
+	std_msgs::String msg;
+
+	robot.init_right_elbow();
+	
+	msg.data = std::string(CMD_START_RIGHT_ELBOW);
+	ctl_pub.publish(msg);
+}
+
+
+
+// 2020 keep it simple -- end //
+
 void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 										controller_manager::ControllerManager& cm,
 										CepheusHW& robot,
@@ -101,30 +163,30 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-/*	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
 	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
 
-	std_msgs::Float64 set_point_msg;
+//	std_msgs::Float64 set_point_msg;
 
 	//IN ORDER TO PUBLISH THE MESSAGE MORE THAN ONE TIME
-	int count = 0 ;
+//	int count = 0 ;
 	std_msgs::String msg;
 
-	ros::AsyncSpinner init_spinner(2);
-	init_spinner.start();
+//	ros::AsyncSpinner init_spinner(2);
+//	init_spinner.start();
 
 
-	ros::Time update_time = ros::Time::now();
-	ros::Time prev_time = update_time;
+//	ros::Time update_time = ros::Time::now();
+//	ros::Time prev_time = update_time;
 
-*/
+
 	//INITIALIZE THE LEFT ELBOW
 	robot.init_left_elbow();
-/*
+
 	msg.data = std::string(CMD_START_LEFT_ELBOW);
 	ctl_pub.publish(msg);
 
-	count = 0;
+/*	count = 0;
 	while (count < MSG_NUM) {
 
 		ctl_pub.publish(msg);
@@ -151,7 +213,7 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 */
 
 	//INITIALIZE THE LEFT SHOULDER
-	//robot.init_left_shoulder();
+//	robot.init_left_shoulder();
 /*	msg.data = std::string(CMD_START_LEFT_SHOULDER);
 
 	count = 0;
@@ -200,7 +262,7 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
+/*	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
 	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
 
 	int count = 0 ;
@@ -212,10 +274,10 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 
 	ros::Time update_time = ros::Time::now();
 	ros::Time prev_time = update_time;
-
+*/
 	//INITIALIZE THE RIGHT ELBOW
-	//robot.init_right_elbow();
-	msg.data = std::string(CMD_START_RIGHT_ELBOW);
+	robot.init_right_elbow();
+	/*msg.data = std::string(CMD_START_RIGHT_ELBOW);
 	ctl_pub.publish(msg);
 
 	count = 0;
@@ -243,10 +305,11 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 
 
 
-	
+
 
 
 	init_spinner.stop();
+*/
 /*
 	//INITIALIZE THE RIGHT SHOULDER
 	//robot.init_right_shoulder();
@@ -281,8 +344,9 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 		loop_rate.sleep();
 	}
 */
-	init_spinner.stop();
+/*	init_spinner.stop();
 
 	robot.init_right_finger();
 	robot.init_right_wrist();
+*/
 }

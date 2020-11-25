@@ -150,14 +150,14 @@ move_left_arm(double set_point_shoulder,
 		//curr_pos_elbow = robot.getPos(LEFT_ELBOW);
 		//curr_pos_wrist = robot.getCmd(LEFT_WRIST);
 
-		cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
-		ROS_WARN("pos : %lf",cmd_pos.data);
-		left_shoulder_pub.publish(cmd_pos);
+		//cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_shoulder, set_point_shoulder);
+		//ROS_WARN("pos : %lf",cmd_pos.data);
+		//left_shoulder_pub.publish(cmd_pos);
 
-		/*
+
 		cmd_pos.data = produce_trajectory_point(timer.toSec(), movement_duration, init_pos_elbow, set_point_elbow);
 		left_elbow_pub.publish(cmd_pos);
-
+		/*
 		wrist_cmd = produce_trajectory_point_wrist(timer.toSec(), movement_duration, init_pos_wrist, set_point_wrist);
 		robot.setCmd(LEFT_WRIST, wrist_cmd);
 		*/
