@@ -125,12 +125,12 @@ void CepheusHW::update_shoulder(double shoulder_rate, double des, double &should
 {
 
 	// was 0.00158
-	double kp = 0.00158;
+	double kp = 2.5;
 	//double ki = 0.000001;
 
 	double e = (des-shoulder_rate);
 	//e_sum += e;
-	ROS_WARN("e: %lf, des: %lf, sh_rate(vel): %lf", e, des, shoulder_rate);
+	//ROS_WARN("e: %lf, des: %lf, sh_rate(vel): %lf", e, des, shoulder_rate);
 
 	shoulder_torque = kp*e;
 }
@@ -145,16 +145,16 @@ void CepheusHW::update_elbow(double elbow_rate, double des, double &elbow_torque
 }
 
 // 2020 Pelekoudas
-void CepheusHW::update_left_elbow(double elbow_rate, double des, double &elbow_torque) {
-        double kp = 0.1;
+void CepheusHW::update_left_elbow(double elbow_rate, double des, double &elbow_torque, double kp) {
+        // double kp = 0.5;
 
         double e = (des-elbow_rate);
         elbow_torque=kp*e;
 }
 
 
-void CepheusHW::update_right_elbow(double elbow_rate, double des, double &elbow_torque) {
-	double kp = 0.001;
+void CepheusHW::update_right_elbow(double elbow_rate, double des, double &elbow_torque, double kp) {
+	// double kp = 1.0;
 
 	double e = (des-elbow_rate);
 	elbow_torque=kp*e;
@@ -196,10 +196,10 @@ double velocity_for_joint_init(double t2, double t, bool positive) {
 
 void CepheusHW::init_left_shoulder() {
 
-	double shoulder_out, elbow_out;
-	double des_shoulder, des_elbow;
+	double shoulder_out, right_elbow_out;
+	double des_shoulder, des_right_elbow;
 
-	if(home_pos[LEFT_SHOULDER] > 0) {
+	if(home_pos[LEFT_SHOULDER]) {
 
 		ROS_INFO_STREAM("homing LEFT SHOULDER................");
 
@@ -209,14 +209,15 @@ void CepheusHW::init_left_shoulder() {
 		timer = ros::Time::now() - init_time;
 		//ros::Duration prev_timer = timer;
 		do {
-			des_shoulder = velocity_for_joint_init(1, (double)timer.toSec(), true);
-			//des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
+			des_shoulder = velocity_for_joint_init(1, (double)timer.toSec(), false);
+			des_right_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
 			update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
 			ROS_WARN("shoulder_out: %lf", shoulder_out);
-			//update_right_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
-			//cmd[LEFT_ELBOW] = elbow_out;
+			update_right_elbow(vel[RIGHT_ELBOW], des_right_elbow, right_elbow_out, 0.01);
+			cmd[RIGHT_ELBOW] = 0.0000001;//right_elbow_out;
 			cmd[LEFT_SHOULDER] = shoulder_out;
+			cmd[LEFT_ELBOW] = -0.000000000001;
 			ROS_WARN("LS cmd: %lf", cmd[LEFT_SHOULDER]);
 			writeMotors();
 
@@ -301,7 +302,7 @@ void CepheusHW::init_left_elbow() {
 
 			//update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
 			//cmd[LEFT_SHOULDER] = shoulder_out;
-			update_left_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out);
+			update_left_elbow(vel[LEFT_ELBOW], des_elbow, elbow_out, 1);
 			cmd[LEFT_ELBOW] = elbow_out;
 
 			//ROS_WARN("cmd4 : %lf" , cmd[4]);
@@ -309,7 +310,7 @@ void CepheusHW::init_left_elbow() {
 
 			heartbeat();
 
-			readLimitSwitches();
+			//readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
 
@@ -327,8 +328,8 @@ void CepheusHW::init_right_elbow() {
 	//Homing right elbow moving left shoulder
 	//and taking advantage of the movement transmission of the right arm
 
-	double shoulder_out,elbow_out;
-	double des_shoulder, des_elbow;
+	double shoulder_out, right_elbow_out, left_elbow_out;
+	double des_shoulder, des_right_elbow, des_left_elbow;
 
 	if (home_pos[RIGHT_ELBOW]) {
 
@@ -340,13 +341,15 @@ void CepheusHW::init_right_elbow() {
 		do{
 			//2020 true right elbow
 			//des_shoulder = velocity_for_joint_init(10, (double)timer.toSec(), true);
-			des_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
-
+			des_right_elbow = velocity_for_joint_init(3, (double)timer.toSec(), false);
+			des_left_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 			//update_shoulder(vel[RIGHT_SHOULDER], des_shoulder, shoulder_out);
 			//cmd[RIGHT_SHOULDER] = shoulder_out;
-			update_right_elbow(vel[RIGHT_ELBOW], des_elbow, elbow_out);
-			cmd[RIGHT_ELBOW] = elbow_out;
+			update_right_elbow(vel[RIGHT_ELBOW], des_right_elbow, right_elbow_out, 1.0);
+			cmd[RIGHT_ELBOW] = right_elbow_out;
 			// 2020
+			update_left_elbow(vel[LEFT_ELBOW], des_left_elbow, left_elbow_out, 0.5);
+			cmd[LEFT_ELBOW] = left_elbow_out;
 			//update_shoulder(vel[LEFT_SHOULDER], 0.0, shoulder_out);
 			//cmd[LEFT_SHOULDER] = shoulder_out;
 			//update_shoulder(vel[LEFT_ELBOW], 0.0, shoulder_out);
@@ -355,7 +358,7 @@ void CepheusHW::init_right_elbow() {
 			writeMotors();
 
 			heartbeat();
-			readLimitSwitches();
+			//readLimitSwitches();
 			readEncoders(timer);
 			timer = ros::Time::now() - init_time;
 
@@ -604,10 +607,17 @@ void CepheusHW::writeMotors()
 	for (int i=4; i<8; i++)
 	{
 
+		// the stator is attached to the rotating part of joint
 		if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
 			cmd[i] = - cmd[i];
 			ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
 		}
+
+		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
+                        cmd[i] = - cmd[i];
+                        ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
+                }
+
 
 		current[i] = (cmd[i]/0.0452 );
 
@@ -1191,7 +1201,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 	//pos[4]=  (double)(encoder_5/121027.38703744316) + offset_pos[4]; (old motors with 190:1 reduction)
 	if (offset_pos[4])
-		pos[4] = - ( - (double)(encoder_5/118366.714)) + offset_pos[4];
+		pos[4] = - ( (double)(encoder_5/118366.714)) + offset_pos[4];
 	else
 		pos[4] = ( (double)(encoder_5/118366.714) );//for new motors (silver)
 

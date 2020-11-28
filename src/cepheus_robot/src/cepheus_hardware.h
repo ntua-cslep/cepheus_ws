@@ -157,8 +157,8 @@ class CepheusHW : public hardware_interface::RobotHW
 		void update_shoulder(double, double, double&);
 		void update_elbow(double, double, double&);
 		// 2020 Pelekoudas
-		void update_left_elbow(double, double, double&);
-		void update_right_elbow(double, double, double&);
+		void update_left_elbow(double, double, double&, double kp);
+		void update_right_elbow(double, double, double&, double kp);
 
 		void set_left_fsr_value(uint8_t val){
 			fsr_values[0] = val;

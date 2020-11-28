@@ -399,11 +399,11 @@ void right_fsr_update()
 
 bool zero_called = false;
 
-void leftElbowGoZero(const std_msgs::Bool::ConstPtr &msg,
+void leftElbowGoTo(const std_msgs::Bool::ConstPtr &msg,
 		controller_manager::ControllerManager &cm)
 {
 	if(!zero_called){
-		move_left_arm(0.5, 0.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+		move_left_arm(0.5, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 			// zero_called = true;
 	}
 
@@ -540,7 +540,7 @@ int main(int argc, char** argv)
 	// ros::ServiceServer init_first_joint_service = nh.advertiseService("init_first_joint", initFirstJoint);
 	// ros::ServiceServer init_second_joint_service = nh.advertiseService("init_second_joint", initSecondJoint);
 	// ros::ServiceServer init_third_joint_service = nh.advertiseService("init_third_joint", initThirdJoint);
-	// ros::Subscriber go_to_zero_service = nh.subscribe<std_msgs::Bool>("left_elbow_go_zero", 1, boost::bind(&leftElbowGoZero, _1, boost::ref(cm)));
+	ros::Subscriber go_to_zero_service = nh.subscribe<std_msgs::Bool>("left_elbow_go_to", 1, boost::bind(&leftElbowGoTo, _1, boost::ref(cm)));
 
 
 	ROS_WARN("About to enter normal spinning...");
@@ -580,16 +580,31 @@ int main(int argc, char** argv)
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
 			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-			move_left_arm(0.5, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
-			robot.readEncoders(time_step);
-			stay_pos.data = 1.0;//robot.getPos(LEFT_ELBOW);
-			left_elbow_pub.publish(stay_pos);
-			robot.writeMotors();
-			/*init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
+			//move_left_arm(0.5, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+			//robot.readEncoders(time_step);
+			//stay_pos.data = 1.0;//robot.getPos(LEFT_ELBOW);
+			//left_elbow_pub.publish(stay_pos);
+			//robot.writeMotors();
+			init_right_elbow_and_start_controller(nh, cm, robot, right_elbow_pub, loop_rate);
 			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(RIGHT_ELBOW);
 			right_elbow_pub.publish(stay_pos);
-			robot.writeMotors();*/
+			stay_pos.data = robot.getPos(LEFT_ELBOW);
+                        left_elbow_pub.publish(stay_pos);
+			robot.writeMotors();
+			init_left_shoulder_and_start_controller(nh, cm, robot, left_shoulder_pub, loop_rate);
+                        robot.readEncoders(time_step);
+			stay_pos.data = robot.getPos(LEFT_SHOULDER);
+			left_shoulder_pub.publish(stay_pos);
+                        stay_pos.data = robot.getPos(RIGHT_ELBOW);
+                        right_elbow_pub.publish(stay_pos);
+                        stay_pos.data = robot.getPos(LEFT_ELBOW);
+                        left_elbow_pub.publish(stay_pos);
+			robot.writeMotors();
+			move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+			move_right_arm(0.0, 0.0, 110.0, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+                        //robot.writeMotors();
+
 			//** end - 2020 pelekoudas changes **//
 		}
 
