@@ -412,7 +412,7 @@ void leftElbowGoTo(const std_msgs::Bool::ConstPtr &msg,
 }
 
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
 
 	ros::init(argc, argv, "cepheus_interface_node", ros::init_options::NoSigintHandler);
@@ -504,10 +504,10 @@ int main(int argc, char** argv)
 	ros::Publisher  torque_pub =  nh.advertise<std_msgs::Float64>("reaction_wheel_effort_controller/command", 1);
 
 	//Puplishers to ROS-contol topics
-	left_shoulder_pub =  nh.advertise<std_msgs::Float64>("left_shoulder_position_controller/command", 1000);
-	left_elbow_pub =  nh.advertise<std_msgs::Float64>("left_elbow_position_controller/command", 1000);
-	right_shoulder_pub =  nh.advertise<std_msgs::Float64>("right_shoulder_position_controller/command", 1000);
-	right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
+//	left_shoulder_pub =  nh.advertise<std_msgs::Float64>("left_shoulder_position_controller/command", 1000);
+//	left_elbow_pub =  nh.advertise<std_msgs::Float64>("left_elbow_position_controller/command", 1000);
+//	right_shoulder_pub =  nh.advertise<std_msgs::Float64>("right_shoulder_position_controller/command", 1000);
+//	right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
 
 	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
 
@@ -544,7 +544,7 @@ int main(int argc, char** argv)
 	// ros::ServiceServer init_first_joint_service = nh.advertiseService("init_first_joint", initFirstJoint);
 	// ros::ServiceServer init_second_joint_service = nh.advertiseService("init_second_joint", initSecondJoint);
 	// ros::ServiceServer init_third_joint_service = nh.advertiseService("init_third_joint", initThirdJoint);
-	ros::Subscriber go_to_zero_service = nh.subscribe<std_msgs::Bool>("left_elbow_go_to", 1, boost::bind(&leftElbowGoTo, _1, boost::ref(cm)));
+	// ros::Subscriber go_to_zero_service = nh.subscribe<std_msgs::Bool>("left_elbow_go_to", 1, boost::bind(&leftElbowGoTo, _1, boost::ref(cm)));
 
 
 	ROS_WARN("About to enter normal spinning...");
@@ -567,23 +567,23 @@ int main(int argc, char** argv)
 			first_time = false;
 			//** start - 2020 pelekoudas changes **//
 			std_msgs::Float64 stay_pos;
-			
-			init_left_elbow_and_start_controller(nh, cm, robot, left_elbow_pub, loop_rate);
-			robot.readEncoders(time_step);
+
+//			init_left_elbow_and_start_controller(nh, cm, robot, left_elbow_pub, loop_rate);
+/*			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
 			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-
-			init_right_elbow_and_start_controller(nh, cm, robot, right_elbow_pub, loop_rate);
-			robot.readEncoders(time_step);
+*/
+//			init_right_elbow_and_start_controller(nh, cm, robot, right_elbow_pub, loop_rate);
+/*			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(RIGHT_ELBOW);
 			right_elbow_pub.publish(stay_pos);
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
 			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-
-			init_left_shoulder_and_start_controller(nh, cm, robot, left_shoulder_pub, loop_rate);
-			robot.readEncoders(time_step);
+*/
+//			init_left_shoulder_and_start_controller(nh, cm, robot, left_shoulder_pub, loop_rate);
+/*			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(LEFT_SHOULDER);
 			left_shoulder_pub.publish(stay_pos);
 			stay_pos.data = robot.getPos(RIGHT_ELBOW);
@@ -591,14 +591,14 @@ int main(int argc, char** argv)
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
 			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-			// move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+*/			// move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 			// move_right_arm(0.0, 0.0, 110.0, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			// robot.writeMotors();
 
-			std_msgs::String msg;
+/*			std_msgs::String msg;
 			msg.data = std::string(CMD_SWITCH_TO_EFFORT);
 			ctl_pub.publish(msg);
-			//** end - 2020 pelekoudas changes **//
+*/			//** end - 2020 pelekoudas changes **//
 		}
 
 		time_step = curr_time - prev_time;

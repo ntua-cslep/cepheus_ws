@@ -144,10 +144,10 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 			sprintf(command, "controllers_to_spawn:=%s",cnames.c_str());
 			ROS_INFO("command: %s",command);
 
-			execl("/opt/ros/kinetic/bin/roslaunch", "/opt/ros/kinetic/bin/roslaunch", "cepheus_robot","spawner.launch", command, (char *)0);	
+			execl("/opt/ros/kinetic/bin/roslaunch", "/opt/ros/kinetic/bin/roslaunch", "cepheus_robot","spawner.launch", command, (char *)0);
 		}
-		//PARENT 
-		else {		
+		//PARENT
+		else {
 			int num_of_ctrls = controllers_to_start.size();
 
 			int count_started_ctrls;
@@ -166,7 +166,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 				}
 				else{
 					ROS_ERROR("Failed to call service add_two_ints");
-				}	
+				}
 
 				count_started_ctrls = 0;
 				for (it = cs.begin() ; it != cs.end(); ++it){
@@ -198,12 +198,12 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		}
 
 	}
-	else if(!left_shoulder_ctrl_started && ((msg->data).compare(CMD_START_LEFT_SHOULDER)== 0)){	
+	else if(!left_shoulder_ctrl_started && ((msg->data).compare(CMD_START_LEFT_SHOULDER)== 0)){
 
 		bool rv;
 
 		rv = loadController(n, std::string(LEFT_SHOULDER_CONTROLLER));
-		if(rv)		
+		if(rv)
 			ROS_WARN("LOADED");
 		else
 			ROS_WARN("could not load");
@@ -245,7 +245,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		std::vector<std::string> v;
 		v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
 		rv = startControllers(n, v);
-		
+
 		if(rv)
 			ROS_WARN("STARTED");
 		else
@@ -257,7 +257,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		int count = 0;
 		std_msgs::String res_msg;
 		res_msg.data = std::string(RESPONSE_LEFT_ELBOW);
-		
+
 		while (count < MSG_NUM) {
 
 			ctl_pub.publish(res_msg);
@@ -335,7 +335,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 		right_elbow_ctrl_started = true;
 	}
-	else if((msg->data).compare(CMD_SWITCH_TO_EFFORT) == 0){	
+	else if((msg->data).compare(CMD_SWITCH_TO_EFFORT) == 0) {
 
 		bool rv;
 
@@ -343,7 +343,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		std::vector<std::string> to_stop;
 		to_stop.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
 		to_stop.push_back(std::string(LEFT_ELBOW_CONTROLLER));
-		to_stop.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
 		to_stop.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
 
 		rv = stopControllers(n, to_stop);
@@ -360,12 +359,6 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 			ROS_WARN("could not load");
 
 		rv = unloadController(n, std::string(LEFT_ELBOW_CONTROLLER));
-		if(rv)
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
-		rv = unloadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
 		if(rv)
 			ROS_WARN("LOADED");
 		else

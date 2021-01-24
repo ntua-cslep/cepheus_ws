@@ -113,7 +113,7 @@ void init_left_elbow_and_start_controller(ros::NodeHandle& nh,
 	robot.init_left_elbow();
 
 	msg.data = std::string(CMD_START_LEFT_ELBOW);
-	ctl_pub.publish(msg);
+	//ctl_pub.publish(msg);
 	//go_to_zero_service.publish(empty_msg);
 }
 
@@ -133,7 +133,7 @@ void init_left_shoulder_and_start_controller(ros::NodeHandle& nh,
 	robot.init_left_shoulder();
 
 	msg.data = std::string(CMD_START_LEFT_SHOULDER);
-	ctl_pub.publish(msg);
+	//ctl_pub.publish(msg);
 }
 
 
@@ -152,7 +152,7 @@ void init_right_elbow_and_start_controller(ros::NodeHandle& nh,
 	robot.init_right_elbow();
 
 	msg.data = std::string(CMD_START_RIGHT_ELBOW);
-	ctl_pub.publish(msg);
+	//ctl_pub.publish(msg);
 }
 
 

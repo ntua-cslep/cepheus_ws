@@ -25,7 +25,7 @@
 	</node>
 
 	<node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen" required="true">
-		<param name="controllers_to_spawn" value="joint_state_publisher	reaction_wheel_effort_controller"/>
+		<param name="controllers_to_spawn" value="joint_state_publisher	reaction_wheel_effort_controller left_shoulder_effort_controller left_elbow_effort_controller right_elbow_effort_controller"/>
 	</node>
 	
 	<node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">

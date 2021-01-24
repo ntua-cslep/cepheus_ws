@@ -125,7 +125,7 @@ void CepheusHW::update_shoulder(double shoulder_rate, double des, double &should
 {
 
 	// was 0.00158
-	double kp = 2.5;
+	double kp = 0.0158;
 	//double ki = 0.000001;
 
 	double e = (des-shoulder_rate);
@@ -214,10 +214,10 @@ void CepheusHW::init_left_shoulder() {
 
 			update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
 			//ROS_WARN("shoulder_out: %lf", shoulder_out);
-			update_right_elbow(vel[RIGHT_ELBOW], des_right_elbow, right_elbow_out, 0.01);
+			//update_right_elbow(vel[RIGHT_ELBOW], des_right_elbow, right_elbow_out, 0.01);
 			cmd[RIGHT_ELBOW] = 0.0000001;//right_elbow_out;
 			cmd[LEFT_SHOULDER] = shoulder_out;
-			cmd[LEFT_ELBOW] = -0.000000000001;
+			cmd[LEFT_ELBOW] = -0.000001;
 			//ROS_WARN("LS cmd: %lf", cmd[LEFT_SHOULDER]);
 			writeMotors();
 
