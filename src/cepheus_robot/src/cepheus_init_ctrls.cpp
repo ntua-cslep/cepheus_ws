@@ -51,8 +51,8 @@ void ctlNodeReport(const std_msgs::StringConstPtr &msg){
 
 void start_standard_controllers(ros::NodeHandle& nh, controller_manager::ControllerManager& cm, ros::Rate& loop_rate){
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 
 
 	std_msgs::Float64 set_point_msg;
@@ -103,8 +103,8 @@ void init_left_elbow_and_start_controller(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 	//ros::Publisher go_to_zero_service = nh.advertise<std_msgs::Bool>("left_elbow_go_to",1);
 
 	std_msgs::String msg;
@@ -125,8 +125,8 @@ void init_left_shoulder_and_start_controller(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 
 	std_msgs::String msg;
 
@@ -144,8 +144,8 @@ void init_right_elbow_and_start_controller(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 
 	std_msgs::String msg;
 
@@ -167,8 +167,8 @@ void init_left_arm_and_start_controllers(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 
 //	std_msgs::Float64 set_point_msg;
 
@@ -266,8 +266,8 @@ void init_right_arm_and_start_controllers(ros::NodeHandle& nh,
 										ros::Rate& loop_rate)
 {
 
-/*	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers",10);
-	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response",10,&ctlNodeReport);
+/*	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+	ros::Subscriber ctl_sub = nh.subscribe<std_msgs::String>("load_start_controllers_response", 10, &ctlNodeReport);
 
 	int count = 0 ;
 	std_msgs::Float64 set_point_msg;

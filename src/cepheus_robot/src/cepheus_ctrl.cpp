@@ -82,6 +82,21 @@ bool startControllers(ros::NodeHandle &n, std::vector<std::string>& controllers_
 	return switch_controller_msg.response.ok;
 }
 
+bool stopControllers(ros::NodeHandle &n, std::vector<std::string>& controllers_to_stop){
+
+	ros::service::waitForService("/controller_manager/switch_controller", -1);
+	ros::ServiceClient switch_controller = n.serviceClient<controller_manager_msgs::SwitchController>(
+			"/controller_manager/switch_controller");
+
+	controller_manager_msgs::SwitchController switch_controller_msg;
+	switch_controller_msg.request.stop_controllers = controllers_to_stop;
+	switch_controller_msg.request.strictness =  switch_controller_msg.request.STRICT;
+
+	switch_controller.call(switch_controller_msg);
+
+	return switch_controller_msg.response.ok;
+}
+
 
 // res: nothing to return because failure stops 'ctrl' and interface hangs
 void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Publisher &ctl_pub)
@@ -179,15 +194,8 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
-		rv = loadController(n, std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
-		if(rv)		
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
 		std::vector<std::string> v;
 		v.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
-		v.push_back(std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -220,16 +228,8 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
-		rv = loadController(n, std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
-		if(rv)
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
-
 		std::vector<std::string> v;
 		v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
-		v.push_back(std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
 		rv = startControllers(n, v);
 		
 		if(rv)
@@ -264,15 +264,8 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
-		rv = loadController(n, std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
-		if(rv)
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
 		std::vector<std::string> v;
 		v.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
-		v.push_back(std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -305,15 +298,8 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
-		rv = loadController(n, std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
-		if(rv)
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
 		std::vector<std::string> v;
 		v.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
-		v.push_back(std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -334,6 +320,73 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		}
 
 		right_elbow_ctrl_started = true;
+	}
+	else if((msg->data).compare(CMD_SWITCH_TO_EFFORT) == 0){	
+
+		bool rv;
+
+		std::vector<std::string> to_stop;
+		to_stop.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
+		to_stop.push_back(std::string(LEFT_ELBOW_CONTROLLER));
+		to_stop.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
+		to_stop.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
+
+		rv = stopControllers(n, to_stop);
+		if(rv)
+			ROS_WARN("STOPPED");
+		else
+			ROS_WARN("could not stop");
+
+		rv = loadController(n, std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = loadController(n, std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = loadController(n, std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = loadController(n, std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		std::vector<std::string> to_start;
+		to_start.push_back(std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
+		to_start.push_back(std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
+		to_start.push_back(std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
+		to_start.push_back(std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
+
+		rv = startControllers(n, to_start);
+		if(rv)
+			ROS_WARN("STARTED");
+		else
+			ROS_WARN("could not start");
+
+		// //send OK response to interface
+		// ros::Rate loop_rate(200);
+		// int count = 0;
+		// std_msgs::String res_msg;
+		// res_msg.data = std::string(RESPONSE_LEFT_SHOULDER);
+		// while (count < MSG_NUM) {
+
+		// 	ctl_pub.publish(res_msg);
+
+		// 	loop_rate.sleep();
+		// 	++count;
+		// }
+
+		// left_shoulder_ctrl_started = true;
 	}
 
 }

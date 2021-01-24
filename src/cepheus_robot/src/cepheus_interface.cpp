@@ -19,10 +19,12 @@ FILE *latency_fp;
 #include <std_msgs/UInt8.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <std_srvs/SetBool.h>
 
 #include <tf/transform_listener.h>
 #include "cepheus_hardware.h"
+#include "cepheus_ctrl.h"
 
 //#include <cepheus_robot/RightCatchObjectAction.h>
 //include <cepheus_robot/LeftCatchObjectAction.h>
@@ -507,6 +509,8 @@ int main(int argc, char** argv)
 	right_shoulder_pub =  nh.advertise<std_msgs::Float64>("right_shoulder_position_controller/command", 1000);
 	right_elbow_pub =  nh.advertise<std_msgs::Float64>("right_elbow_position_controller/command", 1000);
 
+	ros::Publisher ctl_pub = nh.advertise<std_msgs::String>("load_start_controllers", 10);
+
 
 	ros::Time prev_time = ros::Time::now();
 
@@ -524,7 +528,7 @@ int main(int argc, char** argv)
 
 	//Initialize the  arms and start the ros controllers
 
-	// start_standard_controllers(nh, cm, loop_rate);
+	start_standard_controllers(nh, cm, loop_rate);
 	// init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
 	// init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 
@@ -590,6 +594,10 @@ int main(int argc, char** argv)
 			// move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 			// move_right_arm(0.0, 0.0, 110.0, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
 			// robot.writeMotors();
+
+			std_msgs::String msg;
+			msg.data = std::string(CMD_SWITCH_TO_EFFORT);
+			ctl_pub.publish(msg);
 			//** end - 2020 pelekoudas changes **//
 		}
 
