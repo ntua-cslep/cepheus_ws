@@ -250,6 +250,13 @@ void rightGripperActionCallback(const std_msgs::Bool::ConstPtr& cmd)
 }
 
 
+void setLeftShoulderEffort(const std_msgs::Float64::ConstPtr& cmd)
+{
+	robot.setCmd(LEFT_SHOULDER, cmd->data);
+	robot.writeMotors();
+}
+
+
 //Trend line transforming force to d_theta for gripper
 double fsr_trend_line(bool positive ,double pi_out)
 {
@@ -527,6 +534,9 @@ int main(int argc, char** argv)
 	//}
 
 	//Initialize the  arms and start the ros controllers
+
+	// 2020
+	ros::Subscriber set_left_shoulder_effort =  nh.subscribe("set_left_shoulder_effort", 1, setLeftShoulderEffort);
 
 	start_standard_controllers(nh, cm, loop_rate);
 	// init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
