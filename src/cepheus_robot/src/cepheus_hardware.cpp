@@ -213,12 +213,12 @@ void CepheusHW::init_left_shoulder() {
 			des_right_elbow = velocity_for_joint_init(10, (double)timer.toSec(), false);
 
 			update_shoulder(vel[LEFT_SHOULDER], des_shoulder, shoulder_out);
-			ROS_WARN("shoulder_out: %lf", shoulder_out);
+			//ROS_WARN("shoulder_out: %lf", shoulder_out);
 			update_right_elbow(vel[RIGHT_ELBOW], des_right_elbow, right_elbow_out, 0.01);
 			cmd[RIGHT_ELBOW] = 0.0000001;//right_elbow_out;
 			cmd[LEFT_SHOULDER] = shoulder_out;
 			cmd[LEFT_ELBOW] = -0.000000000001;
-			ROS_WARN("LS cmd: %lf", cmd[LEFT_SHOULDER]);
+			//ROS_WARN("LS cmd: %lf", cmd[LEFT_SHOULDER]);
 			writeMotors();
 
 			heartbeat();
@@ -610,12 +610,12 @@ void CepheusHW::writeMotors()
 		// the stator is attached to the rotating part of joint
 		if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
 			cmd[i] = - cmd[i];
-			ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
+			//ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
 		}
 
 		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
                         cmd[i] = - cmd[i];
-                        ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
+                        //ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
                 }
 
 
@@ -624,11 +624,11 @@ void CepheusHW::writeMotors()
 		/*if(i==RIGHT_ELBOW) {
 			ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
 			ROS_WARN("current[RIGHT_ELBOW] = %lf", current[RIGHT_ELBOW]);
-		}*/
+		}
 		if(i==LEFT_SHOULDER) {
                         ROS_WARN("cmd[LEFT_SHOULDER] = %lf",cmd[LEFT_SHOULDER]);
                         ROS_WARN("current[LEFT_SHOULDER] = %lf", current[LEFT_SHOULDER]);
-                }
+                }*/
 		// K = 0.0439, current -> torque
 		// current[i] = (cmd[i]/0.0439 );//cmd is in Nm
 
@@ -1226,7 +1226,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 	ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, re: %f", pos[4], pos[5], pos[6], pos[7]);
 
-	ROS_INFO("DT: %lf", dt.toSec());
+	//ROS_INFO("DT: %lf", dt.toSec());
 	// Speed Calculation radians/sec
 	for(int i=0; i<8; i++)
 	{
@@ -1925,7 +1925,7 @@ void CepheusHW::safeClose()
 	/*for(int i=0; i<8; i++){
 		cmd[i]=0;
 	}*/
-	writeMotors();
+	//writeMotors();
 	setThrustPwm(thrust, 0.05, 0.95);
 
 	dm7820_status = DM7820_General_Close_Board(board);
