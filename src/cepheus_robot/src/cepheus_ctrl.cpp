@@ -67,6 +67,20 @@ bool loadController(ros::NodeHandle &n, std::string c_name){
 	return load_controller_msg.response.ok;
 }
 
+bool unloadController(ros::NodeHandle &n, std::string c_name){
+
+	ROS_WARN(c_name.c_str());
+
+	ros::service::waitForService("/controller_manager/load_controller", -1);
+	ros::ServiceClient load_controller = n.serviceClient<controller_manager_msgs::UnloadController>(
+			"/controller_manager/unload_controller");
+
+	controller_manager_msgs::UnloadController unload_controller_msg;
+	unload_controller_msg.request.name = c_name;
+	load_controller.call(unload_controller_msg);
+	return unload_controller_msg.response.ok;
+}
+
 bool startControllers(ros::NodeHandle &n, std::vector<std::string>& controllers_to_start){
 
 	ros::service::waitForService("/controller_manager/switch_controller", -1);
@@ -325,6 +339,7 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 
 		bool rv;
 
+		// stop position controllers
 		std::vector<std::string> to_stop;
 		to_stop.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
 		to_stop.push_back(std::string(LEFT_ELBOW_CONTROLLER));
@@ -337,6 +352,32 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not stop");
 
+		// unload position controllers
+		rv = unloadController(n, std::string(LEFT_SHOULDER_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = unloadController(n, std::string(LEFT_ELBOW_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = unloadController(n, std::string(RIGHT_SHOULDER_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		rv = unloadController(n, std::string(RIGHT_ELBOW_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
+		// load effort controllers
 		rv = loadController(n, std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
 		if(rv)
 			ROS_WARN("LOADED");
@@ -349,22 +390,16 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
-		rv = loadController(n, std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
-		if(rv)
-			ROS_WARN("LOADED");
-		else
-			ROS_WARN("could not load");
-
 		rv = loadController(n, std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
 		if(rv)
 			ROS_WARN("LOADED");
 		else
 			ROS_WARN("could not load");
 
+		// start effort controllers
 		std::vector<std::string> to_start;
 		to_start.push_back(std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
 		to_start.push_back(std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
-		to_start.push_back(std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
 		to_start.push_back(std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, to_start);
