@@ -614,12 +614,12 @@ void CepheusHW::writeMotors()
 		}
 
 		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
-                        cmd[i] = - cmd[i];
-                        //ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
-                }
+            cmd[i] = - cmd[i];
+            //ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
+        }
 
 
-		current[i] = (cmd[i]/0.0452 );
+		current[i] = (cmd[i]/0.0452);
 
 		/*if(i==RIGHT_ELBOW) {
 			ROS_WARN("cmd[RIGHT_ELBOW] = %lf",cmd[RIGHT_ELBOW]);
@@ -630,9 +630,9 @@ void CepheusHW::writeMotors()
                         ROS_WARN("current[LEFT_SHOULDER] = %lf", current[LEFT_SHOULDER]);
                 }*/
 		// K = 0.0439, current -> torque
-		// current[i] = (cmd[i]/0.0439 );//cmd is in Nm
+		// current[i] = (cmd[i]/0.0439);//cmd is in Nm
 
-		// current[i] = (cmd[i]/0.0452 );
+		// current[i] = (cmd[i]/0.0452);
 
 		eff[i] = cmd[i];	// torque
 		// saturate to max current

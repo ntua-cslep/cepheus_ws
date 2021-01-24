@@ -24,13 +24,28 @@ left_shoulder_position_controller:
   pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
   #pid: {p: 0.08, i: 0.0, i_clamp: 0.0, d: 0.01}
 
+left_shoulder_effort_controller:
+  type: effort_controllers/JointEffortController
+  joint: left_shoulder
+  pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
+
 left_elbow_position_controller:
   type: effort_controllers/JointPositionController
   joint: left_elbow
   pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
 
+left_elbow_effort_controller:
+  type: effort_controllers/JointEffortController
+  joint: left_elbow
+  pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
+
 right_shoulder_position_controller:
   type: effort_controllers/JointPositionController
+  joint: right_shoulder
+  pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
+
+right_shoulder_effort_controller:
+  type: effort_controllers/JointEffortController
   joint: right_shoulder
   pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
 
@@ -41,6 +56,12 @@ right_elbow_position_controller:
   # change of the gains, new arm
   pid: {p: 0.236, i: 0.0, i_clamp: 0.0, d: 0.05569}
 # change of the gains, new arm-olga
+  pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
+
+right_elbow_effort_controller:
+  type: effort_controllers/JointEffortController
+  joint: right_elbow
+  pid: {p: 0.236, i: 0.0, i_clamp: 0.0, d: 0.05569}
   pid: {p: 0.1, i: 0.0, i_clamp: 0.0, d: 0.02}
 
 left_wrist_position_controller:

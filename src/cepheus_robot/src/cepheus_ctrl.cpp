@@ -179,8 +179,15 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
+		rv = loadController(n, std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
+		if(rv)		
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
 		std::vector<std::string> v;
 		v.push_back(std::string(LEFT_SHOULDER_CONTROLLER));
+		v.push_back(std::string(LEFT_SHOULDER_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -213,9 +220,16 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
+		rv = loadController(n, std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
 
 		std::vector<std::string> v;
 		v.push_back(std::string(LEFT_ELBOW_CONTROLLER));
+		v.push_back(std::string(LEFT_ELBOW_EFFORT_CONTROLLER));
 		rv = startControllers(n, v);
 		
 		if(rv)
@@ -250,8 +264,15 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
+		rv = loadController(n, std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
+
 		std::vector<std::string> v;
 		v.push_back(std::string(RIGHT_SHOULDER_CONTROLLER));
+		v.push_back(std::string(RIGHT_SHOULDER_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
@@ -284,17 +305,21 @@ void startCtrl(const std_msgs::StringConstPtr &msg, ros::NodeHandle &n, ros::Pub
 		else
 			ROS_WARN("could not load");
 
+		rv = loadController(n, std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
+		if(rv)
+			ROS_WARN("LOADED");
+		else
+			ROS_WARN("could not load");
 
 		std::vector<std::string> v;
 		v.push_back(std::string(RIGHT_ELBOW_CONTROLLER));
-
+		v.push_back(std::string(RIGHT_ELBOW_EFFORT_CONTROLLER));
 
 		rv = startControllers(n, v);
 		if(rv)
 			ROS_WARN("STARTED");
 		else
 			ROS_WARN("could not start");
-
 
 		//send OK response to interface
 		ros::Rate loop_rate(200);

@@ -563,48 +563,33 @@ int main(int argc, char** argv)
 			first_time = false;
 			//** start - 2020 pelekoudas changes **//
 			std_msgs::Float64 stay_pos;
-			/*
-			stay_pos.data = robot.getPos(RIGHT_ELBOW);
-			right_elbow_pub.publish(stay_pos);
-			stay_pos.data = robot.getPos(LEFT_ELBOW);
-			left_elbow_pub.publish(stay_pos);
-			stay_pos.data = robot.getPos(LEFT_SHOULDER);
-			left_shoulder_pub.publish(stay_pos);
-			robot.writeMotors();
-			*/
+			
 			init_left_elbow_and_start_controller(nh, cm, robot, left_elbow_pub, loop_rate);
-			//init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 			robot.readEncoders(time_step);
-			//stay_pos.data = robot.getPos(LEFT_SHOULDER);
-			//left_shoulder_pub.publish(stay_pos);
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
 			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-			//move_left_arm(0.5, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
-			//robot.readEncoders(time_step);
-			//stay_pos.data = 1.0;//robot.getPos(LEFT_ELBOW);
-			//left_elbow_pub.publish(stay_pos);
-			//robot.writeMotors();
+
 			init_right_elbow_and_start_controller(nh, cm, robot, right_elbow_pub, loop_rate);
 			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(RIGHT_ELBOW);
 			right_elbow_pub.publish(stay_pos);
 			stay_pos.data = robot.getPos(LEFT_ELBOW);
-                        left_elbow_pub.publish(stay_pos);
+			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
+
 			init_left_shoulder_and_start_controller(nh, cm, robot, left_shoulder_pub, loop_rate);
-                        robot.readEncoders(time_step);
+			robot.readEncoders(time_step);
 			stay_pos.data = robot.getPos(LEFT_SHOULDER);
 			left_shoulder_pub.publish(stay_pos);
-                        stay_pos.data = robot.getPos(RIGHT_ELBOW);
-                        right_elbow_pub.publish(stay_pos);
-                        stay_pos.data = robot.getPos(LEFT_ELBOW);
-                        left_elbow_pub.publish(stay_pos);
+			stay_pos.data = robot.getPos(RIGHT_ELBOW);
+			right_elbow_pub.publish(stay_pos);
+			stay_pos.data = robot.getPos(LEFT_ELBOW);
+			left_elbow_pub.publish(stay_pos);
 			robot.writeMotors();
-			move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
-			move_right_arm(0.0, 0.0, 110.0, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-                        //robot.writeMotors();
-
+			// move_left_arm(0.0, 1.0, 110.0, 12.0, cm, robot, left_shoulder_pub, left_elbow_pub);
+			// move_right_arm(0.0, 0.0, 110.0, 6.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+			// robot.writeMotors();
 			//** end - 2020 pelekoudas changes **//
 		}
 
