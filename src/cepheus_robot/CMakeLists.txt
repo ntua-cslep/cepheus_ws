@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   urdf
   tf
   control_msgs
-  trajectory_msgs 
+  trajectory_msgs
   kdl_parser
   hardware_interface
   controller_interface
@@ -23,8 +23,11 @@ find_package(catkin REQUIRED COMPONENTS
   angles
   genmsg
   actionlib_msgs
-  actionlib	
+  actionlib
 )
+
+# find_package(Eigen3 REQUIRED)
+# include_directories(${Eigen3_INCLUDE_DIRS})
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)

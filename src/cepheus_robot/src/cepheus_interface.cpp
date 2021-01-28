@@ -253,7 +253,22 @@ void rightGripperActionCallback(const std_msgs::Bool::ConstPtr& cmd)
 void setLeftShoulderEffort(const std_msgs::Float64::ConstPtr& cmd)
 {
 	robot.setCmd(LEFT_SHOULDER, cmd->data);
+//	ROS_INFO("GOT EFFORT FOR LEFT SHOULDER: %f", cmd->data);
 	robot.writeMotors();
+}
+
+void setLeftElbowEffort(const std_msgs::Float64::ConstPtr& cmd)
+{
+        robot.setCmd(LEFT_ELBOW, cmd->data);
+//        ROS_INFO("GOT EFFORT FOR LEFT ELBOW: %f", cmd->data);
+        robot.writeMotors();
+}
+
+void setRightElbowEffort(const std_msgs::Float64::ConstPtr& cmd)
+{
+        robot.setCmd(RIGHT_ELBOW, cmd->data);
+//        ROS_INFO("GOT EFFORT FOR RIGHT ELBOW: %f", cmd->data);
+        robot.writeMotors();
 }
 
 
@@ -536,7 +551,9 @@ int main(int argc, char** argv)
 	//Initialize the  arms and start the ros controllers
 
 	// 2020
-	ros::Subscriber set_left_shoulder_effort =  nh.subscribe("set_left_shoulder_effort", 1, setLeftShoulderEffort);
+	ros::Subscriber set_left_shoulder_effort = nh.subscribe("set_left_shoulder_effort", 1, setLeftShoulderEffort);
+	ros::Subscriber set_left_elbow_effort = nh.subscribe("set_left_elbow_effort", 1, setLeftElbowEffort);
+	ros::Subscriber set_right_elbow_effort =  nh.subscribe("set_right_elbow_effort", 1, setRightElbowEffort);
 
 	start_standard_controllers(nh, cm, loop_rate);
 	// init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);

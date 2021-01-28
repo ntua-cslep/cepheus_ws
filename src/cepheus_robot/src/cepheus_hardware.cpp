@@ -608,15 +608,15 @@ void CepheusHW::writeMotors()
 	{
 
 		// the stator is attached to the rotating part of joint
-		if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
-			cmd[i] = - cmd[i];
+//		if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
+//			cmd[i] = - cmd[i];
 			//ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
-		}
+//		}
 
-		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
-            cmd[i] = - cmd[i];
-            //ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
-        }
+//		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
+  //          		cmd[i] = - cmd[i];
+            		//ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
+ //       	}
 
 
 		current[i] = (cmd[i]/0.0452);
@@ -1224,7 +1224,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
 	//ROS_INFO("(1)pos[4]: %lf  | (2)pos[5]: %lf  | (3)pos[7]: %lf", pos[4], pos[5], pos[7]);
 
-	ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, re: %f", pos[4], pos[5], pos[6], pos[7]);
+//	ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, re: %f", pos[4], pos[5], pos[6], pos[7]);
 
 	//ROS_INFO("DT: %lf", dt.toSec());
 	// Speed Calculation radians/sec

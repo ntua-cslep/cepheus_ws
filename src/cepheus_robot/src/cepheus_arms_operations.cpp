@@ -198,7 +198,7 @@ move_right_arm(double set_point_shoulder,
 	double init_pos_wrist = robot.getCmd(RIGHT_WRIST);
 	double init_pos_elbow = robot.getPos(RIGHT_ELBOW);
 
-	ros::Rate loop_rate(200);
+	ros::Rate loop_rate(400);
 
 	std_msgs::Float64 cmd_pos_sh;
 	std_msgs::Float64 cmd_pos_elb;
