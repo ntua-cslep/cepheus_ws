@@ -585,6 +585,28 @@ int main(int argc, char** argv)
 
 	int a = 120;
 
+	// alex gripper control
+	double errorq[3];
+	double error_qdot[3];
+	double torq[3];
+	double qd[3];
+	double qd_dot[3];
+	double s, s_dot;
+	double ls_position;
+	double le_position;
+	double re_position;
+
+	double ls_velocity;
+	double le_velocity;
+	double re_velocity;
+
+	double theta0_des = 90 * (M_PI / 180);
+	ros::Time t_beg = ros::Time::now();
+	ros::Duration all_time;
+
+	double Kp = 0.02;
+	double Kd = 0.002;
+	// ----
 	while(!g_request_shutdown) {
 
 		curr_time = ros::Time::now();
@@ -631,11 +653,139 @@ int main(int argc, char** argv)
 		time_step = curr_time - prev_time;
 		prev_time = curr_time;
 
-
+		all_time = curr_time - t_beg;
 		//ros::spinOnce();
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
+
+		// START -- 2021 alex gripper control
+
+		ls_position = - robot.getPos(LEFT_SHOULDER);
+		le_position = robot.getPos(LEFT_ELBOW);
+		re_position = - robot.getPos(RIGHT_ELBOW);
+
+		ls_velocity = - robot.getVel(LEFT_SHOULDER);
+		le_velocity = robot.getVel(LEFT_ELBOW);
+		re_velocity = - robot.getVel(RIGHT_ELBOW);
+
+		double secs = all_time.sec + all_time.nsec * pow(10, -9);
+
+
+		// ROS_INFO("%lf", secs);
+		if (secs <= 10.0) {
+			s = (0.00006 * pow(secs, 5)) + (-0.0015 * pow(secs, 4)) + (0.01 * pow(secs, 3));
+			s_dot = (5 * 0.00006 * pow(secs, 4)) + (4 * -0.0015 * pow(secs, 3)) + (3 * 0.01 * pow(secs, 2));
+			qd[0] = - 0.577133908412845 * s;
+			qd[1] = 1.89218648491777 * s;
+			qd[2] = 0.404987644145028 * s;
+			qd_dot[0] = qd[0] * s_dot;
+			qd_dot[1] = qd[1] * s_dot;
+			qd_dot[2] = qd[2] * s_dot;
+		}
+		else if (secs < 15.0) {
+			qd[0] = - 0.577133908412845;
+                        qd[1] = 1.89218648491777;
+                        qd[2] = 0.404987644145028;
+			qd_dot[0] = 0.0;
+                        qd_dot[1] = 0.0;
+                        qd_dot[2] = 0.0;
+			theta0_des = 90 * (3.14 / 180);
+		}
+		else if (secs <= 25.0) {
+
+			double a = 0.143318141419581;
+			double b = 0.331623152993806;
+			double c = 0.257342875265441;
+			double d = 0.257361884747802;
+			double d0 = 2.646113815104468;
+			double d1 = 0.630816718763539;
+			double d2 = 0.576914490577165;
+			double d3 = 0.264249582341000;
+			double S = a*b*d2*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1]);
+
+			s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
+			double xe_desdot = s_dot;
+
+			double theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
+						(b*d2*sin(theta0_des+qd[0])-c*d1*sin(theta0_des+qd[0]+qd[1]))*0+\
+						0.0*(-b*c*d3*sin(qd[1])-c*d*d1*sin(qd[2])+b*d*d2*sin(qd[1]+qd[2])))/S;
+
+			qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
+				(-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
+				0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
+				b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
+
+			qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
+				(a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
+				0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
+				b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
+
+			qd_dot[2]=((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
+				(-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
+				0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
+				b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
+
+			qd[0] = qd_dot[0] - qd[0];
+                        qd[1] = qd_dot[1] - qd[1];
+                        qd[2] = qd_dot[2] - qd[2];
+		}
+		else {
+			double a = 0.143318141419581;
+                        double b = 0.331623152993806;
+                        double c = 0.257342875265441;
+                        double d = 0.257361884747802;
+                        double d0 = 2.646113815104468;
+                        double d1 = 0.630816718763539;
+                        double d2 = 0.576914490577165;
+                        double d3 = 0.264249582341000;
+                        double S = a*b*d2*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1]);
+
+                       // s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
+                        double xe_desdot = 0.0;
+
+                        double theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
+                                                (b*d2*sin(theta0_des+qd[0])-c*d1*sin(theta0_des+qd[0]+qd[1]))*0+\
+                                                0.0*(-b*c*d3*sin(qd[1])-c*d*d1*sin(qd[2])+b*d*d2*sin(qd[1]+qd[2])))/S;
+
+                        qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
+                                (-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
+                                0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
+                                b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
+
+                        qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
+                                (a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
+                                0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
+                                b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
+
+                        qd_dot[2]=((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
+                                (-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
+                                0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
+                                b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
+
+                        qd[0] = qd_dot[0] - qd[0];
+			qd[1] = qd_dot[1] - qd[1];
+                        qd[2] = qd_dot[2] - qd[2];
+		}
+		 ROS_INFO("secs: %lf   |   qd0: %lf,    qd1: %lf,    qd2: %lf", secs, qd[0], qd[1], qd[2]);
+
+		errorq[0] = qd[0] - ls_position;
+		errorq[1] = qd[1] - le_position;
+		errorq[2] = qd[2] - re_position;
+
+		error_qdot[0] = qd_dot[0] - ls_velocity;
+		error_qdot[1] = qd_dot[1] - le_velocity;
+		error_qdot[2] = qd_dot[2] - re_velocity;
+
+		torq[0] = -((Kp * errorq[0]) + (Kd * error_qdot[0]));
+		torq[1] = (Kp * errorq[1]) + (Kd * error_qdot[1]);
+		torq[2] = -((Kp * errorq[2]) + (Kd * error_qdot[2]));
+
+		robot.setCmd(LEFT_SHOULDER, torq[0]);
+		robot.setCmd(LEFT_ELBOW, torq[1]);
+		robot.setCmd(RIGHT_ELBOW, torq[2]);
+
+		// STOP -- 2021 alex gripper control
 
 		/*
 		if(ready_to_grip_left)

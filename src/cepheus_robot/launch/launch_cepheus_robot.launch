@@ -35,7 +35,11 @@
 
 	<node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="true">
 		<param name="publish_frequency" value="200"/>
-	</node>  
+	</node>
+
+	<!--node name="alex_gripper_control_node" pkg="cepheus_robot" type="alex_gripper_control_node" output="screen" required="true">
+		<<param name="publish_frequency" value="200"/>
+	</node-->
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
 	<param name="use_reaction_wheel" value="True"/>

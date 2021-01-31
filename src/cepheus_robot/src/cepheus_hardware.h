@@ -127,7 +127,7 @@ class CepheusHW : public hardware_interface::RobotHW
 		void setParam(double*, double);
 		void setCmd(int,double);
 		double getVel(int);
-		void safeClose(); 
+		void safeClose();
 		CepheusHW();
 
 		//Panagiotis mavridis
