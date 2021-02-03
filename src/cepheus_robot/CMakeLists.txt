@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cepheus_robot)
 
+add_compile_options(-std=c++11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -28,6 +30,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 # find_package(Eigen3 REQUIRED)
 # include_directories(${Eigen3_INCLUDE_DIRS})
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(gsl REQUIRED gsl)
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -173,7 +177,7 @@ add_executable(new_base_planner_node src/new_base_planner.cpp)
 #target_link_libraries(mouse_odom_node  ${catkin_LIBRARIES})
 target_link_libraries(phase_space_inverted_node  ${catkin_LIBRARIES})
 #target_link_libraries(thrusters_node  ${catkin_LIBRARIES} librtd_dm7820)
-target_link_libraries(cepheus_interface_node  ${catkin_LIBRARIES} librtd_dm7820 cepheus_init_ctrls cepheus_arms_operations)
+target_link_libraries(cepheus_interface_node  ${catkin_LIBRARIES} librtd_dm7820 cepheus_init_ctrls cepheus_arms_operations ${gsl_LIBRARIES})
 #target_link_libraries(FT_interface_node  ${catkin_LIBRARIES})
 target_link_libraries(cepheus_ctrl  ${catkin_LIBRARIES})
 #target_link_libraries(thrusters_interface_node  ${catkin_LIBRARIES} librtd_dm7820)

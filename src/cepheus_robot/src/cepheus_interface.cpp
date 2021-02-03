@@ -1,6 +1,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <math.h>
+#include <iostream>
+#include <string>
+#include <fstream>
 
 #include <sys/resource.h>
 FILE *latency_fp;
@@ -541,7 +544,25 @@ int main(int argc, char** argv)
 	robot.setHomePos(6, r1_limit_pos);
 	robot.setHomePos(7, r2_limit_pos);
 
+	// FOR ALEX 2021
+	std::ifstream data("qdes.csv");
+    std::string line;
+    std::vector<std::vector<double> > parsedCsv;
+    while(std::getline(data,line))
+    {
+        std::stringstream lineStream(line);
+        std::string cell;
+		double toDouble;
+        std::vector<double> parsedRow;
+        while(std::getline(lineStream,cell,','))
+        {
+			toDouble = std::stod(cell);
+            parsedRow.push_back(toDouble);
+        }
 
+        parsedCsv.push_back(parsedRow);
+    }
+	//
 	//int err = readErr();
 	//if (err) {
 	//fixJointPos();
@@ -583,7 +604,7 @@ int main(int argc, char** argv)
 
 	bool first_time = true;
 
-	int a = 120;
+	// int a = 120;
 
 	// alex gripper control
 	double errorq[3];
@@ -601,11 +622,36 @@ int main(int argc, char** argv)
 	double re_velocity;
 
 	double theta0_des = 90 * (M_PI / 180);
+	double theta0_desdot = 0.0;
 	ros::Time t_beg = ros::Time::now();
 	ros::Duration all_time;
 
 	double Kp = 0.02;
 	double Kd = 0.002;
+	double a, b, c, d, d0, d1, d2, d3, S;
+	double a00 = 2.328090369367525;
+	double a01 = 0.331762469609965;
+	double a02 = 0.247736831332797;
+	double a03 = 0.152479037019120;
+	double a11 = 0.768198737850671;
+	double a21 = 0.573237053631319;
+	double a31 = 0.352820504933170;
+	double a22 = 0.443678774166903;
+	double a32 = 0.273792231852408;
+	double a33 = 0.269608750820881;
+	double a12 = 0.573237053631319;
+	double a23 = 0.273792231852408;
+	double a13 = 0.352820504933170;
+	double d00, d10, d20, d30, d01, d02, d03, d11, d21, d31, d12, d22, d32, d13, d23, d33;
+	double prev_secs = 0.0;
+	double qd_prev1;
+	double qd_prev2;
+	double qd_prev3;
+
+	double q1_init = -60 * (M_PI / 180);
+	double q2_init = 105 * (M_PI / 180);
+	double q3_init = 45 * (M_PI / 180);
+	int pointer_of = 0;
 	// ----
 	while(!g_request_shutdown) {
 
@@ -673,101 +719,99 @@ int main(int argc, char** argv)
 
 
 		// ROS_INFO("%lf", secs);
-		if (secs <= 10.0) {
-			s = (0.00006 * pow(secs, 5)) + (-0.0015 * pow(secs, 4)) + (0.01 * pow(secs, 3));
-			s_dot = (5 * 0.00006 * pow(secs, 4)) + (4 * -0.0015 * pow(secs, 3)) + (3 * 0.01 * pow(secs, 2));
-			qd[0] = - 0.577133908412845 * s;
-			qd[1] = 1.89218648491777 * s;
-			qd[2] = 0.404987644145028 * s;
-			qd_dot[0] = qd[0] * s_dot;
-			qd_dot[1] = qd[1] * s_dot;
-			qd_dot[2] = qd[2] * s_dot;
-		}
-		else if (secs < 15.0) {
-			qd[0] = - 0.577133908412845;
-                        qd[1] = 1.89218648491777;
-                        qd[2] = 0.404987644145028;
-			qd_dot[0] = 0.0;
-                        qd_dot[1] = 0.0;
-                        qd_dot[2] = 0.0;
-			theta0_des = 90 * (3.14 / 180);
-		}
-		else if (secs <= 25.0) {
+		// if (secs <= 10.0) {
+		// 	s = (0.00006 * pow(secs, 5)) + (-0.0015 * pow(secs, 4)) + (0.01 * pow(secs, 3));
+		// 	s_dot = (5 * 0.00006 * pow(secs, 4)) + (4 * -0.0015 * pow(secs, 3)) + (3 * 0.01 * pow(secs, 2));
+		// 	qd[0] = q1_init * s;
+		// 	qd[1] = q2_init * s;
+		// 	qd[2] = q3_init * s;
+		// 	qd_dot[0] = qd[0] * s_dot;
+		// 	qd_dot[1] = qd[1] * s_dot;
+		// 	qd_dot[2] = qd[2] * s_dot;
+		// }
+		// else if (secs < 15.0) {
+		// 	qd[0] = q1_init;
+		// 	qd[1] = q2_init;
+		// 	qd[2] = q3_init;
+		// 	qd_dot[0] = 0.0;
+		// 	qd_dot[1] = 0.0;
+		// 	qd_dot[2] = 0.0;
+		// }
+		// else if (secs <= 25.0) {
 
-			double a = 0.143318141419581;
-			double b = 0.331623152993806;
-			double c = 0.257342875265441;
-			double d = 0.257361884747802;
-			double d0 = 2.646113815104468;
-			double d1 = 0.630816718763539;
-			double d2 = 0.576914490577165;
-			double d3 = 0.264249582341000;
-			double S = a*b*d2*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1]);
+		// 	a = 0.143318141419581;
+		// 	b = 0.331623152993806;
+		// 	c = 0.257342875265441;
+		// 	d = 0.257361884747802;
+		// 	d00 = a00;
+		// 	d10 = a01 * cos(qd[0]);
+		// 	d20 = a02 * cos(qd[0] + qd[1]);
+		// 	d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
+		// 	d01 = d10;
+		// 	d11 = a11;
+		// 	d21 = a21 * cos(qd[1]);
+		// 	d31 = a31 * cos(qd[1] + qd[2]);
+		// 	d02 = d20;
+		// 	d12 = d21;
+		// 	d22 = a22;
+		// 	d32 = a32 * cos(qd[2]);
+		// 	d03 = d30;
+		// 	d13 = d31;
+		// 	d23 = d32;
+		// 	d33 = a33;
+		// 	d0 = d00 + d10 + d20 + d30;
+		// 	d1 = d01 + d11 + d21 + d31;
+		// 	d2 = d02 + d12 + d22 + d32;
+		// 	d3 = d03 + d13 + d23 + d33;
 
-			s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
-			double xe_desdot = s_dot;
+		// 	double S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
+		// 	s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
+		// 	double xe_desdot = - 0.1 * s_dot;
 
-			double theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
-						(b*d2*sin(theta0_des+qd[0])-c*d1*sin(theta0_des+qd[0]+qd[1]))*0+\
-						0.0*(-b*c*d3*sin(qd[1])-c*d*d1*sin(qd[2])+b*d*d2*sin(qd[1]+qd[2])))/S;
+		// 	double theta0_des_prev = theta0_des;
+		// 	theta0_desdot = ((b*d2*cos(theta0_des+qd[0]) - c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot + \
+		// 					(b*d2*sin(theta0_des+qd[0]) - c*d1*sin(theta0_des+qd[0]+qd[1]))*0 + \
+		// 					0.0*(-b*c*d3*sin(qd[1]) - c*d*d1*sin(qd[2]) + b*d*d2*sin(qd[1]+qd[2])))/S;
+		// 	qd_prev1 = qd[0];
+		// 	qd_prev2 = qd[1];
+		// 	qd_prev3 = qd[2];
 
-			qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
-				(-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
-				0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
-				b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
+		// 	qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
+		// 				(-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
+		// 				0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
+		// 				b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
 
-			qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
-				(a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
-				0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
-				b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
+		// 	qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
+		// 				(a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
+		// 				0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
+		// 				b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
 
-			qd_dot[2]=((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
-				(-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
-				0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
-				b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
+		// 	qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
+		// 				(-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
+		// 				0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
+		// 				b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
 
-			qd[0] = qd_dot[0] - qd[0];
-                        qd[1] = qd_dot[1] - qd[1];
-                        qd[2] = qd_dot[2] - qd[2];
-		}
-		else {
-			double a = 0.143318141419581;
-                        double b = 0.331623152993806;
-                        double c = 0.257342875265441;
-                        double d = 0.257361884747802;
-                        double d0 = 2.646113815104468;
-                        double d1 = 0.630816718763539;
-                        double d2 = 0.576914490577165;
-                        double d3 = 0.264249582341000;
-                        double S = a*b*d2*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1]);
-
-                       // s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
-                        double xe_desdot = 0.0;
-
-                        double theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
-                                                (b*d2*sin(theta0_des+qd[0])-c*d1*sin(theta0_des+qd[0]+qd[1]))*0+\
-                                                0.0*(-b*c*d3*sin(qd[1])-c*d*d1*sin(qd[2])+b*d*d2*sin(qd[1]+qd[2])))/S;
-
-                        qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
-                                (-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
-                                0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
-                                b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
-
-                        qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
-                                (a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
-                                0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
-                                b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
-
-                        qd_dot[2]=((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
-                                (-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
-                                0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
-                                b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
-
-                        qd[0] = qd_dot[0] - qd[0];
-			qd[1] = qd_dot[1] - qd[1];
-                        qd[2] = qd_dot[2] - qd[2];
-		}
-		 ROS_INFO("secs: %lf   |   qd0: %lf,    qd1: %lf,    qd2: %lf", secs, qd[0], qd[1], qd[2]);
+		// 	qd[0] = qd_dot[0] * (0.005) + qd_prev1;
+		// 	qd[1] = qd_dot[1] * (0.005) + qd_prev2;
+		// 	qd[2] = qd_dot[2] * (0.005) + qd_prev3;
+		// 	theta0_des = theta0_desdot * (0.005) + theta0_des_prev;
+		// 	// qd[0] = ((qd_dot[0] + xc) / 2 ) * (secs - prev_secs);
+		// 	// qd[1] = ((qd_dot[1] + qd_prev2) / 2 ) * (secs - prev_secs);
+		// 	// qd[2] = ((qd_dot[2] + qd_prev3) / 2 ) * (secs - prev_secs);
+		// 	// theta0_des = ((theta0_desdot + theta0_desdot_prev) / 2 ) * (secs - prev_secs);
+		// }
+		// else {
+        //     qd_dot[0] = 0.0;
+        //     qd_dot[1] = 0.0;
+		// 	qd_dot[2] = 0.0;
+		// }
+		qd[0] = parsedCsv[pointer_of][0];
+		qd[1] = parsedCsv[pointer_of][1];
+		qd[2] = parsedCsv[pointer_of][2];
+		
+		prev_secs = secs;
+		// ROS_INFO("-dot: previous:   |   qd0: %lf,    qd1: %lf,    qd2: %lf", qd_dot[0], qd_dot[1], qd_dot[2]);
+		ROS_INFO("secs: %lf   |   qd0: %lf,    qd1: %lf,    qd2: %lf", secs, qd[0], qd[1], qd[2]);
 
 		errorq[0] = qd[0] - ls_position;
 		errorq[1] = qd[1] - le_position;
@@ -785,6 +829,7 @@ int main(int argc, char** argv)
 		robot.setCmd(LEFT_ELBOW, torq[1]);
 		robot.setCmd(RIGHT_ELBOW, torq[2]);
 
+		pointer_of ++;
 		// STOP -- 2021 alex gripper control
 
 		/*
