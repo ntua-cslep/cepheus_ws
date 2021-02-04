@@ -193,6 +193,10 @@ class CepheusHW : public hardware_interface::RobotHW
 		double getPos(int i){
 			return pos[i];
 		}
+	
+		void setOffset(int i, double offset){
+			offset_pos[i] = offset;
+		}
 
 	private:
 		bool homing(int, float);

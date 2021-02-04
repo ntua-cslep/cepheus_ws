@@ -608,15 +608,15 @@ void CepheusHW::writeMotors()
 	{
 
 		// the stator is attached to the rotating part of joint
-//		if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
-//			cmd[i] = - cmd[i];
-			//ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
-//		}
+		// if (i == RIGHT_ELBOW && offset_pos[RIGHT_ELBOW]) {
+		// 	cmd[i] = - cmd[i];
+		// 	ROS_WARN("cmd[RIGHT_ELBOW]: %lf", cmd[i]);
+		// }
 
-//		if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
-  //          		cmd[i] = - cmd[i];
-            		//ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
- //       	}
+		// if (i == LEFT_SHOULDER && offset_pos[LEFT_SHOULDER]) {
+		// 	cmd[i] = - cmd[i];
+		// 	ROS_WARN("cmd[LEFT_SHOULDER]: %lf", cmd[i]);
+		// }
 
 
 		current[i] = (cmd[i]/0.0452);

@@ -1,9 +1,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <math.h>
-#include <iostream>
-#include <string>
-#include <fstream>
 
 #include <sys/resource.h>
 FILE *latency_fp;
@@ -256,22 +253,44 @@ void rightGripperActionCallback(const std_msgs::Bool::ConstPtr& cmd)
 void setLeftShoulderEffort(const std_msgs::Float64::ConstPtr& cmd)
 {
 	robot.setCmd(LEFT_SHOULDER, cmd->data);
-//	ROS_INFO("GOT EFFORT FOR LEFT SHOULDER: %f", cmd->data);
+	// ROS_INFO("GOT EFFORT FOR LEFT SHOULDER: %f", cmd->data);
 	robot.writeMotors();
 }
 
 void setLeftElbowEffort(const std_msgs::Float64::ConstPtr& cmd)
 {
-        robot.setCmd(LEFT_ELBOW, cmd->data);
-//        ROS_INFO("GOT EFFORT FOR LEFT ELBOW: %f", cmd->data);
-        robot.writeMotors();
+	robot.setCmd(LEFT_ELBOW, cmd->data);
+	// ROS_INFO("GOT EFFORT FOR LEFT ELBOW: %f", cmd->data);
+	robot.writeMotors();
 }
 
 void setRightElbowEffort(const std_msgs::Float64::ConstPtr& cmd)
 {
-        robot.setCmd(RIGHT_ELBOW, cmd->data);
-//        ROS_INFO("GOT EFFORT FOR RIGHT ELBOW: %f", cmd->data);
-        robot.writeMotors();
+	robot.setCmd(RIGHT_ELBOW, cmd->data);
+	// ROS_INFO("GOT EFFORT FOR RIGHT ELBOW: %f", cmd->data);
+	robot.writeMotors();
+}
+
+
+void setLeftShoulderOffset(const std_msgs::Float64::ConstPtr& cmd)
+{
+	robot.setOffset(LEFT_SHOULDER, cmd->data);
+	// ROS_INFO("GOT Offset FOR LEFT SHOULDER: %f", cmd->data);
+	robot.writeMotors();
+}
+
+void setLeftElbowOffset(const std_msgs::Float64::ConstPtr& cmd)
+{
+	robot.setOffset(LEFT_ELBOW, cmd->data);
+	// ROS_INFO("GOT Offset FOR LEFT ELBOW: %f", cmd->data);
+	robot.writeMotors();
+}
+
+void setRightElbowOffset(const std_msgs::Float64::ConstPtr& cmd)
+{
+	robot.setOffset(RIGHT_ELBOW, cmd->data);
+	// ROS_INFO("GOT Offset FOR RIGHT ELBOW: %f", cmd->data);
+	robot.writeMotors();
 }
 
 
@@ -544,30 +563,11 @@ int main(int argc, char** argv)
 	robot.setHomePos(6, r1_limit_pos);
 	robot.setHomePos(7, r2_limit_pos);
 
-	// FOR ALEX 2021
-	std::ifstream data("qdes.csv");
-    std::string line;
-    std::vector<std::vector<double> > parsedCsv;
-    while(std::getline(data,line))
-    {
-        std::stringstream lineStream(line);
-        std::string cell;
-		double toDouble;
-        std::vector<double> parsedRow;
-        while(std::getline(lineStream,cell,','))
-        {
-			toDouble = std::stod(cell);
-            parsedRow.push_back(toDouble);
-        }
-
-        parsedCsv.push_back(parsedRow);
-    }
-	//
-	//int err = readErr();
-	//if (err) {
-	//fixJointPos();
-	//ROS_INFO("Fixed, now init...\n");
-	//}
+	// int err = readErr();
+	// if (err) {
+	// fixJointPos();
+	// ROS_INFO("Fixed, now init...\n");
+	// }
 
 	//Initialize the  arms and start the ros controllers
 
@@ -575,18 +575,29 @@ int main(int argc, char** argv)
 	ros::Subscriber set_left_shoulder_effort = nh.subscribe("set_left_shoulder_effort", 1, setLeftShoulderEffort);
 	ros::Subscriber set_left_elbow_effort = nh.subscribe("set_left_elbow_effort", 1, setLeftElbowEffort);
 	ros::Subscriber set_right_elbow_effort =  nh.subscribe("set_right_elbow_effort", 1, setRightElbowEffort);
+	ros::Subscriber set_left_shoulder_offset = nh.subscribe("set_left_shoulder_offset", 1, setLeftShoulderOffset);
+	ros::Subscriber set_left_elbow_offset = nh.subscribe("set_left_elbow_offset", 1, setLeftElbowOffset);
+	ros::Subscriber set_right_elbow_offset =  nh.subscribe("set_right_elbow_offset", 1, setRightElbowOffset);
+
+	ros::Publisher ls_pos_pub = nh.advertise<std_msgs::Float64>("read_left_shoulder_position", 1);
+	ros::Publisher le_pos_pub = nh.advertise<std_msgs::Float64>("read_left_elbow_position", 1);
+	ros::Publisher re_pos_pub = nh.advertise<std_msgs::Float64>("read_right_elbow_position", 1);
+	ros::Publisher ls_vel_pub = nh.advertise<std_msgs::Float64>("read_left_shoulder_velocity", 1);
+	ros::Publisher le_vel_pub = nh.advertise<std_msgs::Float64>("read_left_elbow_velocity", 1);
+	ros::Publisher re_vel_pub = nh.advertise<std_msgs::Float64>("read_right_elbow_velocity", 1);
+	ros::Publisher ls_limit_pub = nh.advertise<std_msgs::UInt8>("read_left_shoulder_limit", 1);
+	ros::Publisher le_limit_pub = nh.advertise<std_msgs::UInt8>("read_left_elbow_limit", 1);
+	ros::Publisher re_limit_pub = nh.advertise<std_msgs::UInt8>("read_right_elbow_limit", 1);
 
 	start_standard_controllers(nh, cm, loop_rate);
 	// init_left_arm_and_start_controllers(nh, cm, robot, left_shoulder_pub, left_elbow_pub, loop_rate);
 	// init_right_arm_and_start_controllers(nh, cm, robot, right_shoulder_pub, right_elbow_pub, loop_rate);
 
 	sleep(1);
-	//Move Right Hand to Ready to Grab Position
-	//move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-	//move_right_arm(M_PI, M_PI/3.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
-	//move_left_arm(M_PI, M_PI/2.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
-
-
+	// Move Right Hand to Ready to Grab Position
+	// move_right_arm(-M_PI/2.0, 2.0 * M_PI/3.0, 110.0, 12.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	// move_right_arm(M_PI, M_PI/3.0, 110.0, 30.0, cm, robot, right_shoulder_pub, right_elbow_pub);
+	// move_left_arm(M_PI, M_PI/2.0, 110.0, 24.0, cm, robot, left_shoulder_pub, left_elbow_pub);
 
 	// ros::ServiceServer init_first_and_third_joints_service = nh.advertiseService("init_first_and_third_joints", initFirstAndThirdJoints);
 	// ros::ServiceServer init_first_joint_service = nh.advertiseService("init_first_joint", initFirstJoint);
@@ -604,55 +615,10 @@ int main(int argc, char** argv)
 
 	bool first_time = true;
 
-	// int a = 120;
+	int a = 120;
+	std_msgs::Float64 robot_info_msg;
+	std_msgs::UInt8 limit_msg;
 
-	// alex gripper control
-	double errorq[3];
-	double error_qdot[3];
-	double torq[3];
-	double qd[3];
-	double qd_dot[3];
-	double s, s_dot;
-	double ls_position;
-	double le_position;
-	double re_position;
-
-	double ls_velocity;
-	double le_velocity;
-	double re_velocity;
-
-	double theta0_des = 90 * (M_PI / 180);
-	double theta0_desdot = 0.0;
-	ros::Time t_beg = ros::Time::now();
-	ros::Duration all_time;
-
-	double Kp = 0.02;
-	double Kd = 0.002;
-	double a, b, c, d, d0, d1, d2, d3, S;
-	double a00 = 2.328090369367525;
-	double a01 = 0.331762469609965;
-	double a02 = 0.247736831332797;
-	double a03 = 0.152479037019120;
-	double a11 = 0.768198737850671;
-	double a21 = 0.573237053631319;
-	double a31 = 0.352820504933170;
-	double a22 = 0.443678774166903;
-	double a32 = 0.273792231852408;
-	double a33 = 0.269608750820881;
-	double a12 = 0.573237053631319;
-	double a23 = 0.273792231852408;
-	double a13 = 0.352820504933170;
-	double d00, d10, d20, d30, d01, d02, d03, d11, d21, d31, d12, d22, d32, d13, d23, d33;
-	double prev_secs = 0.0;
-	double qd_prev1;
-	double qd_prev2;
-	double qd_prev3;
-
-	double q1_init = -60 * (M_PI / 180);
-	double q2_init = 105 * (M_PI / 180);
-	double q3_init = 45 * (M_PI / 180);
-	int pointer_of = 0;
-	// ----
 	while(!g_request_shutdown) {
 
 		curr_time = ros::Time::now();
@@ -661,7 +627,7 @@ int main(int argc, char** argv)
 			prev_time = curr_time;
 			first_time = false;
 			//** start - 2020 pelekoudas changes **//
-			std_msgs::Float64 stay_pos;
+			// std_msgs::Float64 stay_pos;
 
 //			init_left_elbow_and_start_controller(nh, cm, robot, left_elbow_pub, loop_rate);
 /*			robot.readEncoders(time_step);
@@ -699,139 +665,30 @@ int main(int argc, char** argv)
 		time_step = curr_time - prev_time;
 		prev_time = curr_time;
 
-		all_time = curr_time - t_beg;
 		//ros::spinOnce();
 
 		robot.readEncoders(time_step);
 		cm.update(curr_time, time_step);
 
-		// START -- 2021 alex gripper control
+		robot_info_msg.data = robot.getPos(LEFT_SHOULDER);
+		ls_pos_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getPos(LEFT_ELBOW);
+		le_pos_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getPos(RIGHT_ELBOW);
+		re_pos_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getVel(LEFT_SHOULDER);
+		ls_vel_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getVel(LEFT_ELBOW);
+		le_vel_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getVel(RIGHT_ELBOW);
+		re_vel_pub.publish(robot_info_msg);
 
-		ls_position = - robot.getPos(LEFT_SHOULDER);
-		le_position = robot.getPos(LEFT_ELBOW);
-		re_position = - robot.getPos(RIGHT_ELBOW);
-
-		ls_velocity = - robot.getVel(LEFT_SHOULDER);
-		le_velocity = robot.getVel(LEFT_ELBOW);
-		re_velocity = - robot.getVel(RIGHT_ELBOW);
-
-		double secs = all_time.sec + all_time.nsec * pow(10, -9);
-
-
-		// ROS_INFO("%lf", secs);
-		// if (secs <= 10.0) {
-		// 	s = (0.00006 * pow(secs, 5)) + (-0.0015 * pow(secs, 4)) + (0.01 * pow(secs, 3));
-		// 	s_dot = (5 * 0.00006 * pow(secs, 4)) + (4 * -0.0015 * pow(secs, 3)) + (3 * 0.01 * pow(secs, 2));
-		// 	qd[0] = q1_init * s;
-		// 	qd[1] = q2_init * s;
-		// 	qd[2] = q3_init * s;
-		// 	qd_dot[0] = qd[0] * s_dot;
-		// 	qd_dot[1] = qd[1] * s_dot;
-		// 	qd_dot[2] = qd[2] * s_dot;
-		// }
-		// else if (secs < 15.0) {
-		// 	qd[0] = q1_init;
-		// 	qd[1] = q2_init;
-		// 	qd[2] = q3_init;
-		// 	qd_dot[0] = 0.0;
-		// 	qd_dot[1] = 0.0;
-		// 	qd_dot[2] = 0.0;
-		// }
-		// else if (secs <= 25.0) {
-
-		// 	a = 0.143318141419581;
-		// 	b = 0.331623152993806;
-		// 	c = 0.257342875265441;
-		// 	d = 0.257361884747802;
-		// 	d00 = a00;
-		// 	d10 = a01 * cos(qd[0]);
-		// 	d20 = a02 * cos(qd[0] + qd[1]);
-		// 	d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
-		// 	d01 = d10;
-		// 	d11 = a11;
-		// 	d21 = a21 * cos(qd[1]);
-		// 	d31 = a31 * cos(qd[1] + qd[2]);
-		// 	d02 = d20;
-		// 	d12 = d21;
-		// 	d22 = a22;
-		// 	d32 = a32 * cos(qd[2]);
-		// 	d03 = d30;
-		// 	d13 = d31;
-		// 	d23 = d32;
-		// 	d33 = a33;
-		// 	d0 = d00 + d10 + d20 + d30;
-		// 	d1 = d01 + d11 + d21 + d31;
-		// 	d2 = d02 + d12 + d22 + d32;
-		// 	d3 = d03 + d13 + d23 + d33;
-
-		// 	double S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
-		// 	s_dot = (5 * 0.00006 * pow(secs-15.0, 4)) + (4 * -0.0015 * pow(secs-15.0, 3)) + (3 * 0.01 * pow(secs-15.0, 2));
-		// 	double xe_desdot = - 0.1 * s_dot;
-
-		// 	double theta0_des_prev = theta0_des;
-		// 	theta0_desdot = ((b*d2*cos(theta0_des+qd[0]) - c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot + \
-		// 					(b*d2*sin(theta0_des+qd[0]) - c*d1*sin(theta0_des+qd[0]+qd[1]))*0 + \
-		// 					0.0*(-b*c*d3*sin(qd[1]) - c*d*d1*sin(qd[2]) + b*d*d2*sin(qd[1]+qd[2])))/S;
-		// 	qd_prev1 = qd[0];
-		// 	qd_prev2 = qd[1];
-		// 	qd_prev3 = qd[2];
-
-		// 	qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot+\
-		// 				(-d2*(a*sin(theta0_des)+b*sin(theta0_des+qd[0]))+c*(d0+d1)*sin(theta0_des+qd[0]+qd[1]))*0+\
-		// 				0.0*(b*c*d3*sin(qd[1])+a*c*d3*sin(qd[0]+qd[1])+c*d*(d0+d1)*sin(qd[2])-\
-		// 				b*d*d2*sin(qd[1]+qd[2])-a*d*d2*sin(qd[0]+qd[1]+qd[2])))/S-(a*c*sin(qd[0]+qd[1]));
-
-		// 	qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot+\
-		// 				(a*(d1+d2)*sin(theta0_des)-d0*(b*sin(theta0_des+qd[0])+c*sin(theta0_des+qd[0]+qd[1])))*0-\
-		// 				0.0*(a*b*d3*sin(qd[0])+a*c*d3*sin(qd[0]+qd[1])+c*d*d0*sin(qd[2])+\
-		// 				b*d*d0*sin(qd[1]+qd[2])-a*d*(d1+d2)*sin(qd[0]+qd[1]+qd[2])))/S+(a*c*sin(qd[0]+qd[1]));
-
-		// 	qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot+\
-		// 				(-a*d1*sin(theta0_des)+b*d0*sin(theta0_des+qd[0]))*0+\
-		// 				0.0*(a*b*(d2+d3)*sin(qd[0])+b*c*d0*sin(qd[1])-a*c*d1*sin(qd[0]+qd[1])+\
-		// 				b*d*d0*sin(qd[1]+qd[2])-a*d*d1*sin(qd[0]+qd[1]+qd[2])))/S;
-
-		// 	qd[0] = qd_dot[0] * (0.005) + qd_prev1;
-		// 	qd[1] = qd_dot[1] * (0.005) + qd_prev2;
-		// 	qd[2] = qd_dot[2] * (0.005) + qd_prev3;
-		// 	theta0_des = theta0_desdot * (0.005) + theta0_des_prev;
-		// 	// qd[0] = ((qd_dot[0] + xc) / 2 ) * (secs - prev_secs);
-		// 	// qd[1] = ((qd_dot[1] + qd_prev2) / 2 ) * (secs - prev_secs);
-		// 	// qd[2] = ((qd_dot[2] + qd_prev3) / 2 ) * (secs - prev_secs);
-		// 	// theta0_des = ((theta0_desdot + theta0_desdot_prev) / 2 ) * (secs - prev_secs);
-		// }
-		// else {
-        //     qd_dot[0] = 0.0;
-        //     qd_dot[1] = 0.0;
-		// 	qd_dot[2] = 0.0;
-		// }
-		qd[0] = parsedCsv[pointer_of][0];
-		qd[1] = parsedCsv[pointer_of][1];
-		qd[2] = parsedCsv[pointer_of][2];
-		
-		prev_secs = secs;
-		// ROS_INFO("-dot: previous:   |   qd0: %lf,    qd1: %lf,    qd2: %lf", qd_dot[0], qd_dot[1], qd_dot[2]);
-		ROS_INFO("secs: %lf   |   qd0: %lf,    qd1: %lf,    qd2: %lf", secs, qd[0], qd[1], qd[2]);
-
-		errorq[0] = qd[0] - ls_position;
-		errorq[1] = qd[1] - le_position;
-		errorq[2] = qd[2] - re_position;
-
-		error_qdot[0] = qd_dot[0] - ls_velocity;
-		error_qdot[1] = qd_dot[1] - le_velocity;
-		error_qdot[2] = qd_dot[2] - re_velocity;
-
-		torq[0] = -((Kp * errorq[0]) + (Kd * error_qdot[0]));
-		torq[1] = (Kp * errorq[1]) + (Kd * error_qdot[1]);
-		torq[2] = -((Kp * errorq[2]) + (Kd * error_qdot[2]));
-
-		robot.setCmd(LEFT_SHOULDER, torq[0]);
-		robot.setCmd(LEFT_ELBOW, torq[1]);
-		robot.setCmd(RIGHT_ELBOW, torq[2]);
-
-		pointer_of ++;
-		// STOP -- 2021 alex gripper control
-
+		limit_msg.data = robot.isLimitReached(LEFT_SHOULDER);
+		ls_limit_pub.publish(limit_msg);
+		limit_msg.data = robot.isLimitReached(LEFT_ELBOW);
+		le_limit_pub.publish(limit_msg);
+		limit_msg.data = robot.isLimitReached(RIGHT_ELBOW);
+		re_limit_pub.publish(limit_msg);
 		/*
 		if(ready_to_grip_left)
 			left_fsr_update();
