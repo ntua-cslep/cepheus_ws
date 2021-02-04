@@ -1,2 +1,14 @@
 build/
 devel/
+
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.o
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/rtd-dm7820.ko
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/.*.cmd
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.ko
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/.tmp_versions
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/rtd-dm7820.mod.c
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/.*.d
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.symvers
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.order
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.markers
+src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*~
