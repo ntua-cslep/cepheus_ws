@@ -8,42 +8,68 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
 
+#define POS_FILTER 0.005
+#define VEL_FILTER 0.05
+#define TORQUE_LIMIT 0.001
 
-double ls_position, le_position, re_position;
-double ls_velocity, le_velocity, re_velocity;
+
+double ls_position = 0.0, le_position = 0.0, re_position = 0.0;
+// double ls_position_prev, le_position_prev, re_position_prev;
+double ls_velocity = 0.0, le_velocity = 0.0, re_velocity = 0.0;
+// double ls_velocity_prev, le_velocity_prev, re_velocity_prev;
 bool ls_initialized = false;
 bool le_initialized = false;
 bool re_initialized = false;
+bool ls_first_time = true;
+bool le_first_time = true;
+bool re_first_time = true;
 bool start_moving = false;
 
 
 void lsPosCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	ls_position = cmd->data;
+	if (abs(cmd->data - ls_position) > POS_FILTER)
+		return;
+	else
+		ls_position = cmd->data;
 }
 
 
 void lePosCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	le_position = cmd->data;
-
+	if (abs(cmd->data - le_position) > POS_FILTER)
+		return;
+	else
+		le_position = cmd->data;
 }
 
 void rePosCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	re_position = cmd->data;
+	if (abs(cmd->data - re_position) > POS_FILTER)
+		return;
+	else
+		re_position = cmd->data;
 }
 
 
 void lsVelCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	ls_velocity = cmd->data;
+	if (abs(cmd->data - ls_velocity) > VEL_FILTER)
+		return;
+	else
+		ls_velocity = cmd->data;
 }
 
 
 void leVelCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	le_velocity = cmd->data;
+	if (abs(cmd->data - le_velocity) > VEL_FILTER)
+		return;
+	else
+		le_velocity = cmd->data;
 }
 
 
 void reVelCallback(const std_msgs::Float64::ConstPtr& cmd) {
-	re_velocity = cmd->data;
+	if (abs(cmd->data - re_velocity) > VEL_FILTER)
+		return;
+	else
+		re_velocity = cmd->data;
 }
 
 
@@ -70,6 +96,13 @@ void startMovingCallback(const std_msgs::Bool::ConstPtr& msg) {
 }
 
 
+// double filter_torque(double prev, double next) {
+// 	if (abs(prev - next) > TORQUE_LIMIT)
+// 		next = prev;
+// 	return next;
+// }
+
+
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "alex_gripper_control_node", ros::init_options::NoSigintHandler);
 
@@ -82,8 +115,12 @@ int main(int argc, char** argv) {
 	ros::Publisher ls_offset_pub = nh.advertise<std_msgs::Float64>("set_left_shoulder_offset", 1);
 	ros::Publisher le_offset_pub = nh.advertise<std_msgs::Float64>("set_left_elbow_offset", 1);
 	ros::Publisher re_offset_pub = nh.advertise<std_msgs::Float64>("set_right_elbow_offset", 1);
+	ros::Publisher ls_qd_pub = nh.advertise<std_msgs::Float64>("set_left_shoulder_qd", 1);
+	ros::Publisher le_qd_pub = nh.advertise<std_msgs::Float64>("set_left_elbow_qd", 1);
+	ros::Publisher re_qd_pub = nh.advertise<std_msgs::Float64>("set_right_elbow_qd", 1);
 
 	ros::Publisher lar_pub = nh.advertise<std_msgs::UInt16>("LAR", 1);
+	ros::Publisher secs_pub = nh.advertise<std_msgs::Float64>("secs", 1);
 
 	ros::Subscriber ls_pos_sub = nh.subscribe("read_left_shoulder_position", 1, lsPosCallback);
 	ros::Subscriber le_pos_sub = nh.subscribe("read_left_elbow_position", 1, lePosCallback);
@@ -102,14 +139,21 @@ int main(int argc, char** argv) {
 	ros::Rate loop_rate(rate);
 
 	double errorq[3];
-	for (int i = 0; i < 3; i++)
-		errorq[i] = 0.0;
-
 	double error_qdot[3];
 	double torq[3];
+	double prev_torq[3];
 	double qd[3];
 	double qd_dot[3];
-	// final posa
+
+	for (int i = 0; i < 3; i++) {
+		errorq[i] = 0.0;
+		error_qdot[i] = 0.0;
+		torq[i] = 0.0;
+		prev_torq[i] = 0.0;
+		qd[i] = 0.0;
+		qd_dot[i] = 0.0;
+	}
+	// final poza
 	double q1_init = -60 * (M_PI / 180);
 	double q2_init = 105 * (M_PI / 180);
 	double q3_init = 45 * (M_PI / 180);
@@ -117,8 +161,8 @@ int main(int argc, char** argv) {
 	double theta0_des = 90 * (M_PI / 180);
 	double theta0_desdot = 0.0;
 
-	double Kp = 0.08;
-	double Kd = 0.008;
+	double Kp = 0.06;
+	double Kd = 0.006;
 	double a00 = 2.328090369367525;
 	double a01 = 0.331762469609965;
 	double a02 = 0.247736831332797;
@@ -146,19 +190,25 @@ int main(int argc, char** argv) {
 	double prev_secs = 0.0;
 	bool ls_moved = false;
 	bool re_moved = false;
-	bool ls_first_time = true;
-	bool le_first_time = true;
-	bool re_first_time = true;
+	bool kati = true;
+	bool kati2 = true;
+	bool kati3 = true;
 	bool first_time_movement = true;
 
 	std_msgs::Float64 torque;
 	std_msgs::Float64 offset;
+	std_msgs::Float64 qd_msg;
+	std_msgs::Float64 _secs;
 	std_msgs::UInt16 lar;
 	bool initialized = false;
 	sleep(4);
 	double secs, ls_time, le_time, re_time, move_time;
 
 	while (ros::ok()) {
+
+		for (int i = 0; i < 3; i++) {
+			prev_torq[i] = torq[i];
+		}
 
 		curr_time = ros::Time::now();
 		all_time = curr_time - t_beg;
@@ -168,7 +218,29 @@ int main(int argc, char** argv) {
 		if (!initialized) {
 			if (!ls_initialized) {
 				// initialize ls
-				error_qdot[0] = 0.1 + ls_velocity;
+				// if (kati) {
+				// 	ls_time = secs;
+				// 	kati =false;
+				// }
+                // s = (0.0000002469135802469135 * pow(secs - ls_time, 5)) + (-0.00001851851851851852* pow(secs - ls_time, 4)) + (0.0003703703703703703* pow(secs - ls_time, 3))+(-5.921189464667501*pow(10,-17)* (secs - ls_time));
+				// s_dot = (5 * 0.0000002469135802469135 * pow(secs - ls_time, 4)) + (4 * -0.00001851851851851852 * pow(secs - ls_time, 3)) + (3 * 0.0003703703703703703* pow(secs - ls_time, 2))-5.921189464667501*pow(10,-17);
+				
+				// qd[0] = (2.5) * s;
+			    // qd_dot[0] = (2.5) * s_dot;
+
+				// error_qdot[0] = qd_dot[0] + ls_velocity;
+				// error_qdot[1] = 0 - le_velocity;
+				// error_qdot[2] = 0 + re_velocity;
+
+				// errorq[0] = qd[0] + ls_position;
+				// errorq[1] = 0 - le_position;
+				// errorq[2] = 0 + re_position;
+
+				// torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
+				// torq[1] = Kp/3 * errorq[1] + Kd/3 * error_qdot[1];
+				// torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
+
+				error_qdot[0] = 0.08 + ls_velocity;
 				error_qdot[1] = 0 - le_velocity;
 				error_qdot[2] = 0 + re_velocity;
 
@@ -176,9 +248,9 @@ int main(int argc, char** argv) {
 				errorq[1] = 0 - le_position;
 				errorq[2] = 0 + re_position;
 
-				torq[0] = - (Kp/4 * error_qdot[0] + Kd/4 * errorq[0]);
-				torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
-				torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
+				torq[0] = - (Kp/5 * error_qdot[0] + Kd/5 * errorq[0]);
+				torq[1] = Kp/6 * errorq[1] + Kd/6 * error_qdot[1];
+				torq[2] = - (Kp/6 * errorq[2] + Kd/6 * error_qdot[2]);
 
 			} else if (!re_initialized) {
 				if (!ls_moved) {
@@ -190,7 +262,7 @@ int main(int argc, char** argv) {
 
 						ls_first_time = false;
 						ls_time = secs;
-						continue;
+						ls_position = qd1_init;
 					}
 
 					s = (0.00006 * pow(secs - ls_time, 5)) + (-0.0015 * pow(secs - ls_time, 4)) + (0.01 * pow(secs - ls_time, 3));
@@ -208,7 +280,7 @@ int main(int argc, char** argv) {
 					errorq[2] = 0 + re_position;
 
 					torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
-					torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
+					torq[1] = Kp/2 * errorq[1] + Kd/2 * error_qdot[1];
 					torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
 
 					// this movement is 10 secs
@@ -216,17 +288,39 @@ int main(int argc, char** argv) {
 						ls_moved = true;
 				} else {
 					// initialize right elbow
+					// if (kati2) {
+					// 	ls_time = secs;
+					// 	kati2 =false;
+					// }
+					// s = (0.0000002469135802469135 * pow(secs - ls_time, 5)) + (-0.00001851851851851852* pow(secs - ls_time, 4)) + (0.0003703703703703703* pow(secs - ls_time, 3))+(-5.921189464667501*pow(10,-17)* (secs - ls_time));
+					// s_dot = (5 * 0.0000002469135802469135 * pow(secs - ls_time, 4)) + (4 * -0.00001851851851851852 * pow(secs - ls_time, 3)) + (3 * 0.0003703703703703703* pow(secs - ls_time, 2))-5.921189464667501*pow(10,-17);
+					
+					// qd[2] = (2.5) * s;
+					// qd_dot[2] = (2.5) * s_dot;
+
+					// error_qdot[0] = 0 - ls_velocity;
+					// error_qdot[1] = 0 - le_velocity;
+					// error_qdot[2] = qd_dot[2] + re_velocity;
+
+					// errorq[0] = q1_init - ls_position;
+					// errorq[1] = 0 - le_position;
+					// errorq[2] = qd[2] + re_position;
+
+					// torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
+					// torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
+					// torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
+  
 					error_qdot[0] = 0 - ls_velocity;
 					error_qdot[1] = 0 - le_velocity;
-					error_qdot[2] = 0.1 + re_velocity;
+					error_qdot[2] = 0.08 + re_velocity;
 
 					errorq[0] = q1_init - ls_position;
 					errorq[1] = 0 - le_position;
 					errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
 
 					torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
-					torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
-					torq[2] = - (Kp/4 * error_qdot[2] + Kd/4 * errorq[2]);
+					torq[1] = Kp/2 * errorq[1] + Kd/2 * error_qdot[1];
+					torq[2] = - (Kp/5 * error_qdot[2] + Kd/5 * errorq[2]);
 				}
 			} else if (!le_initialized) {
 				if (!re_moved) {
@@ -238,7 +332,7 @@ int main(int argc, char** argv) {
 
 						re_first_time = false;
 						re_time = secs;
-						continue;
+						re_position = qd3_init;
 					}
 
 					s = (0.00006 * pow(secs - re_time, 5)) + (-0.0015 * pow(secs - re_time, 4)) + (0.01 * pow(secs - re_time, 3));
@@ -265,8 +359,30 @@ int main(int argc, char** argv) {
 
 				} else {
 					// initialize left elbow
+					// if (kati3) {
+					// 	ls_time = secs;
+					// 	kati3 =false;
+					// }
+					// s = (0.0000002469135802469135 * pow(secs - ls_time, 5)) + (-0.00001851851851851852* pow(secs - ls_time, 4)) + (0.0003703703703703703* pow(secs - ls_time, 3))+(-5.921189464667501*pow(10,-17)* (secs - ls_time));
+					// s_dot = (5 * 0.0000002469135802469135 * pow(secs - ls_time, 4)) + (4 * -0.00001851851851851852 * pow(secs - ls_time, 3)) + (3 * 0.0003703703703703703* pow(secs - ls_time, 2))-5.921189464667501*pow(10,-17);
+					
+					// qd[1] = (2.5) * s;
+					// qd_dot[1] = (2.5) * s_dot;
+
+					// error_qdot[0] = 0 - ls_velocity;
+					// error_qdot[1] = qd_dot[1]  - le_velocity;
+					// error_qdot[2] = 0 - re_velocity;
+
+					// errorq[0] = q1_init - ls_position;
+					// errorq[1] = qd[1] - le_position;
+					// errorq[2] = q3_init - re_position;
+
+					// torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
+					// torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
+					// torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
+						
 					error_qdot[0] = 0 - ls_velocity;
-					error_qdot[1] = 0.1 - le_velocity;
+					error_qdot[1] = 0.08 - le_velocity;
 					error_qdot[2] = 0 - re_velocity;
 
 					errorq[0] = q1_init - ls_position;
@@ -274,7 +390,7 @@ int main(int argc, char** argv) {
 					errorq[2] = q3_init - re_position;
 
 					torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
-					torq[1] = Kp/4 * error_qdot[1] + Kd/4 * errorq[1];
+					torq[1] = Kp/6 * error_qdot[1] + Kd/6 * errorq[1];
 					torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
 				}
 			} else {
@@ -286,7 +402,7 @@ int main(int argc, char** argv) {
 
 					le_first_time = false;
 					le_time = secs;
-					continue;
+					le_position = qd2_init;
 				}
 
 				s = (0.00006 * pow(secs - le_time, 5)) + (-0.0015 * pow(secs - le_time, 4)) + (0.01 * pow(secs - le_time, 3));
@@ -328,6 +444,9 @@ int main(int argc, char** argv) {
 		} else {
 			// calculate secs
 			if (first_time_movement) {
+				qd[0] = q1_init;
+				qd[1] = q2_init;
+				qd[2] = q3_init;
 				move_time = secs;
 				first_time_movement = false;
 			}
@@ -360,7 +479,7 @@ int main(int argc, char** argv) {
 				d3 = d03 + d13 + d23 + d33;
 
 				S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
-				s_dot = (5 * 0.00006 * pow((secs - move_time)-15.0, 4)) + (4 * -0.0015 * pow((secs - move_time)-15.0, 3)) + (3 * 0.01 * pow((secs - move_time)-15.0, 2));
+				s_dot = (5 * 0.00006 * pow((secs - move_time), 4)) + (4 * -0.0015 * pow((secs - move_time), 3)) + (3 * 0.01 * pow((secs - move_time), 2));
 				xe_desdot = - 0.1 * s_dot;
 
 				theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S;
@@ -400,16 +519,29 @@ int main(int argc, char** argv) {
 		}
 
 		prev_secs = secs;
+		
+		// ROS_INFO("secs: %lf   |   errorq[0]: %lf,    error_qdot[0]: %lf", secs, errorq[0], error_qdot[0]);
 
+		_secs.data = secs;
+		secs_pub.publish(_secs);
+		// torque.data = filter_torque(prev_torq[0], torq[0]);
 		torque.data = torq[0];
 		ls_torque_pub.publish(torque);
-
+		// torque.data = filter_torque(prev_torq[1], torq[1]);
 		torque.data = torq[1];
 		le_torque_pub.publish(torque);
-
+		// torque.data = filter_torque(prev_torq[2], torq[2]);
 		torque.data = torq[2];
 		re_torque_pub.publish(torque);
-			ros::spinOnce();
+
+		qd_msg.data = qd[0];
+		ls_qd_pub.publish(qd_msg);
+		qd_msg.data = qd[1];
+		le_qd_pub.publish(qd_msg);
+		qd_msg.data = qd[2];
+		re_qd_pub.publish(qd_msg);
+
+		ros::spinOnce();
 		loop_rate.sleep();
 	}
 

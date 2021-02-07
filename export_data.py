@@ -19,6 +19,7 @@ def get_list_from_file(file, topic):
 			l = line.split(',', 1)[1]
 			if l == 'field.data\n':
 				continue
+			# print(line.strip('\n'))
 			f_contents.append(l.strip('\n'))
 	return f_contents
 
@@ -47,6 +48,7 @@ def main():
 	filepaths = []
 	for txt_file in txt_files:
 		filepath = mypath + '/' + txt_file
+		# print(filepath)
 		filepaths.append(filepath)
 
 	# get file contents
@@ -54,16 +56,19 @@ def main():
 	f_contents = []
 	for file in filepaths:
 		topic = file.split('bag.', 1)[1].split('.txt', 1)[0]
+		# print(topic)
+		# if topic not in ['set_ls_qd', 'set_le_qd', 'set_re_qd']:
 		f_contents.append(get_list_from_file(file, topic))
 	print('Done')
-
+	# print (f_contents)
 	# write to csv
 	csv_filename = f_prefix + '.csv'
 	with open(csv_filename, "w") as f:
 		writer = csv.writer(f)
+		# print(list(zip(*f_contents)))
 		writer.writerows(list(zip(*f_contents)))
 
-	# delete all csv
+	# delete all txt
 	for (dirpath, dirnames, filenames) in os.walk(mypath):
 		for filename in filenames:
 			if filename.endswith('.txt'):

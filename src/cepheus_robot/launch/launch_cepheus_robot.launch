@@ -41,7 +41,7 @@
 		<param name="loop_rate" value="200"/>
 	</node>
 
-	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus /secs /set_left_shoulder_effort /set_left_elbow_effort /set_right_elbow_effort /read_left_shoulder_position /read_left_elbow_position /read_right_elbow_position /read_left_shoulder_velocity /read_left_elbow_velocity /read_right_elbow_velocity" respawn="true" output="screen"/>
+	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus /secs /set_left_shoulder_effort /set_left_elbow_effort /set_right_elbow_effort /set_left_shoulder_qd /set_left_elbow_qd /set_right_elbow_qd /read_left_shoulder_position /read_left_elbow_position /read_right_elbow_position /read_left_shoulder_velocity /read_left_elbow_velocity /read_right_elbow_velocity" respawn="true" output="screen"/>
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
 	<param name="use_reaction_wheel" value="True"/>

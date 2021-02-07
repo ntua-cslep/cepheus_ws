@@ -1298,7 +1298,7 @@ CepheusHW::CepheusHW()
 	}
 	//Pelekoudas init cmd values to 0;
 	for (int i=4; i<8; i++)
-		cmd[i] = 0.000000001;
+		cmd[i] = 0.0000000001;
 
 	int16_t encoder_init_value = 0;
 
