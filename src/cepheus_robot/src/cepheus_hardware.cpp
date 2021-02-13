@@ -1201,11 +1201,11 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 	//pos[4]=  (double)(encoder_5/121027.38703744316) + offset_pos[4]; (old motors with 190:1 reduction)
 	if (offset_pos[4])
-		pos[4] = - ( (double)(encoder_5/118366.714)) + offset_pos[4];
+		pos[4] = - ( (double)(encoder_6/118366.714)) + offset_pos[4];
 	else
-		pos[4] = ( (double)(encoder_5/118366.714) );//for new motors (silver)
+		pos[4] = ( (double)(encoder_6/118366.714) );//for new motors (silver)
 
-	pos[5]= (double)(encoder_6/118366.714) + offset_pos[5];//for new motors (silver)
+	pos[5]= (double)(encoder_5/118366.714) + offset_pos[5];//for new motors (silver)
 
 	//pos[5]=  (double)(encoder_6/121027.38703744316) - (double)(encoder_5/121027.38703744316) + offset_pos[5];
 	//pos[5]=  (double)(encoder_6/121027.38703744316) - pos[4] + offset_pos[5];
@@ -1224,7 +1224,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 	//ROS_INFO(" 6 %lf 7 %lf", (double)(encoder_7/121027.38703744316), (double)(encoder_8/121027.38703744316));
 	//ROS_INFO("(1)pos[4]: %lf  | (2)pos[5]: %lf  | (3)pos[7]: %lf", pos[4], pos[5], pos[7]);
 
-//	ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, re: %f", pos[4], pos[5], pos[6], pos[7]);
+	// ROS_INFO("readEncoders: ls: %f, le: %f, rw: %f, re: %f", pos[4], pos[5], pos[6], pos[7]);
 
 	//ROS_INFO("DT: %lf", dt.toSec());
 	// Speed Calculation radians/sec
@@ -1298,7 +1298,7 @@ CepheusHW::CepheusHW()
 	}
 	//Pelekoudas init cmd values to 0;
 	for (int i=4; i<8; i++)
-		cmd[i] = 0.0000000001;
+		cmd[i] = 0.00000001;
 
 	int16_t encoder_init_value = 0;
 

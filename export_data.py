@@ -69,11 +69,11 @@ def main():
 		writer.writerows(list(zip(*f_contents)))
 
 	# delete all txt
-	for (dirpath, dirnames, filenames) in os.walk(mypath):
-		for filename in filenames:
-			if filename.endswith('.txt'):
-				os.remove(mypath + '/' + filename)
-		break
+	# for (dirpath, dirnames, filenames) in os.walk(mypath):
+	# 	for filename in filenames:
+	# 		if filename.endswith('.txt'):
+	# 			os.remove(mypath + '/' + filename)
+	# 	break
 
 if __name__ == "__main__":
 	main()

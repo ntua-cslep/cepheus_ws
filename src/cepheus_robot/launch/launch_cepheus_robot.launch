@@ -21,7 +21,7 @@
 		<!--param name="right_elbow_limit_pos" value="-1.6231" /-->
 		<param name="right_elbow_limit_pos" value="1.811219" />
 		<!-- For the param below : False if no planner needed. It exists for gripper feedback to the planner. Nessesary if the robots tracks, chases and tries to grasp something -->
-		<param name="use_with_chase_planner" value="True" />          
+		<param name="use_with_chase_planner" value="True" />
 	</node>
 
 	<node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen" required="true">
@@ -41,7 +41,31 @@
 		<param name="loop_rate" value="200"/>
 	</node>
 
-	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus /secs /set_left_shoulder_effort /set_left_elbow_effort /set_right_elbow_effort /set_left_shoulder_qd /set_left_elbow_qd /set_right_elbow_qd /read_left_shoulder_position /read_left_elbow_position /read_right_elbow_position /read_left_shoulder_velocity /read_left_elbow_velocity /read_right_elbow_velocity" respawn="true" output="screen"/>
+	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus  /secs 
+																														/set_left_shoulder_effort 
+																														/set_left_elbow_effort 
+																														/set_right_elbow_effort 
+																														/set_left_shoulder_qd 
+																														/set_left_elbow_qd 
+																														/set_right_elbow_qd 
+																														/read_left_shoulder_position 
+																														/read_left_elbow_position 
+																														/read_right_elbow_position 
+																														/read_left_shoulder_velocity 
+																														/read_left_elbow_velocity 
+																														/read_right_elbow_velocity
+																														/left_shoulder_pos
+																														/left_elbow_pos
+																														/right_elbow_pos
+																														/left_shoulder_vel
+																														/left_elbow_vel
+																														/right_elbow_vel
+																														/FSR_soft
+																														/FSR_hard
+																														/ls_error
+																														/le_error
+																														/re_error
+																														/map_to_alxgripper" respawn="true" output="screen"/>
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
 	<param name="use_reaction_wheel" value="True"/>
@@ -66,10 +90,10 @@
 	<!--node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen" required="true">
 	</node-->
 
-	<!--include file="$(find phase_space)/launch/track_two_objects.launch">
+	<include file="$(find phase_space)/launch/track_two_objects_alex.launch">
 		<arg name="turn_rviz_on" value="false" />
 		<arg name="turn_phase_space_on" value="true" />
-	</include-->
+	</include>
 
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" /-->
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" /-->

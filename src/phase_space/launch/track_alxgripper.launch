@@ -1,0 +1,45 @@
+<launch>
+
+   <!-- SprGrf addition - if we launch this file solo, not from the harware.launch, there was not a parameter description to appear in Rviz --> 
+   <!-- <param name="robot_description" command="cat $(find cepheus_robot)/model/cepheus.urdf" />    -->
+
+   <!-- <param name="robot_description" command="cat $(find cepheus_robot)/model/alxgripper.urdf" />    -->
+
+
+  <!-- select the object by name -->
+
+    <arg name="object" default="alxgripper" />
+
+
+
+  <!-- decide wether to visualize the object or not -->
+  <arg name="turn_rviz_on" default="false" />
+  <arg name="turn_phase_space_on" default="true" />
+
+  <!-- DO NOT EDIT BELOW, EVERYTHING IS HANDLED AUTOMATICALLY IF YOU FOLLOW THE INSTRUCTIONS GIVEN IN THE README -->
+
+  <rosparam command="load" file="$(find phase_space)/config/$(arg object).yaml" />
+
+  <node name="track_$(arg object)" pkg="phase_space" type="track_body_node" output="screen">
+    <param name="reference_frame" value="/map" />
+    <param name="object_frame" value="$(arg object)"/>
+  </node>
+
+  <group ns="$(arg object)">
+
+    <!-- load the urdf file of your object -->
+    <arg name="model" default="$(find phase_space)/urdf/object.urdf.xacro"/>
+    <param name="robot_description" command="$(find xacro)/xacro.py $(arg model) object:=$(arg object)"/>
+
+  </group>
+
+
+
+ <group if="$(arg turn_phase_space_on)">
+  <!-- and launch the phase space client -->
+ <include file="$(find phase_space)/launch/phase_space.launch">
+    <arg name="turn_rviz_on" value="$(arg turn_rviz_on)" />
+  </include>
+</group>
+
+</launch>

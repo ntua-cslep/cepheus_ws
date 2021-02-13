@@ -39,7 +39,7 @@
          <cylinder length="0.43" radius="0.2"/>
       </geometry>
     </collision>
-  </link>
+</link>
 
   <link name="reaction_wheel">
     <visual>
@@ -358,7 +358,7 @@
 
 
 
-  <link
+  <!-- <link
     name="left_grip">
     <inertial>
       <origin
@@ -392,9 +392,9 @@
         <box size="0.085 0.07 0.05"/>
       </geometry>
     </collision>
-  </link>
+  </link> -->
 
-  <joint
+  <!-- <joint
     name="left_wrist"
     type="revolute">
     <origin
@@ -410,7 +410,7 @@
       lower="20"
       upper="150"
       effort="1"
-      velocity="10" />
+      velocity="10" /> -->
     <!--calibration
       rising="-5"
       falling="5" />
@@ -422,9 +422,9 @@
       soft_lower="-5"
       k_position="1"
       k_velocity="1" /-->
-  </joint>
+  <!-- </joint> -->
 
-  <link name="left_finger">
+  <!-- <link name="left_finger">
     <visual>
       <geometry>
         <box size="0.09 .05 .03"/>
@@ -436,9 +436,9 @@
       <mass value="0.15"/>
       <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.04" iyz="0.0" izz="0.02"/>
     </inertial>
-  </link>
+  </link> -->
 
-  <joint
+  <!-- <joint
     name="left_finger_joint"
     type="revolute">
     <origin
@@ -455,7 +455,7 @@
       upper="1.35"
       effort="1"
       velocity="10" />
-  </joint>
+  </joint> -->
 
   <!--link name="right_mouse">
     <visual>
