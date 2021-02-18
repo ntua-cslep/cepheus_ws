@@ -1,6 +1,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <math.h>
+#include <iostream>
+#include <Eigen/Dense>
 
 #include <ros/ros.h>
 #include <std_msgs/UInt8.h>
@@ -8,10 +10,41 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
 
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/WrenchStamped.h>
+#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <std_msgs/Float64.h>
+#include <std_srvs/SetBool.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+
+
+#include "digital_filter.h"
+
 #define POS_FILTER 0.005
 #define VEL_FILTER 0.05
 #define TORQUE_LIMIT 0.001
 
+DigitalFilter *f_x1;
+DigitalFilter *f_x2;
+DigitalFilter *f_x3;
+DigitalFilter *f_y1;
+DigitalFilter *f_y2;
+DigitalFilter *f_y3;
+DigitalFilter *f_z1;
+DigitalFilter *f_z2;
+DigitalFilter *f_z3;
+
+enum PhaseSpaceEnumeration{
+	CEPHEUS = 0,
+	ALX_GRIPPER,
+	ASSIST
+};
 
 double ls_position = 0.0, le_position = 0.0, re_position = 0.0;
 // double ls_position_prev, le_position_prev, re_position_prev;
@@ -24,6 +57,76 @@ bool ls_first_time = true;
 bool le_first_time = true;
 bool re_first_time = true;
 bool start_moving = false;
+
+double ps_x[3];
+double ps_y[3];
+double ps_th[3];
+
+
+void PSAlxCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+	geometry_msgs::TransformStamped temp;
+	temp = *msg;
+
+	double x = temp.transform.rotation.x;
+	double y = temp.transform.rotation.y;
+	double z = temp.transform.rotation.z;
+	double w = temp.transform.rotation.w;
+	double roll,pitch,yaw;
+
+	tf::Quaternion q(x, y, z, w);
+	tf::Matrix3x3 m(q);
+	m.getRPY(roll,pitch,yaw);
+
+	// pose_stamp = temp.header.stamp;
+	ps_x[ALX_GRIPPER] = f_x1->filter(temp.transform.translation.x);
+	ps_y[ALX_GRIPPER] = f_y1->filter(temp.transform.translation.y);
+	ps_th[ALX_GRIPPER] = f_z1->filter(yaw);
+	return;
+}
+
+
+void PSAssistCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+	geometry_msgs::TransformStamped temp;
+	temp = *msg;
+
+	double x = temp.transform.rotation.x;
+	double y = temp.transform.rotation.y;
+	double z = temp.transform.rotation.z;
+	double w = temp.transform.rotation.w;
+	double roll,pitch,yaw;
+
+	tf::Quaternion q(x, y, z, w);
+	tf::Matrix3x3 m(q);
+	m.getRPY(roll, pitch, yaw);
+
+	// pose_stamp = temp.header.stamp;
+	ps_x[ASSIST] = f_x2->filter(temp.transform.translation.x);
+	ps_y[ASSIST] = f_y2->filter(temp.transform.translation.y);
+	ps_th[ASSIST] = f_z2->filter(yaw);
+	return;
+}
+
+
+void PSCepheusCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+	geometry_msgs::TransformStamped temp;
+	temp = *msg;
+
+	double x = temp.transform.rotation.x;
+	double y = temp.transform.rotation.y;
+	double z = temp.transform.rotation.z;
+	double w = temp.transform.rotation.w;
+	double roll, pitch, yaw;
+
+	tf::Quaternion q(x, y, z, w);
+	tf::Matrix3x3 m(q);
+	m.getRPY(roll, pitch, yaw);
+
+	// pose_stamp = temp.header.stamp;
+	ps_x[CEPHEUS] = f_x3->filter(temp.transform.translation.x);
+	ps_y[CEPHEUS] = f_y3->filter(temp.transform.translation.y);
+	ps_th[CEPHEUS] = f_z3->filter(yaw);
+	return;
+}
 
 
 void lsPosCallback(const std_msgs::Float64::ConstPtr& cmd) {
@@ -110,6 +213,19 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "alex_gripper_control_node", ros::init_options::NoSigintHandler);
 
 	ros::NodeHandle nh;
+	f_x1 = new DigitalFilter(10, 0.0);
+	f_x2 = new DigitalFilter(10, 0.0);
+	f_x3 = new DigitalFilter(10, 0.0);
+	f_y1 = new DigitalFilter(10, 0.0);
+	f_y2 = new DigitalFilter(10, 0.0);
+	f_y3 = new DigitalFilter(10, 0.0);
+	f_z1 = new DigitalFilter(10, 0.0);
+	f_z2 = new DigitalFilter(10, 0.0);
+	f_z3 = new DigitalFilter(10, 0.0);
+	
+	ros::Subscriber ps_alx_sub =  nh.subscribe("map_to_alxgripper", 1, PSAlxCallback);
+	ros::Subscriber ps_assist_sub =  nh.subscribe("map_to_assist_robot", 1, PSAssistCallback);
+	ros::Subscriber ps_cepheus_sub =  nh.subscribe("map_to_cepheus", 1, PSCepheusCallback);
 
 	// ros::Subscriber phase_space_sub =  nh.subscribe("joint_states", 1, statesCallback);
 	ros::Publisher ls_torque_pub = nh.advertise<std_msgs::Float64>("set_left_shoulder_effort", 1);
@@ -459,53 +575,22 @@ int main(int argc, char** argv) {
 		} else {
 			// calculate secs
 			if (first_time_movement) {
-				qd[0] = q1_init;
-				qd[1] = q2_init;
-				qd[2] = q3_init;
+				// qd[0] = q1_init;
+				// qd[1] = q2_init;
+				// qd[2] = q3_init;
 				move_time = secs;
+				/*xE_in = ps_x[1]; //(xE is given from phasespace)
+				xE_fin = ps_x[2]; //(xlar is the LAR's marker given from the urdf)
+				yE_in = ps_y[1]; //(yE is given from phasespace)
+				thetae_in = ps_th[1]; //(thE is given from phasespace)
+				xE_dot = 0.0;
+				yE_dot = 0.0;
+				thE_dot = 0.0;*/
 				first_time_movement = false;
 			}
 
 			if ((secs - move_time) <= 10.0) {
 
-				a = 0.143318141419581;
-				b = 0.331623152993806;
-				c = 0.257342875265441;
-				d = 0.257361884747802;
-				d00 = a00;
-				d10 = a01 * cos(qd[0]);
-				d20 = a02 * cos(qd[0] + qd[1]);
-				d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
-				d01 = d10;
-				d11 = a11;
-				d21 = a21 * cos(qd[1]);
-				d31 = a31 * cos(qd[1] + qd[2]);
-				d02 = d20;
-				d12 = d21;
-				d22 = a22;
-				d32 = a32 * cos(qd[2]);
-				d03 = d30;
-				d13 = d31;
-				d23 = d32;
-				d33 = a33;
-				d0 = d00 + d10 + d20 + d30;
-				d1 = d01 + d11 + d21 + d31;
-				d2 = d02 + d12 + d22 + d32;
-				d3 = d03 + d13 + d23 + d33;
-
-				S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
-				s_dot = (5 * 0.00006 * pow((secs - move_time), 4)) + (4 * -0.0015 * pow((secs - move_time), 3)) + (3 * 0.01 * pow((secs - move_time), 2));
-				xe_desdot = - 0.1 * s_dot;
-
-				theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S;
-				qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S; 
-				qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot)/S;
-				qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot)/S;
-
-				qd[0] = qd_dot[0] * (secs - prev_secs) + qd[0];
-				qd[1] = qd_dot[1] * (secs - prev_secs) + qd[1];
-				qd[2] = qd_dot[2] * (secs - prev_secs) + qd[2];
-				theta0_des = theta0_desdot * (secs - prev_secs) + theta0_des;
 			}
 			else {
 				qd_dot[0] = 0.0;
@@ -584,3 +669,159 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
+
+
+// ////////////////////////////////////////////////////////////initial values////////////////////////////////////////////////////////////////////////////
+// 	if (first_time){
+// 	xE_in=xE; //(xE is given from phasespace)
+// 	xE_fin=xLar //(xlar is the LAR's marker given from the urdf)
+// 	yE_in=yE; //(yE is given from phasespace)
+// 	thetae_in=thE; //(thE is given from phasespace)
+// 	xE_dot=0;
+// 	yE_dot=0;
+// 	thE_dot=0;
+// 	first_time=false;
+// 	}
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+		
+// 	s = (0.000001875 * pow(secs - ls_time, 5)) + (-0.00009375000000000002 * pow(secs - ls_time, 4)) + (0.00125 * pow(secs - ls_time, 3));
+// 	s_dot = (5 * 0.000001875 * pow(secs - ls_time, 4)) + (4 * -0.00009375000000000002 * pow(secs - ls_time, 3)) + (3 * 0.00125  * pow(secs - ls_time, 2));
+	
+// 	xe_des=xE_in+(xE_fin-xE_in)*s; 
+//     ye_des=yE_in;
+//     thetae_des=thetae_in;
+//     xe_desdot=sdot*(xE_fin-xE_in);
+//     ye_desdot=0; 
+//     thetae_desdot=0;
+
+// 	//////////////////// phase space gives//////////
+
+// 	if(!first_time){
+// 	xE=phasespace;
+// 	yE=phasespace;
+// 	thE=phasespace;
+// 	xE_dot=(-xE_prev+xE)/(secs-prev_secs);
+// 	yE_dot=(-yE_prev+yE)/(secs-prev_secs);
+// 	thE_dot=(-thE_prev+thE)/(secs-prev_secs);
+// 	th0=phasespace;
+// 	}
+
+// 	xE_prev=xE;
+// 	yE_prev=yE;
+// 	thE_prev=thE;
+
+// 	////////////////////////
+
+// 	errorx=xe_des-xE;
+//     errory=ye_des-yE;
+//     errorthE=thetae_des-thE;
+
+// 	error=[errorx;errory;errorthE];
+
+// 	errorx_dot=xe_desdot-xE_dot;
+//     errory_dot=ye_desdot-yE_dot;
+//     errorthE_dot=thetae_desdot-thE_dot;
+
+// 	error_dot=[errorx_dot;errory_dot;errorthE_dot];
+
+// 	R0=[cos(th0) -sin(th0) 0;
+//     sin(th0) cos(th0) 0;
+//     0 0 1]; 
+
+// 	Kpp=[Kp 0 0; 0 Kp 0; 0 0 Kp];
+
+// 	Kdd=[Kd 0 0; 0 Kd 0; 0 0 Kd];
+
+// 	Jq=...
+// [(-1).*(a00+a01.*cos(q1)+a02.*cos(q1+q2)+a03.*cos(q1+q2+q3)).*( ...
+//   a00+a11+a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2) ...
+//   +2.*a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1).* ...
+//   (b.*sin(q1)+c.*sin(q1+q2)+d.*sin(q1+q2+q3)),(-1).*c.*sin(q1+q2)+( ...
+//   -1).*d.*sin(q1+q2+q3)+(a22+a33+a12.*cos(q2)+a02.*cos(q1+q2)+2.* ...
+//   a23.*cos(q3)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+a11+a22+ ...
+//   a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.*a23.* ...
+//   cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1).*(b.*sin( ...
+//   q1)+c.*sin(q1+q2)+d.*sin(q1+q2+q3)),(-1).*d.*sin(q1+q2+q3)+(a33+ ...
+//   a23.*cos(q3)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+a11+a22+ ...
+//   a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.*a23.* ...
+//   cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1).*(b.*sin( ...
+//   q1)+c.*sin(q1+q2)+d.*sin(q1+q2+q3));b.*cos(q1)+c.*cos(q1+q2)+d.* ...
+//   cos(q1+q2+q3)+(-1).*(a11+a22+a33+a01.*cos(q1)+2.*a12.*cos(q2)+ ...
+//   a02.*cos(q1+q2)+2.*a23.*cos(q3)+2.*a13.*cos(q2+q3)+a03.*cos(q1+q2+ ...
+//   q3)).*(a00+a11+a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.* ...
+//   cos(q1+q2)+2.*a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+ ...
+//   q3)).^(-1).*(a+b.*cos(q1)+c.*cos(q1+q2)+d.*cos(q1+q2+q3)),c.*cos( ...
+//   q1+q2)+d.*cos(q1+q2+q3)+(-1).*(a22+a33+a12.*cos(q2)+a02.*cos(q1+ ...
+//   q2)+2.*a23.*cos(q3)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+a11+ ...
+//   a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.* ...
+//   a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1).*(a+ ...
+//   b.*cos(q1)+c.*cos(q1+q2)+d.*cos(q1+q2+q3)),d.*cos(q1+q2+q3)+(-1).* ...
+//   (a33+a23.*cos(q3)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+a11+ ...
+//   a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.* ...
+//   a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1).*(a+ ...
+//   b.*cos(q1)+c.*cos(q1+q2)+d.*cos(q1+q2+q3));(a00+a01.*cos(q1)+a02.* ...
+//   cos(q1+q2)+a03.*cos(q1+q2+q3)).*(a00+a11+a22+a33+2.*a01.*cos(q1)+ ...
+//   2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.*a23.*cos(q3)+2.*a13.*cos(q2+ ...
+//   q3)+2.*a03.*cos(q1+q2+q3)).^(-1),(a00+a11+2.*a01.*cos(q1)+a12.* ...
+//   cos(q2)+a02.*cos(q1+q2)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+ ...
+//   a11+a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.* ...
+//   a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1),1+( ...
+//   -1).*(a33+a23.*cos(q3)+a13.*cos(q2+q3)+a03.*cos(q1+q2+q3)).*(a00+ ...
+//   a11+a22+a33+2.*a01.*cos(q1)+2.*a12.*cos(q2)+2.*a02.*cos(q1+q2)+2.* ...
+//   a23.*cos(q3)+2.*a13.*cos(q2+q3)+2.*a03.*cos(q1+q2+q3)).^(-1)];
+
+//     torq=(R0*Jq)'*(Kpp*error+Kdd*error_dot);
+
+// 	torq[0]=;
+// 	torq[1]=;
+// 	torq[2]=;
+
+
+
+
+
+
+
+
+
+
+////////////////////move 10 cm
+
+// a = 0.143318141419581;
+// b = 0.331623152993806;
+// c = 0.257342875265441;
+// d = 0.257361884747802;
+// d00 = a00;
+// d10 = a01 * cos(qd[0]);
+// d20 = a02 * cos(qd[0] + qd[1]);
+// d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
+// d01 = d10;
+// d11 = a11;
+// d21 = a21 * cos(qd[1]);
+// d31 = a31 * cos(qd[1] + qd[2]);
+// d02 = d20;
+// d12 = d21;
+// d22 = a22;
+// d32 = a32 * cos(qd[2]);
+// d03 = d30;
+// d13 = d31;
+// d23 = d32;
+// d33 = a33;
+// d0 = d00 + d10 + d20 + d30;
+// d1 = d01 + d11 + d21 + d31;
+// d2 = d02 + d12 + d22 + d32;
+// d3 = d03 + d13 + d23 + d33;
+
+// S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
+// s_dot = (5 * 0.00006 * pow((secs - move_time), 4)) + (4 * -0.0015 * pow((secs - move_time), 3)) + (3 * 0.01 * pow((secs - move_time), 2));
+// xe_desdot = - 0.1 * s_dot;
+
+// theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S;
+// qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S; 
+// qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot)/S;
+// qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot)/S;
+
+// qd[0] = qd_dot[0] * (secs - prev_secs) + qd[0];
+// qd[1] = qd_dot[1] * (secs - prev_secs) + qd[1];
+// qd[2] = qd_dot[2] * (secs - prev_secs) + qd[2];
+// theta0_des = theta0_desdot * (secs - prev_secs) + theta0_des;
