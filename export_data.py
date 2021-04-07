@@ -58,9 +58,11 @@ def main():
 		topic = file.split('bag.', 1)[1].split('.txt', 1)[0]
 		# print(topic)
 		# if topic not in ['set_ls_qd', 'set_le_qd', 'set_re_qd']:
-		f_contents.append(get_list_from_file(file, topic))
+		l = get_list_from_file(file, topic)
+		print(len(l))
+		f_contents.append(l)
 	print('Done')
-	# print (f_contents)
+	# print (len(f_contents))
 	# write to csv
 	csv_filename = f_prefix + '.csv'
 	with open(csv_filename, "w") as f:

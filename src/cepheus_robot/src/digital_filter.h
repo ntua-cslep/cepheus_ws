@@ -31,9 +31,9 @@ class DigitalFilter {
 
 			for(int i=0;i<len;i++)
 			{
-					x_gain(i) = 1.0/(double)len;
-					x(i) = init_value;
-					y(i) = init_value;
+				x_gain(i) = 1.0/(double)len;
+				x(i) = init_value;
+				y(i) = init_value;
 			}
 			// ROS_INFO_STREAM("Simple Filter initialized with:");
 			// ROS_INFO_STREAM("gains\n" << x_gain);
@@ -45,8 +45,8 @@ class DigitalFilter {
 		{
 			for(int i=(len-1); i>0; i--)//will run len-1 times because the last value will set after
 			{
-					x(i) = x(i-1);
-					y(i) = y(i-1);
+				x(i) = x(i-1);
+				y(i) = y(i-1);
 			}
 			x(0) = newVal;
 			y(0) = x * x_gain;

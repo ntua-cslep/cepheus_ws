@@ -38,7 +38,7 @@
 	</node>
 
 	<node name="alex_gripper_control_node" pkg="cepheus_robot" type="alex_gripper_control_node" output="screen" required="true">
-		<param name="loop_rate" value="200"/>
+		<param name="loop_rate" value="200.0"/>
 	</node>
 
 	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus  /secs 
@@ -65,6 +65,20 @@
 																														/ls_error
 																														/le_error
 																														/re_error
+																														/g_x
+																														/g_y
+																														/g_th
+																														/g_x_dot
+																														/g_y_dot
+																														/g_th_dot
+																														/g_x_desdot
+																														/c_x
+																														/c_y
+																														/c_th
+																														/g_error_x
+																														/g_error_y
+																														/g_error_th
+																														/det
 																														/map_to_alxgripper" respawn="true" output="screen"/>
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
@@ -90,10 +104,10 @@
 	<!--node name="new_base_planner" pkg="cepheus_robot" type="new_base_planner_node" output="screen" required="true">
 	</node-->
 
-	<include file="$(find phase_space)/launch/track_two_objects_alex.launch">
+	<!-- <include file="$(find phase_space)/launch/track_two_objects_alex.launch">
 		<arg name="turn_rviz_on" value="false" />
 		<arg name="turn_phase_space_on" value="true" />
-	</include>
+	</include> -->
 
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" /-->
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" /-->
