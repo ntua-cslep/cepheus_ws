@@ -12,3 +12,9 @@ src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.symvers
 src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.order
 src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*.markers
 src/cepheus_robot/DM7820_Linux_v03.00.00/driver/*~
+src/cepheus_robot/bags/
+src/assist_space_robot/
+src/ueye_cam/
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+export.sh
