@@ -166,7 +166,9 @@ add_executable(cepheus_ctrl src/cepheus_ctrl.cpp)
 #add_executable(cepheus_force_sensor src/bota_FTS.cpp)
 #add_executable(gripper_target_broadcaster src/gripper_target_broadcaster.cpp)
 add_executable(new_base_planner_node src/new_base_planner.cpp)
-add_executable(alex_gripper_control_node src/alex_gripper_control.cpp)
+# add_executable(alex_gripper_control_node src/alex_gripper_control.cpp)
+add_executable(initialise_arm_node src/initialise_arm.cpp)
+add_executable(eross_control_node src/eross_control.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -186,7 +188,9 @@ target_link_libraries(base_planner_node  ${catkin_LIBRARIES} )
 #target_link_libraries(cepheus_force_sensor ${catkin_LIBRARIES})
 #target_link_libraries(gripper_target_broadcaster ${catkin_LIBRARIES})
 target_link_libraries(new_base_planner_node ${catkin_LIBRARIES})
-target_link_libraries(alex_gripper_control_node ${catkin_LIBRARIES})
+# target_link_libraries(alex_gripper_control_node ${catkin_LIBRARIES})
+target_link_libraries(initialise_arm_node ${catkin_LIBRARIES})
+target_link_libraries(eross_control_node ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
