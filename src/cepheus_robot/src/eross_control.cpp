@@ -46,10 +46,8 @@ enum PhaseSpaceEnumeration{
 	ASSIST
 };
 
-double ls_position = 0.0, le_position = 0.0, re_position = 0.0;
-// double ls_position_prev, le_position_prev, re_position_prev;
-double ls_velocity = 0.0, le_velocity = 0.0, re_velocity = 0.0;
-// double ls_velocity_prev, le_velocity_prev, re_velocity_prev;
+double ls_position = 0.0, le_position = 0.0, re_position = 0.0, rw_position = 0.0;
+double ls_velocity = 0.0, le_velocity = 0.0, re_velocity = 0.0, rw_velocity = 0.0;
 bool first_time_movement = true;
 bool start_docking = false;
 bool first_time_before_docking = true;
@@ -150,11 +148,20 @@ void lePosCallback(const std_msgs::Float64::ConstPtr& cmd) {
 		le_position = cmd->data;
 }
 
+
 void rePosCallback(const std_msgs::Float64::ConstPtr& cmd) {
 	if (abs(cmd->data - re_position) > POS_FILTER)
 		return;
 	else
 		re_position = cmd->data;
+}
+
+
+void rwPosCallback(const std_msgs::Float64::ConstPtr& cmd) {
+	if (abs(cmd->data - rw_position) > POS_FILTER)
+		return;
+	else
+		rw_position = cmd->data;
 }
 
 
@@ -179,6 +186,14 @@ void reVelCallback(const std_msgs::Float64::ConstPtr& cmd) {
 		return;
 	else
 		re_velocity = cmd->data;
+}
+
+
+void rwVelCallback(const std_msgs::Float64::ConstPtr& cmd) {
+	if (abs(cmd->data - rw_velocity) > VEL_FILTER)
+		return;
+	else
+		rw_velocity = cmd->data;
 }
 
 
@@ -241,13 +256,14 @@ int main(int argc, char** argv) {
 	f_z2 = new DigitalFilter(10, 0.0);
 	f_z3 = new DigitalFilter(10, 0.0);
 	
-	ros::Subscriber ps_alx_sub =  nh.subscribe("map_to_alxgripper", 1, PSAlxCallback);
-	ros::Subscriber ps_assist_sub =  nh.subscribe("map_to_assist_robot", 1, PSAssistCallback);
-	ros::Subscriber ps_cepheus_sub =  nh.subscribe("map_to_cepheus", 1, PSCepheusCallback);
+	// ros::Subscriber ps_alx_sub =  nh.subscribe("map_to_alxgripper", 1, PSAlxCallback);
+	// ros::Subscriber ps_assist_sub =  nh.subscribe("map_to_assist_robot", 1, PSAssistCallback);
+	// ros::Subscriber ps_cepheus_sub =  nh.subscribe("map_to_cepheus", 1, PSCepheusCallback);
 
 	ros::Publisher start_moving_pub = nh.advertise<std_msgs::Bool>("start_moving", 1);
     reset_movement_pub = nh.advertise<std_msgs::Bool>("reset_movement", 1);
 	// ros::Subscriber phase_space_sub =  nh.subscribe("joint_states", 1, statesCallback);
+	ros::Publisher rw_torque_pub = nh.advertise<std_msgs::Float64>("set_reaction_wheel_effort", 1);
 	ros::Publisher ls_torque_pub = nh.advertise<std_msgs::Float64>("set_left_shoulder_effort", 1);
 	ros::Publisher le_torque_pub = nh.advertise<std_msgs::Float64>("set_left_elbow_effort", 1);
 	ros::Publisher re_torque_pub = nh.advertise<std_msgs::Float64>("set_right_elbow_effort", 1);
@@ -284,9 +300,11 @@ int main(int argc, char** argv) {
 	ros::Subscriber ls_pos_sub = nh.subscribe("read_left_shoulder_position", 1, lsPosCallback);
 	ros::Subscriber le_pos_sub = nh.subscribe("read_left_elbow_position", 1, lePosCallback);
 	ros::Subscriber re_pos_sub = nh.subscribe("read_right_elbow_position", 1, rePosCallback);
+	ros::Subscriber rw_pos_sub = nh.subscribe("read_reaction_wheel_position", 1, rwPosCallback);
 	ros::Subscriber ls_vel_sub = nh.subscribe("read_left_shoulder_velocity", 1, lsVelCallback);
 	ros::Subscriber le_vel_sub = nh.subscribe("read_left_elbow_velocity", 1, leVelCallback);
 	ros::Subscriber re_vel_sub = nh.subscribe("read_right_elbow_velocity", 1, reVelCallback);
+	ros::Subscriber rw_vel_sub = nh.subscribe("read_reaction_wheel_velocity", 1, rwVelCallback);
 
 	ros::Subscriber start_docking_sub = nh.subscribe("start_docking", 1, startDockingCallback);
 	ros::Subscriber reset_docking_sub = nh.subscribe("reset_docking", 1, resetDockingCallback);
@@ -297,14 +315,14 @@ int main(int argc, char** argv) {
 	ros::param::param<double>("~loop_rate", rate, 200);
 	ros::Rate loop_rate(rate);
 
-	double errorq[3];
-	double error_qdot[3];
-	double torq[3];
-	double prev_torq[3];
-	double qd[3];
-	double qd_dot[3];
+	double errorq[4];
+	double error_qdot[4];
+	double torq[4];
+	double prev_torq[4];
+	double qd[4];
+	double qd_dot[4];
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		errorq[i] = 0.0;
 		error_qdot[i] = 0.0;
 		torq[i] = 0.0;
@@ -331,7 +349,7 @@ int main(int argc, char** argv) {
 	double a13 = 0.352820504933170;
 	double a, b, c, d, d0, d1, d2, d3;
 	double d00, d10, d20, d30, d01, d02, d03, d11, d21, d31, d12, d22, d32, d13, d23, d33;
-	double s, s_dot, S;
+	double s, sdot, sdotdot;
 	double xe_desdot;
 	double determinant = 0.0;
 	// docking final joins' angles
@@ -371,7 +389,13 @@ int main(int argc, char** argv) {
 	std_msgs::Float64 _secs;
 	std_msgs::UInt16 lar;
 
-	double secs, move_time, docking_time, penetration_time;
+	double secs, move_time, docking_time, penetration_time, prin;
+	double xE_in, yE_in, thE_in, th0_in, xE_fin, yE_fin, thE_fin, th0_fin;
+	double s_0, s_f, s0dot, sfdot, s0dotdot, sfdotdot;
+	double K, L;
+	double t0 = 0.0, tf = 20.0, time = 0.0;
+	double a0, a1, a2, a3, a4, a5;
+	double th0_des, xE, yE, thE, th0dot_des, xEdot, yEdot, thEdot, th0dotdot_des, xEdotdot, yEdotdot, thEdotdot;
 
 	while (!g_request_shutdown) {
         // order initialize_arm_node to release arm
@@ -386,360 +410,138 @@ int main(int argc, char** argv) {
 
 		secs = all_time.sec + all_time.nsec * pow(10, -9);
 
-        // calculate secs
-        if (first_time_movement) {
-            move_time = secs;
-            // q1 = ls_position;
-            // q2 = le_position;
-            // q3 = re_position;
-            // cepheus_x = ps_x[CEPHEUS];
-            // cepheus_y = ps_y[CEPHEUS];
-            // cepheus_th = ps_th[CEPHEUS];
-            // gripper_x_init = cepheus_x + 0.1645 * cos(cepheus_th) + 0.370 * cos(cepheus_th + q1) + 0.286 * cos(cepheus_th + q1 + q2) + 0.28971 * cos(cepheus_th + q1 + q2 + q3);
-            // gripper_y_init = cepheus_y + 0.1645 * sin(cepheus_th) + 0.370 * sin(cepheus_th + q1) + 0.286 * sin(cepheus_th + q1 + q2) + 0.28971 * sin(cepheus_th + q1 + q2 + q3);
-            // gripper_th_init = cepheus_th + q1 + q2 + q3;
-            // gripper_x = gripper_x_init;
-            // gripper_y = gripper_y_init;
-            // gripper_th = gripper_th_init;
-            // x_prev = gripper_x_init;
-            // y_prev = gripper_y_init;
-            // th_prev = gripper_th_init;
-            // lar_x_fin = gripper_x_init + 0.1;
-            // lar_y_fin = gripper_y_init;
-            // lar_th_fin = gripper_th_init;
-            // gripper_x_dot = 0.0;
-            // gripper_y_dot = 0.0;
-            // gripper_th_dot = 0.0;
-            first_time_movement = false;
-            a = 0.143318141419581;
-            b = 0.331623152993806;
-            c = 0.257342875265441;
-            d = 0.257361884747802;
-            qd[0] = q1_init;
-            qd[1] = q2_init;
-            qd[2] = q3_init;
-            Kp = 0.06;
-            Kd = 0.0006;
-        }
-        if ((secs - move_time) <= 20.0) {
-            // move 10 cm
-            d00 = a00;
-            d10 = a01 * cos(qd[0]);
-            d20 = a02 * cos(qd[0] + qd[1]);
-            d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
-            d01 = d10;
-            d11 = a11;
-            d21 = a21 * cos(qd[1]);
-            d31 = a31 * cos(qd[1] + qd[2]);
-            d02 = d20;
-            d12 = d21;
-            d22 = a22;
-            d32 = a32 * cos(qd[2]);
-            d03 = d30;
-            d13 = d31;
-            d23 = d32;
-            d33 = a33;
-            d0 = d00 + d10 + d20 + d30;
-            d1 = d01 + d11 + d21 + d31;
-            d2 = d02 + d12 + d22 + d32;
-            d3 = d03 + d13 + d23 + d33;
+		if (first_time_movement) {
+			move_time = secs;
+			// xE_in = ps_x[ALX_GRIPPER];
+			// yE_in = ps_y[ALX_GRIPPER];
+			// thE_in = ps_th[ALX_GRIPPER];
+			// th0_in = ps_th[CEPHEUS];
+			// xE_fin = ps_x[ASSIST];
+			// yE_fin = ps_y[ASSIST];
+			// thE_fin = ps_th[ASSIST];
+			// th0_fin = th0_in;
+			xE_in=-1.975;
+			yE_in=3.409;
+			thE_in=170*(M_PI/180);
+			th0_in=90*(M_PI/180);
+			xE_fin=-2.1;
+			yE_fin=3.5;
+			thE_fin=150*(M_PI/180);
+			th0_fin=90*(M_PI/180);
 
-            S = a * b * d2 *sin(qd[0]) + b * c * d0 * sin(qd[1]) - a * c * d1 *sin(qd[0] + qd[1]);
-            s_dot = (5 * 0.000001875 * pow(secs - move_time, 4)) + (4 * -0.00009375000000000002 * pow(secs - move_time, 3)) + (3 * 0.00125  * pow(secs - move_time, 2));
-            xe_desdot = - 0.1 * s_dot;
+			K = (yE_fin-yE_in)/(xE_fin-xE_in);
+			L = (yE_in*(xE_fin-xE_in)-xE_in*(yE_fin-yE_in))/(xE_fin-xE_in);
 
-            theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S;
-            qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S; 
-            qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot)/S;
-            qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot)/S;
+			s_0 = 0.0;
+			s_f = 1.0;
+			s0dot = 0.0;
+			sfdot = 0.0;
+			s0dotdot = 0.0;
+			sfdotdot = 0.0;
 
-            qd[0] = qd_dot[0] * (secs - prev_secs) + qd[0];
-            qd[1] = qd_dot[1] * (secs - prev_secs) + qd[1];
-            qd[2] = qd_dot[2] * (secs - prev_secs) + qd[2];
-            theta0_des = theta0_desdot * (secs - prev_secs) + theta0_des;
+			Eigen::MatrixXd G(6, 6);
 
-            error_qdot[0] = qd_dot[0] - ls_velocity;
-            error_qdot[1] = qd_dot[1] - le_velocity;
-            error_qdot[2] = qd_dot[2] - re_velocity;
+			G << 1, t0, pow(t0,2), pow(t0,3), pow(t0,4), pow(t0,5),
+				1, tf, pow(tf,2), pow(tf,3), pow(tf,4), pow(tf,5),
+				0, 1, 2*t0, 3*pow(t0,2), 4*pow(t0,3), 5*pow(t0,4),
+				0, 1, 2*tf, 3*pow(tf,2), 4*pow(tf,3), 5*pow(tf,4),
+				0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
+				0, 0, 2, 6*tf, 12*pow(tf,2), 20*pow(tf,3);
 
-            errorq[0] = qd[0] - ls_position;
-            errorq[1] = qd[1] - le_position;
-            errorq[2] = qd[2] - re_position;
+			Eigen::VectorXd B1(6);
 
-            // torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
-            // torq[1] = 1.5*Kp * errorq[1] + 1.5*Kd * error_qdot[1];
-            // torq[2] = - (2.3*Kp * errorq[2] + 2.3*Kd * error_qdot[2]);
+			B1 << s_0, 
+				s_f, 
+				s0dot, 
+				sfdot, 
+				s0dotdot, 
+				sfdotdot;
 
-            torq[0] = - (58.42645738* errorq[0] +  1.047501073* error_qdot[0])/186;
-            torq[1] = (40.54481 * errorq[1] + 1.23743613 * error_qdot[1])/186;
-            torq[2] = - (30.90236545*errorq[2] + 1.089994475 * error_qdot[2])/186;
+			Eigen::VectorXd x1(6);
 
-            // gripper_x_des = gripper_x_init + (lar_x_fin - gripper_x_init) * s;
-            // gripper_y_des = gripper_y_init;
-            // gripper_th_des = gripper_th_init;
-            // gripper_x_desdot = s_dot * (lar_x_fin - gripper_x_init);
-            // gripper_y_desdot = 0.0;
-            // gripper_th_desdot = 0.0;
+			Eigen::MatrixXd inv(6, 6);
+			std::cout << "Here is the matrix G:\n" << G << std::endl;
+			inv = G.inverse();
+			std::cout << "Here is the inv matrix G:\n" << inv << std::endl;
+			x1 = inv*B1;
 
-            // cepheus_x = ps_x[CEPHEUS];
-            // cepheus_y = ps_y[CEPHEUS];
-            // cepheus_th = ps_th[CEPHEUS];
+			a0 = x1(0);
+			a1 = x1(1);
+			a2 = x1(2);
+			a3 = x1(3);
+			a4 = x1(4);
+			a5 = x1(5);
+			first_time_movement = false;
+		}
 
-            // q1 = ls_position;
-            // q2 = le_position;
-            // q3 = re_position;
+		time = secs - move_time;
+        if (time <= tf) {
+			s = a5*pow(time,5)+a4*pow(time,4)+a3*pow(time,3)+a2*pow(time,2)+a1*time+a0;
+			sdot = 5*a5*pow(time,4)+4*a4*pow(time,3)+3*a3*pow(time,2)+2*a2*time+a1;
+			sdotdot = 20*a5*pow(time,3)+12*a4*pow(time,2)+6*a3*time+2*a2;
 
-            // gripper_x = cepheus_x + 0.1645 * cos(cepheus_th) + 0.370 * cos(cepheus_th + q1) + 0.286 * cos(cepheus_th + q1 + q2) + 0.28971 * cos(cepheus_th + q1 + q2 + q3);
-            // gripper_y = cepheus_y + 0.1645 * sin(cepheus_th) + 0.370 * sin(cepheus_th + q1) + 0.286 * sin(cepheus_th + q1 + q2) + 0.28971 * sin(cepheus_th + q1 + q2 + q3);
-            // gripper_th = cepheus_th + q1 + q2 + q3;
+			th0_des = th0_in+s*(th0_fin-th0_in);
+			xE = xE_in+s*(xE_fin-xE_in);
+			yE = K*xE+L;
+			thE = thE_in+s*(thE_fin-thE_in);
+			th0dot_des = sdot*(th0_fin-th0_in);
+			xEdot = sdot*(xE_fin-xE_in);
+			yEdot = K*xEdot;
+			thEdot = sdot*(thE_fin-thE_in);
+			th0dotdot_des = sdotdot*(th0_fin-th0_in);
+			xEdotdot = sdotdot*(xE_fin-xE_in);
+			yEdotdot = K*xEdotdot;
+			thEdotdot = sdotdot*(thE_fin-thE_in);
 
-            // gripper_x_dot = (gripper_x - x_prev) / (secs - prev_secs);
-            // gripper_y_dot = (gripper_y - y_prev) / (secs - prev_secs);
-            // gripper_th_dot = (gripper_th - th_prev) / (secs - prev_secs);
+			Eigen::Vector3d qE_des(xE, yE, thE);
+			ROS_INFO("qE_des      : %f %f %f %f", time, xE, yE, thE);
+			Eigen::Vector3d qEdot_des(xEdot, yEdot, thEdot);
+			ROS_INFO("qEdot_des   : %f %f %f %f", time, xEdot, yEdot, thEdot);
+			Eigen::Vector3d qEdotdot_des(xEdotdot, yEdotdot, thEdotdot);
+			ROS_INFO("qEdotdot_des: %f %f %f %f", time, xEdotdot, yEdotdot, thEdotdot);
 
-            // gripper_error_x = gripper_x_des - gripper_x;
-            // gripper_error_y = gripper_y_des - gripper_y;
-            // gripper_error_th = gripper_th_des - gripper_th;
+        } else {
+			th0_des=th0_fin;
+			th0dot_des=0;
+			th0dotdot_des=0;
+		
+			xE=xE_fin;
+			yE=yE_fin;
+			thE=thE_fin;
+		
+			xEdot=0;
+			yEdot=0;
+			thEdot=0;
+		
+			xEdotdot=0;
+			yEdotdot=0;
+			thEdotdot=0;
 
-            // Eigen::Vector3d gripper_error(gripper_error_x, gripper_error_y, gripper_error_th);
-
-            // gripper_error_x_dot = gripper_x_desdot - gripper_x_dot;
-            // gripper_error_y_dot = gripper_y_desdot - gripper_y_dot;
-            // gripper_error_th_dot = gripper_th_desdot - gripper_th_dot;
-
-            // Eigen::Vector3d gripper_error_dot(gripper_error_x_dot, gripper_error_y_dot, gripper_error_th_dot);
-
-            // Eigen::Matrix3d R0;
-            // R0 << cos(cepheus_th), -sin(cepheus_th), 	0.0,
-            //       sin(cepheus_th), cos(cepheus_th), 	0.0,
-            //       0.0,  	0.0, 		1.0;
-            
-            
-            // Eigen::Matrix3d Kpp;
-            // Kpp << Kp, 0.0, 0.0,
-            // 	  0.0, Kp, 0.0,
-            // 	  0.0, 0.0, Kp;
-
-            // Eigen::Matrix3d Kdd;
-            // Kdd << Kd, 0.0, 0.0,
-            // 		0.0, Kd, 0.0,
-            // 		0.0, 0.0, Kd;
-
-            // Eigen::Matrix3d Jq;
-            // Jq	<<	(-1)*(a00+a01*cos(q1)+a02*cos(q1+q2)+a03*cos(q1+q2+q3))*
-            // 		pow((a00+a11+a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)
-            // 		+2*a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1))*
-            // 		(b*sin(q1)+c*sin(q1+q2)+d*sin(q1+q2+q3)),
-            // 		(-1)*c*sin(q1+q2)+(-1)*d*sin(q1+q2+q3)+(a22+a33+a12*cos(q2)+a02*cos(q1+q2)+2*
-            // 		a23*cos(q3)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+a11+a22+
-            // 		a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*a23*
-            // 		cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1))*(b*sin(
-            // 		q1)+c*sin(q1+q2)+d*sin(q1+q2+q3)),
-            // 		(-1)*d*sin(q1+q2+q3)+(a33+a23*cos(q3)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+a11+a22+
-            // 		a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*a23*
-            // 		cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1))*(b*sin(
-            // 		q1)+c*sin(q1+q2)+d*sin(q1+q2+q3)),
-            // 		b*cos(q1)+c*cos(q1+q2)+d*cos(q1+q2+q3)+(-1)*(a11+a22+a33+a01*cos(q1)+2*a12*cos(q2)+
-            // 		a02*cos(q1+q2)+2*a23*cos(q3)+2*a13*cos(q2+q3)+a03*cos(q1+q2+
-            // 		q3))*pow((a00+a11+a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*
-            // 		cos(q1+q2)+2*a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+
-            // 		q3)),(-1))*(a+b*cos(q1)+c*cos(q1+q2)+d*cos(q1+q2+q3)),
-            // 		c*cos(q1+q2)+d*cos(q1+q2+q3)+(-1)*(a22+a33+a12*cos(q2)+a02*cos(q1+
-            // 		q2)+2*a23*cos(q3)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+a11+
-            // 		a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*
-            // 		a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1))*(a+
-            // 		b*cos(q1)+c*cos(q1+q2)+d*cos(q1+q2+q3)),
-            // 		d*cos(q1+q2+q3)+(-1)*(a33+a23*cos(q3)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+a11+
-            // 		a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*
-            // 		a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1))*(a+
-            // 		b*cos(q1)+c*cos(q1+q2)+d*cos(q1+q2+q3)),
-            // 		(a00+a01*cos(q1)+a02*
-            // 		cos(q1+q2)+a03*cos(q1+q2+q3))*pow((a00+a11+a22+a33+2*a01*cos(q1)+
-            // 		2*a12*cos(q2)+2*a02*cos(q1+q2)+2*a23*cos(q3)+2*a13*cos(q2+
-            // 		q3)+2*a03*cos(q1+q2+q3)),(-1)),
-            // 		(a00+a11+2*a01*cos(q1)+a12*cos(q2)+a02*cos(q1+q2)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+
-            // 		a11+a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*
-            // 		a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1)),
-            // 		1+(-1)*(a33+a23*cos(q3)+a13*cos(q2+q3)+a03*cos(q1+q2+q3))*pow((a00+
-            // 		a11+a22+a33+2*a01*cos(q1)+2*a12*cos(q2)+2*a02*cos(q1+q2)+2*
-            // 		a23*cos(q3)+2*a13*cos(q2+q3)+2*a03*cos(q1+q2+q3)),(-1));
-            
-            // determinant = Jq.determinant();
-            // Eigen::Vector3d torque_vector;
-            // Eigen::Matrix3d xxx = R0*Jq;
-            // Eigen::Matrix3d xxx1 = xxx.transpose();
-            // torque_vector = xxx1 * ((Kpp * gripper_error) + (Kdd * gripper_error_dot));
-
-            // torq[0] = - torque_vector(0);
-            // torq[1] = torque_vector(1);
-            // torq[2] = - torque_vector(2);
-
-
-            // x_prev = gripper_x;
-            // y_prev = gripper_y;
-            // th_prev = gripper_th;
-        } 
-        else {
-            if (!start_docking) {
-                if (first_time_before_docking) {
-                    Kp = 0.06;
-                    Kd = 0.0006;
-                    errorq[0] = 0.0;
-                    errorq[1] = 0.0;
-                    errorq[2] = 0.0;
-                    first_time_before_docking = false;
-                }
-
-                qd_dot[0] = 0.0001;
-                qd_dot[1] = 0.0001;
-                qd_dot[2] = 0.0001;
-
-                error_qdot[0] = qd_dot[0] - ls_velocity;
-                error_qdot[1] = qd_dot[1] - le_velocity;
-                error_qdot[2] = qd_dot[2] - re_velocity;
-
-                errorq[0] = error_qdot[0] * (secs - prev_secs) + errorq[0];
-                errorq[1] = error_qdot[1] * (secs - prev_secs) + errorq[1];
-                errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
-
-                torq[0] = - (Kp/16 * errorq[0] + Kd/16 * error_qdot[0]);
-                torq[1] = Kp/16 * errorq[1] + Kd/16 * error_qdot[1];
-                torq[2] = - (Kp/16 * errorq[2] + Kd/16 * error_qdot[2]);
-
-                // ROS_INFO("ERRORQ:  %f   %f   %f", errorq[0], errorq[1], errorq[2]);
-                // ROS_INFO("pos:  %f   %f   %f", ls_position, le_position,re_position);
-
-                ROS_INFO("ls(-0.577): %lf	    le(1.89): %lf       re(0.40): %lf", ls_position, le_position, re_position);
-                // PUBLISH LAR
-                // lar.data = 1;
-                // lar_pub.publish(lar);
-            } else {
-                if (first_time_docking) {
-                    docking_time = secs;
-                    q1_init = ls_position;
-                    q2_init = le_position;
-                    q3_init = re_position;
-                    first_time_docking = false;
-                }
-                if ((secs - docking_time) <= 20.0) {
-                    s = (0.000001875 * pow(secs - docking_time, 5)) + (-0.00009375000000000002 * pow(secs - docking_time, 4)) + (0.00125 * pow(secs - docking_time, 3));
-                    s_dot = (5 * 0.000001875 * pow(secs - docking_time, 4)) + (4 * -0.00009375000000000002 * pow(secs - docking_time, 3)) + (3 * 0.00125  * pow(secs - docking_time, 2));
-
-                    qd[0] = q1_init + (q1_fin_docking - q1_init) * s;
-                    qd_dot[0] = (q1_fin_docking - q1_init) * s_dot;
-
-                    qd[1] = q2_init + (q2_fin_docking - q2_init) * s;
-                    qd_dot[1] = (q2_fin_docking - q2_init) * s_dot;
-
-                    qd[2] = q3_init + (q3_fin_docking - q3_init) * s;
-                    qd_dot[2] = (q3_fin_docking - q3_init) * s_dot;
-
-                    error_qdot[0] = qd_dot[0] - ls_velocity;
-                    error_qdot[1] = qd_dot[1] - le_velocity;
-                    error_qdot[2] = qd_dot[2] - re_velocity;
-
-                    errorq[0] = qd[0] - ls_position;
-                    errorq[1] = qd[1] - le_position;
-                    errorq[2] = qd[2] - re_position;
-
-                    // torq[0] = - (3.0*Kp * errorq[0] + 3.0*Kd * error_qdot[0]);
-                    // torq[1] = 2.0*Kp * errorq[1] + 2.0*Kd * error_qdot[1];
-                    // torq[2] = - (4.0*Kp * errorq[2] + 4.0*Kd * error_qdot[2]);
-
-                    // torq[0] = - (152.1982533* errorq[0] +  2.152083302* error_qdot[0])/186;
-                    // torq[1] = (271.5 * errorq[1] + 7.679437641 * error_qdot[1])/186;
-                    // torq[2] = - (254.5740711*errorq[2] + 35.99677365 * error_qdot[2])/186;
-
-                    torq[0] = - (40.42645738* errorq[0] +  1.647501073* error_qdot[0])/186;
-                    torq[1] = (40.54481 * errorq[1] + 1.63743613 * error_qdot[1])/186;
-                    torq[2] = - (30.5740711*errorq[2] + 1.99677365 * error_qdot[2])/186;
-
-                } else {
-                    if (first_time_penetrating) {
-                        penetration_time = secs;
-                        q1_init = ls_position;
-                        q2_init = le_position;
-                        q3_init = re_position;
-                        first_time_penetrating = false;
-                    }
-                    if ((secs - penetration_time) <= 10.0) {
-                        s = (0.00006 * pow(secs - penetration_time, 5)) + (-0.0015 * pow(secs - penetration_time, 4)) + (0.01 * pow(secs - penetration_time, 3));
-                        s_dot = (5 * 0.00006 * pow(secs - penetration_time, 4)) + (4 * -0.0015 * pow(secs - penetration_time, 3)) + (3 * 0.01 * pow(secs - penetration_time, 2));
-
-                        qd[0] = q1_init + (q1_fin_pen - q1_init) * s;
-                        qd_dot[0] = (q1_fin_pen - q1_init) * s_dot;
-
-                        qd[1] = q2_init + (q2_fin_pen - q2_init) * s;
-                        qd_dot[1] = (q2_fin_pen - q2_init) * s_dot;
-
-                        qd[2] = q3_init + (q3_fin_pen - q3_init) * s;
-                        qd_dot[2] = (q3_fin_pen - q3_init) * s_dot;
-
-                        error_qdot[0] = qd_dot[0] - ls_velocity;
-                        error_qdot[1] = qd_dot[1] - le_velocity;
-                        error_qdot[2] = qd_dot[2] - re_velocity;
-
-                        errorq[0] = qd[0] - ls_position;
-                        errorq[1] = qd[1] - le_position;
-                        errorq[2] = qd[2] - re_position;
-
-                        // torq[0] = - (3.0*Kp * errorq[0] + 3.0*Kd * error_qdot[0]);
-                        // torq[1] = 2.0*Kp * errorq[1] + 2.0*Kd * error_qdot[1];
-                        // torq[2] = - (4.0*Kp * errorq[2] + 4.0*Kd * error_qdot[2]);
-
-                        torq[0] = - (38.42645738* errorq[0] +  1.647501073* error_qdot[0])/186;
-                        torq[1] = (45.54481 * errorq[1] + 1.63743613 * error_qdot[1])/186;
-                        torq[2] = - (30.5740711*errorq[2] + 1.99677365 * error_qdot[2])/186;
-
-                        ROS_INFO("ls(-0.577): %lf	    le(1.89): %lf       re(0.40): %lf", ls_position, le_position, re_position);
-
-
-                    } else {
-                        if (first_time_after_docking) {
-                            Kp = 0.06;
-                            Kd = 0.0006;
-                            errorq[0] = 0.0;
-                            errorq[1] = 0.0;
-                            errorq[2] = 0.0;
-                            first_time_after_docking = false;
-                        }
-
-                        qd_dot[0] = 0.0001;
-                        qd_dot[1] = 0.0001;
-                        qd_dot[2] = 0.0001;
-
-                        error_qdot[0] = qd_dot[0] - ls_velocity;
-                        error_qdot[1] = qd_dot[1] - le_velocity;
-                        error_qdot[2] = qd_dot[2] - re_velocity;
-
-                        errorq[0] = error_qdot[0] * (secs - prev_secs) + errorq[0];
-                        errorq[1] = error_qdot[1] * (secs - prev_secs) + errorq[1];
-                        errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
-
-                        torq[0] = - (Kp * errorq[0] + Kd * error_qdot[0]);
-                        torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
-                        torq[2] = - (Kp * errorq[2] + Kd * error_qdot[2]);
-
-                        ROS_INFO("ls(-0.577): %lf	    le(1.89): %lf       re(0.40): %lf", ls_position, le_position, re_position);
-
-                    }
-                }
-            }
-        }
+			Eigen::Vector3d qE_des(xE, yE, thE);
+			ROS_INFO("qE_des      : %f %f %f %f", time, xE, yE, thE);
+			Eigen::Vector3d qEdot_des(xEdot, yEdot, thEdot);
+			ROS_INFO("qEdot_des   : %f %f %f %f", time, xEdot, yEdot, thEdot);
+			Eigen::Vector3d qEdotdot_des(xEdotdot, yEdotdot, thEdotdot);
+			ROS_INFO("qEdotdot_des: %f %f %f %f", time, xEdotdot, yEdotdot, thEdotdot);
+		}
+		
+		// ROS_WARN("position: %f, torq: %f",rw_position,torq[3]);
 
 		prev_secs = secs;
 		
 		_secs.data = secs;
 		secs_pub.publish(_secs);
-		torque.data = filter_torque(torq[0], prev_torq[0]);
-		torque.data = torq[0];
+		// torque.data = filter_torque(torq[0], prev_torq[0]);
+		torque.data = - 0.0000001;
 		ls_torque_pub.publish(torque);
-		torque.data = filter_torque(torq[1], prev_torq[1]);
-		torque.data = torq[1];
+		// torque.data = filter_torque(torq[1], prev_torq[1]);
+		torque.data = 0.0000001;
 		le_torque_pub.publish(torque);
-		torque.data = filter_torque(torq[2], prev_torq[2]);
-		torque.data = torq[2];
+		// torque.data = filter_torque(torq[2], prev_torq[2]);
+		torque.data = - 0.0000001;
 		re_torque_pub.publish(torque);
+		torque.data = torq[3];
+		rw_torque_pub.publish(torque);
 
 		temp_msg.data = qd[0];
 		ls_qd_pub.publish(temp_msg);
@@ -814,44 +616,487 @@ int main(int argc, char** argv) {
 
 
 
+//////////////////////////////////////////////////////////////////////controller///////////////////////////////
+// m0=400;
+// m1=100;
+// m2=100;
+// m3=50;
+// M=m0+m1+m2+m3;
 
-////////////////////move 10 cm
+// r0x=0.5;
+// r0y=0.0;
 
-// a = 0.143318141419581;
-// b = 0.331623152993806;
-// c = 0.257342875265441;
-// d = 0.257361884747802;
-// d00 = a00;
-// d10 = a01 * cos(qd[0]);
-// d20 = a02 * cos(qd[0] + qd[1]);
-// d30 = a03 * cos(qd[0] + qd[1] + qd[2]);
-// d01 = d10;
-// d11 = a11;
-// d21 = a21 * cos(qd[1]);
-// d31 = a31 * cos(qd[1] + qd[2]);
-// d02 = d20;
-// d12 = d21;
-// d22 = a22;
-// d32 = a32 * cos(qd[2]);
-// d03 = d30;
-// d13 = d31;
-// d23 = d32;
-// d33 = a33;
-// d0 = d00 + d10 + d20 + d30;
-// d1 = d01 + d11 + d21 + d31;
-// d2 = d02 + d12 + d22 + d32;
-// d3 = d03 + d13 + d23 + d33;
+// r1=1;
+// l1=1;
 
-// S = a*b*d2*sin(qd[0]) + b*c*d0*sin(qd[1]) - a*c*d1*sin(qd[0]+qd[1]);
-// s_dot = (5 * 0.00006 * pow((secs - move_time), 4)) + (4 * -0.0015 * pow((secs - move_time), 3)) + (3 * 0.01 * pow((secs - move_time), 2));
-// xe_desdot = - 0.1 * s_dot;
+// r2=0.5;
+// l2=0.5;
 
-// theta0_desdot = ((b*d2*cos(theta0_des+qd[0])-c*d1*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S;
-// qd_dot[0] = ((-d2*(a*cos(theta0_des)+b*cos(theta0_des+qd[0]))+c*(d0+d1)*cos(theta0_des+qd[0]+qd[1]))*xe_desdot)/S; 
-// qd_dot[1] = ((a*(d1+d2)*cos(theta0_des)-d0*(b*cos(theta0_des+qd[0])+c*cos(theta0_des+qd[0]+qd[1])))*xe_desdot)/S;
-// qd_dot[2] = ((-a*d1*cos(theta0_des)+b*d0*cos(theta0_des+qd[0]))*xe_desdot)/S;
+// r3=0.5;
+// l3=0.5;
 
-// qd[0] = qd_dot[0] * (secs - prev_secs) + qd[0];
-// qd[1] = qd_dot[1] * (secs - prev_secs) + qd[1];
-// qd[2] = qd_dot[2] * (secs - prev_secs) + qd[2];
-// theta0_des = theta0_desdot * (secs - prev_secs) + theta0_des;
+// I0z=100;
+// I1z=50;
+// I2z=50;
+// I3z=10;
+
+
+// q01=0;
+
+
+// ve = qE;
+// vedot = qEDot;
+
+// ve_des = qE_des;
+// vedot_des = qEdot_des;
+
+
+
+// KD=2*eye(3);
+// KP=4*eye(3);
+
+// HPS=eye(2);
+// DPS=2*eye(2);
+// KPS=4*eye(2);
+
+
+// HA=eye(3);
+// DA=2*eye(3);
+// KA=4*eye(3);
+
+// theta0=q(3);
+// theta1=q(4);
+// theta2=q(5);
+// theta3=q(6);
+
+
+// theta0Dot = qDot(3);
+// theta1Dot = qDot(4);
+// theta2Dot = qDot(5);
+// theta3Dot = qDot(6);
+
+// th0=theta0;
+// q1=theta1+q01;
+// q2=theta2;
+// q3=theta3;
+
+// th0dot=theta0Dot;
+// q1dot=theta1Dot;
+// q2dot=theta2Dot;
+// q3dot=theta3Dot;
+
+// thetaEdot=qEDot(3);
+
+// thetaE=qE(3);
+
+// thetaE_des=qE_des(3);
+
+// thetaEdot_des=qEdot_des(3);
+
+// thetaEdotdot_des=qEdotdot_des(3);
+
+// xEdotdot_des=[qEdotdot_des(1);qEdotdot_des(2)];
+
+// xEdot=[qEDot(1);qEDot(2)];
+
+// xE=[qE(1);qE(2)];
+
+// xEdot_des=[qEdot_des(1); qEdot_des(2)];
+
+// xE_des=[qE_des(1); qE_des(2)];
+
+// error_theta = theta0_des - theta0;
+
+// errordot_theta = theta0dot_des - theta0Dot;
+
+// error_ve = ve_des - ve;
+
+// errordot_ve = vedot_des - vedot;
+
+// error = [error_theta; error_ve];
+
+// error_dot = [errordot_theta; errordot_ve];
+
+
+// v1 = qDot;
+
+
+
+
+
+// p1=M;
+// p2=(m1+m2+m3)*r0x;
+// p3=(m1+m2+m3)*r0y;
+// p4=(m1+m2+m3)*l1+(m2+m3)*r1;
+// p5=(m2+m3)*l2+m3*r2;
+// p6=I0z+(m1+m2+m3)*(r0x^2+r0y^2);
+// p7=I1z+(m1+m2+m3)*l1^2+2*(m2+m3)*l1*r1+(m2+m3)*r1^2;
+// p8=I2z+(m2+m3)*l2^2+2*m3*l2*r2+m3*r2^2;
+// p9=I3z+m3*l3^2;
+// p10=((m1+m2+m3)*l1+(m2+m3)*r1)*r0x;
+// p11=((m1+m2+m3)*l1+(m2+m3)*r1)*r0y;
+// p12=(l1+r1)*((m2+m3)*l2+m3*r2);
+// p13=((m2+m3)*l2+m3*r2)*r0x;
+// p14=((m2+m3)*l2+m3*r2)*r0y;
+// p15=m3*l3;
+// p16=m3*l3*r0x;
+// p17=m3*l3*r0y;
+// p18=(l1+r1)*m3*l3;
+// p19=(l2+r2)*m3*l3;
+
+
+// H=...
+//   [p1,0,(-1).*p3.*cos(th0) + (-1).*p2.*sin(th0) + (-1).*p4.*sin(q1 + th0) +  ...
+//   (-1).*p5.*sin(q1 + q2 + th0) + (-1).*p15.*sin(q1 + q2 + q3 + th0),(-1).*p4.* ...
+//   sin(q1 + th0) + (-1).*p5.*sin(q1 + q2 + th0) + (-1).*p15.*sin(q1 + q2 + q3 + th0), ...
+//   (-1).*p5.*sin(q1 + q2 + th0) + (-1).*p15.*sin(q1 + q2 + q3 + th0),(-1).*p15.* ...
+//   sin(q1 + q2 + q3 + th0);0,p1,p2.*cos(th0) + p4.*cos(q1 + th0) + p5.*cos(q1 + q2 +  ...
+//   th0) + p15.*cos(q1 + q2 + q3 + th0) + (-1).*p3.*sin(th0),p4.*cos(q1 + th0) +  ...
+//   p5.*cos(q1 + q2 + th0) + p15.*cos(q1 + q2 + q3 + th0),p5.*cos(q1 + q2 + th0) + p15.* ...
+//   cos(q1 + q2 + q3 + th0),p15.*cos(q1 + q2 + q3 + th0);(-1).*p3.*cos(th0) + (-1).* ...
+//   p2.*sin(th0) + (-1).*p4.*sin(q1 + th0) + (-1).*p5.*sin(q1 + q2 + th0) + (-1).* ...
+//   p15.*sin(q1 + q2 + q3 + th0),p2.*cos(th0) + p4.*cos(q1 + th0) + p5.*cos(q1 + q2 +  ...
+//   th0) + p15.*cos(q1 + q2 + q3 + th0) + (-1).*p3.*sin(th0),p6 + p7 + p8 + p9 + 2.* ...
+//   p10.*cos(q1) + 2.*p12.*cos(q2) + 2.*p13.*cos(q1 + q2) + 2.*p19.*cos(q3) +  ...
+//   2.*p18.*cos(q2 + q3) + 2.*p16.*cos(q1 + q2 + q3) + 2.*p11.*sin(q1) + 2.*p14.* ...
+//   sin(q1 + q2) + 2.*p17.*sin(q1 + q2 + q3),p7 + p8 + p9 + p10.*cos(q1) + 2.*p12.* ...
+//   cos(q2) + p13.*cos(q1 + q2) + 2.*p19.*cos(q3) + 2.*p18.*cos(q2 + q3) + p16.* ...
+//   cos(q1 + q2 + q3) + p11.*sin(q1) + p14.*sin(q1 + q2) + p17.*sin(q1 + q2 + q3),p8 +  ...
+//   p9 + p12.*cos(q2) + p13.*cos(q1 + q2) + 2.*p19.*cos(q3) + p18.*cos(q2 + q3) +  ...
+//   p16.*cos(q1 + q2 + q3) + p14.*sin(q1 + q2) + p17.*sin(q1 + q2 + q3),p9 + p19.*cos( ...
+//   q3) + p18.*cos(q2 + q3) + p16.*cos(q1 + q2 + q3) + p17.*sin(q1 + q2 + q3);(-1).* ...
+//   p4.*sin(q1 + th0) + (-1).*p5.*sin(q1 + q2 + th0) + (-1).*p15.*sin(q1 + q2 + q3 +  ...
+//   th0),p4.*cos(q1 + th0) + p5.*cos(q1 + q2 + th0) + p15.*cos(q1 + q2 + q3 + th0),p7 +  ...
+//   p8 + p9 + p10.*cos(q1) + 2.*p12.*cos(q2) + p13.*cos(q1 + q2) + 2.*p19.*cos(q3) ...
+//    + 2.*p18.*cos(q2 + q3) + p16.*cos(q1 + q2 + q3) + p11.*sin(q1) + p14.*sin(q1 +  ...
+//   q2) + p17.*sin(q1 + q2 + q3),p7 + p8 + p9 + 2.*p12.*cos(q2) + 2.*p19.*cos(q3) +  ...
+//   2.*p18.*cos(q2 + q3),p8 + p9 + p12.*cos(q2) + 2.*p19.*cos(q3) + p18.*cos(q2 +  ...
+//   q3),p9 + p19.*cos(q3) + p18.*cos(q2 + q3);(-1).*p5.*sin(q1 + q2 + th0) + (-1) ...
+//   .*p15.*sin(q1 + q2 + q3 + th0),p5.*cos(q1 + q2 + th0) + p15.*cos(q1 + q2 + q3 + th0) ...
+//   ,p8 + p9 + p12.*cos(q2) + p13.*cos(q1 + q2) + 2.*p19.*cos(q3) + p18.*cos(q2 +  ...
+//   q3) + p16.*cos(q1 + q2 + q3) + p14.*sin(q1 + q2) + p17.*sin(q1 + q2 + q3),p8 + p9 +  ...
+//   p12.*cos(q2) + 2.*p19.*cos(q3) + p18.*cos(q2 + q3),p8 + p9 + 2.*p19.*cos(q3) ...
+//   ,p9 + p19.*cos(q3);(-1).*p15.*sin(q1 + q2 + q3 + th0),p15.*cos(q1 + q2 + q3 +  ...
+//   th0),p9 + p19.*cos(q3) + p18.*cos(q2 + q3) + p16.*cos(q1 + q2 + q3) + p17.*sin( ...
+//   q1 + q2 + q3),p9 + p19.*cos(q3) + p18.*cos(q2 + q3),p9 + p19.*cos(q3),p9];
+
+
+// c=...
+//   [(-1).*p2.*th0dot.^2.*cos(th0) + (-1).*p4.*(q1dot + th0dot).^2.*cos( ...
+//   q1 + th0) + (-1).*p5.*q1dot.^2.*cos(q1 + q2 + th0) + (-2).*p5.*q1dot.* ...
+//   q2dot.*cos(q1 + q2 + th0) + (-1).*p5.*q2dot.^2.*cos(q1 + q2 + th0) + (-2).* ...
+//   p5.*q1dot.*th0dot.*cos(q1 + q2 + th0) + (-2).*p5.*q2dot.*th0dot.*cos(q1 +  ...
+//   q2 + th0) + (-1).*p5.*th0dot.^2.*cos(q1 + q2 + th0) + (-1).*p15.*q1dot.^2.* ...
+//   cos(q1 + q2 + q3 + th0) + (-2).*p15.*q1dot.*q2dot.*cos(q1 + q2 + q3 + th0) + (-1) ...
+//   .*p15.*q2dot.^2.*cos(q1 + q2 + q3 + th0) + (-2).*p15.*q1dot.*q3dot.*cos( ...
+//   q1 + q2 + q3 + th0) + (-2).*p15.*q2dot.*q3dot.*cos(q1 + q2 + q3 + th0) + (-1).* ...
+//   p15.*q3dot.^2.*cos(q1 + q2 + q3 + th0) + (-2).*p15.*q1dot.*th0dot.*cos(q1 +  ...
+//   q2 + q3 + th0) + (-2).*p15.*q2dot.*th0dot.*cos(q1 + q2 + q3 + th0) + (-2).*p15.* ...
+//   q3dot.*th0dot.*cos(q1 + q2 + q3 + th0) + (-1).*p15.*th0dot.^2.*cos(q1 + q2 +  ...
+//   q3 + th0) + p3.*th0dot.^2.*sin(th0);(-1).*p3.*th0dot.^2.*cos(th0) + (-1) ...
+//   .*p2.*th0dot.^2.*sin(th0) + (-1).*p4.*q1dot.^2.*sin(q1 + th0) + (-2).* ...
+//   p4.*q1dot.*th0dot.*sin(q1 + th0) + (-1).*p4.*th0dot.^2.*sin(q1 + th0) + ( ...
+//   -1).*p5.*q1dot.^2.*sin(q1 + q2 + th0) + (-2).*p5.*q1dot.*q2dot.*sin(q1 +  ...
+//   q2 + th0) + (-1).*p5.*q2dot.^2.*sin(q1 + q2 + th0) + (-2).*p5.*q1dot.* ...
+//   th0dot.*sin(q1 + q2 + th0) + (-2).*p5.*q2dot.*th0dot.*sin(q1 + q2 + th0) + ( ...
+//   -1).*p5.*th0dot.^2.*sin(q1 + q2 + th0) + (-1).*p15.*q1dot.^2.*sin(q1 + q2 +  ...
+//   q3 + th0) + (-2).*p15.*q1dot.*q2dot.*sin(q1 + q2 + q3 + th0) + (-1).*p15.* ...
+//   q2dot.^2.*sin(q1 + q2 + q3 + th0) + (-2).*p15.*q1dot.*q3dot.*sin(q1 + q2 + q3 +  ...
+//   th0) + (-2).*p15.*q2dot.*q3dot.*sin(q1 + q2 + q3 + th0) + (-1).*p15.* ...
+//   q3dot.^2.*sin(q1 + q2 + q3 + th0) + (-2).*p15.*q1dot.*th0dot.*sin(q1 + q2 +  ...
+//   q3 + th0) + (-2).*p15.*q2dot.*th0dot.*sin(q1 + q2 + q3 + th0) + (-2).*p15.* ...
+//   q3dot.*th0dot.*sin(q1 + q2 + q3 + th0) + (-1).*p15.*th0dot.^2.*sin(q1 + q2 +  ...
+//   q3 + th0);p11.*q1dot.*(q1dot + 2.*th0dot).*cos(q1) + p14.*(q1dot + q2dot) ...
+//   .*(q1dot + q2dot + 2.*th0dot).*cos(q1 + q2) + p17.*q1dot.^2.*cos(q1 + q2 + q3) ...
+//    + 2.*p17.*q1dot.*q2dot.*cos(q1 + q2 + q3) + p17.*q2dot.^2.*cos(q1 + q2 + q3) +  ...
+//   2.*p17.*q1dot.*q3dot.*cos(q1 + q2 + q3) + 2.*p17.*q2dot.*q3dot.*cos(q1 +  ...
+//   q2 + q3) + p17.*q3dot.^2.*cos(q1 + q2 + q3) + 2.*p17.*q1dot.*th0dot.*cos(q1 +  ...
+//   q2 + q3) + 2.*p17.*q2dot.*th0dot.*cos(q1 + q2 + q3) + 2.*p17.*q3dot.* ...
+//   th0dot.*cos(q1 + q2 + q3) + (-1).*p10.*q1dot.^2.*sin(q1) + (-2).*p10.* ...
+//   q1dot.*th0dot.*sin(q1) + (-2).*p12.*q1dot.*q2dot.*sin(q2) + (-1).* ...
+//   p12.*q2dot.^2.*sin(q2) + (-2).*p12.*q2dot.*th0dot.*sin(q2) + (-1).* ...
+//   p13.*q1dot.^2.*sin(q1 + q2) + (-2).*p13.*q1dot.*q2dot.*sin(q1 + q2) + (-1) ...
+//   .*p13.*q2dot.^2.*sin(q1 + q2) + (-2).*p13.*q1dot.*th0dot.*sin(q1 + q2) + ( ...
+//   -2).*p13.*q2dot.*th0dot.*sin(q1 + q2) + (-2).*p19.*q1dot.*q3dot.*sin( ...
+//   q3) + (-2).*p19.*q2dot.*q3dot.*sin(q3) + (-1).*p19.*q3dot.^2.*sin(q3) +  ...
+//   (-2).*p19.*q3dot.*th0dot.*sin(q3) + (-2).*p18.*q1dot.*q2dot.*sin(q2 +  ...
+//   q3) + (-1).*p18.*q2dot.^2.*sin(q2 + q3) + (-2).*p18.*q1dot.*q3dot.*sin( ...
+//   q2 + q3) + (-2).*p18.*q2dot.*q3dot.*sin(q2 + q3) + (-1).*p18.*q3dot.^2.* ...
+//   sin(q2 + q3) + (-2).*p18.*q2dot.*th0dot.*sin(q2 + q3) + (-2).*p18.*q3dot.* ...
+//   th0dot.*sin(q2 + q3) + (-1).*p16.*q1dot.^2.*sin(q1 + q2 + q3) + (-2).*p16.* ...
+//   q1dot.*q2dot.*sin(q1 + q2 + q3) + (-1).*p16.*q2dot.^2.*sin(q1 + q2 + q3) + ( ...
+//   -2).*p16.*q1dot.*q3dot.*sin(q1 + q2 + q3) + (-2).*p16.*q2dot.*q3dot.* ...
+//   sin(q1 + q2 + q3) + (-1).*p16.*q3dot.^2.*sin(q1 + q2 + q3) + (-2).*p16.* ...
+//   q1dot.*th0dot.*sin(q1 + q2 + q3) + (-2).*p16.*q2dot.*th0dot.*sin(q1 + q2 +  ...
+//   q3) + (-2).*p16.*q3dot.*th0dot.*sin(q1 + q2 + q3);(-1).*p11.*th0dot.^2.* ...
+//   cos(q1) + (-1).*p14.*th0dot.^2.*cos(q1 + q2) + (-1).*p17.*th0dot.^2.* ...
+//   cos(q1 + q2 + q3) + p10.*th0dot.^2.*sin(q1) + (-2).*p12.*q1dot.*q2dot.* ...
+//   sin(q2) + (-1).*p12.*q2dot.^2.*sin(q2) + (-2).*p12.*q2dot.*th0dot.* ...
+//   sin(q2) + p13.*th0dot.^2.*sin(q1 + q2) + (-2).*p19.*q1dot.*q3dot.*sin( ...
+//   q3) + (-2).*p19.*q2dot.*q3dot.*sin(q3) + (-1).*p19.*q3dot.^2.*sin(q3) +  ...
+//   (-2).*p19.*q3dot.*th0dot.*sin(q3) + (-2).*p18.*q1dot.*q2dot.*sin(q2 +  ...
+//   q3) + (-1).*p18.*q2dot.^2.*sin(q2 + q3) + (-2).*p18.*q1dot.*q3dot.*sin( ...
+//   q2 + q3) + (-2).*p18.*q2dot.*q3dot.*sin(q2 + q3) + (-1).*p18.*q3dot.^2.* ...
+//   sin(q2 + q3) + (-2).*p18.*q2dot.*th0dot.*sin(q2 + q3) + (-2).*p18.*q3dot.* ...
+//   th0dot.*sin(q2 + q3) + p16.*th0dot.^2.*sin(q1 + q2 + q3);(-1).*p14.* ...
+//   th0dot.^2.*cos(q1 + q2) + (-1).*p17.*th0dot.^2.*cos(q1 + q2 + q3) + p12.* ...
+//   q1dot.^2.*sin(q2) + 2.*p12.*q1dot.*th0dot.*sin(q2) + p12.*th0dot.^2.* ...
+//   sin(q2) + p13.*th0dot.^2.*sin(q1 + q2) + (-2).*p19.*q1dot.*q3dot.*sin( ...
+//   q3) + (-2).*p19.*q2dot.*q3dot.*sin(q3) + (-1).*p19.*q3dot.^2.*sin(q3) +  ...
+//   (-2).*p19.*q3dot.*th0dot.*sin(q3) + p18.*q1dot.^2.*sin(q2 + q3) + 2.* ...
+//   p18.*q1dot.*th0dot.*sin(q2 + q3) + p18.*th0dot.^2.*sin(q2 + q3) + p16.* ...
+//   th0dot.^2.*sin(q1 + q2 + q3);(-1).*p17.*th0dot.^2.*cos(q1 + q2 + q3) + p19.* ...
+//   (q1dot + q2dot + th0dot).^2.*sin(q3) + p18.*q1dot.^2.*sin(q2 + q3) + 2.* ...
+//   p18.*q1dot.*th0dot.*sin(q2 + q3) + p18.*th0dot.^2.*sin(q2 + q3) + p16.* ...
+//   th0dot.^2.*sin(q1 + q2 + q3)];
+
+// Je=...
+//    [1,0,(-1).*r0y.*cos(th0) + (-1).*r0x.*sin(th0) + (-1).*l1.*sin(q1 + th0) ...
+//    + (-1).*r1.*sin(q1 + th0) + (-1).*l2.*sin(q1 + q2 + th0) + (-1).*r2.*sin(q1 +  ...
+//   q2 + th0) + (-1).*l3.*sin(q1 + q2 + q3 + th0) + (-1).*r3.*sin(q1 + q2 + q3 + th0),( ...
+//   -1).*(l1 + r1).*sin(q1 + th0) + (-1).*(l2 + r2).*sin(q1 + q2 + th0) + (-1).*(l3 +  ...
+//   r3).*sin(q1 + q2 + q3 + th0),(-1).*(l2 + r2).*sin(q1 + q2 + th0) + (-1).*(l3 + r3) ...
+//   .*sin(q1 + q2 + q3 + th0),(-1).*(l3 + r3).*sin(q1 + q2 + q3 + th0);0,1,r0x.*cos( ...
+//   th0) + l1.*cos(q1 + th0) + r1.*cos(q1 + th0) + l2.*cos(q1 + q2 + th0) + r2.*cos( ...
+//   q1 + q2 + th0) + l3.*cos(q1 + q2 + q3 + th0) + r3.*cos(q1 + q2 + q3 + th0) + (-1).*r0y.* ...
+//   sin(th0),(l1 + r1).*cos(q1 + th0) + (l2 + r2).*cos(q1 + q2 + th0) + (l3 + r3).* ...
+//   cos(q1 + q2 + q3 + th0),(l2 + r2).*cos(q1 + q2 + th0) + (l3 + r3).*cos(q1 + q2 + q3 +  ...
+//   th0),(l3 + r3).*cos(q1 + q2 + q3 + th0);0,0,1,1,1,1];
+
+// Jedot=...
+//    [0,0,q3dot.*((-1).*l3.*cos(q1 + q2 + q3 + th0) + (-1).*r3.*cos(q1 + q2 + q3 +  ...
+//   th0)) + q2dot.*((-1).*l2.*cos(q1 + q2 + th0) + (-1).*r2.*cos(q1 + q2 + th0) + ( ...
+//   -1).*l3.*cos(q1 + q2 + q3 + th0) + (-1).*r3.*cos(q1 + q2 + q3 + th0)) + q1dot.*(( ...
+//   -1).*l1.*cos(q1 + th0) + (-1).*r1.*cos(q1 + th0) + (-1).*l2.*cos(q1 + q2 +  ...
+//   th0) + (-1).*r2.*cos(q1 + q2 + th0) + (-1).*l3.*cos(q1 + q2 + q3 + th0) + (-1).* ...
+//   r3.*cos(q1 + q2 + q3 + th0)) + th0dot.*((-1).*r0x.*cos(th0) + (-1).*l1.*cos( ...
+//   q1 + th0) + (-1).*r1.*cos(q1 + th0) + (-1).*l2.*cos(q1 + q2 + th0) + (-1).*r2.* ...
+//   cos(q1 + q2 + th0) + (-1).*l3.*cos(q1 + q2 + q3 + th0) + (-1).*r3.*cos(q1 + q2 + q3 +  ...
+//   th0) + r0y.*sin(th0)),(-1).*q3dot.*(l3 + r3).*cos(q1 + q2 + q3 + th0) +  ...
+//   q2dot.*((-1).*(l2 + r2).*cos(q1 + q2 + th0) + (-1).*(l3 + r3).*cos(q1 + q2 + q3 +  ...
+//   th0)) + q1dot.*((-1).*(l1 + r1).*cos(q1 + th0) + (-1).*(l2 + r2).*cos(q1 + q2 +  ...
+//   th0) + (-1).*(l3 + r3).*cos(q1 + q2 + q3 + th0)) + th0dot.*((-1).*(l1 + r1).* ...
+//   cos(q1 + th0) + (-1).*(l2 + r2).*cos(q1 + q2 + th0) + (-1).*(l3 + r3).*cos(q1 +  ...
+//   q2 + q3 + th0)),(-1).*q3dot.*(l3 + r3).*cos(q1 + q2 + q3 + th0) + q1dot.*((-1).* ...
+//   (l2 + r2).*cos(q1 + q2 + th0) + (-1).*(l3 + r3).*cos(q1 + q2 + q3 + th0)) + q2dot.*( ...
+//   (-1).*(l2 + r2).*cos(q1 + q2 + th0) + (-1).*(l3 + r3).*cos(q1 + q2 + q3 + th0)) +  ...
+//   th0dot.*((-1).*(l2 + r2).*cos(q1 + q2 + th0) + (-1).*(l3 + r3).*cos(q1 + q2 +  ...
+//   q3 + th0)),(-1).*q1dot.*(l3 + r3).*cos(q1 + q2 + q3 + th0) + (-1).*q2dot.*(l3 +  ...
+//   r3).*cos(q1 + q2 + q3 + th0) + (-1).*q3dot.*(l3 + r3).*cos(q1 + q2 + q3 + th0) + ( ...
+//   -1).*(l3 + r3).*th0dot.*cos(q1 + q2 + q3 + th0);0,0,q3dot.*((-1).*l3.*sin( ...
+//   q1 + q2 + q3 + th0) + (-1).*r3.*sin(q1 + q2 + q3 + th0)) + q2dot.*((-1).*l2.*sin( ...
+//   q1 + q2 + th0) + (-1).*r2.*sin(q1 + q2 + th0) + (-1).*l3.*sin(q1 + q2 + q3 + th0) + ( ...
+//   -1).*r3.*sin(q1 + q2 + q3 + th0)) + q1dot.*((-1).*l1.*sin(q1 + th0) + (-1).* ...
+//   r1.*sin(q1 + th0) + (-1).*l2.*sin(q1 + q2 + th0) + (-1).*r2.*sin(q1 + q2 + th0) +  ...
+//   (-1).*l3.*sin(q1 + q2 + q3 + th0) + (-1).*r3.*sin(q1 + q2 + q3 + th0)) + th0dot.*( ...
+//   (-1).*r0y.*cos(th0) + (-1).*r0x.*sin(th0) + (-1).*l1.*sin(q1 + th0) + (-1) ...
+//   .*r1.*sin(q1 + th0) + (-1).*l2.*sin(q1 + q2 + th0) + (-1).*r2.*sin(q1 + q2 +  ...
+//   th0) + (-1).*l3.*sin(q1 + q2 + q3 + th0) + (-1).*r3.*sin(q1 + q2 + q3 + th0)),(-1) ...
+//   .*q3dot.*(l3 + r3).*sin(q1 + q2 + q3 + th0) + q2dot.*((-1).*(l2 + r2).*sin(q1 +  ...
+//   q2 + th0) + (-1).*(l3 + r3).*sin(q1 + q2 + q3 + th0)) + q1dot.*((-1).*(l1 + r1).* ...
+//   sin(q1 + th0) + (-1).*(l2 + r2).*sin(q1 + q2 + th0) + (-1).*(l3 + r3).*sin(q1 +  ...
+//   q2 + q3 + th0)) + th0dot.*((-1).*(l1 + r1).*sin(q1 + th0) + (-1).*(l2 + r2).* ...
+//   sin(q1 + q2 + th0) + (-1).*(l3 + r3).*sin(q1 + q2 + q3 + th0)),(-1).*q3dot.*(l3 +  ...
+//   r3).*sin(q1 + q2 + q3 + th0) + q1dot.*((-1).*(l2 + r2).*sin(q1 + q2 + th0) + (-1) ...
+//   .*(l3 + r3).*sin(q1 + q2 + q3 + th0)) + q2dot.*((-1).*(l2 + r2).*sin(q1 + q2 +  ...
+//   th0) + (-1).*(l3 + r3).*sin(q1 + q2 + q3 + th0)) + th0dot.*((-1).*(l2 + r2).* ...
+//   sin(q1 + q2 + th0) + (-1).*(l3 + r3).*sin(q1 + q2 + q3 + th0)),(-1).*q1dot.*(l3 +  ...
+//   r3).*sin(q1 + q2 + q3 + th0) + (-1).*q2dot.*(l3 + r3).*sin(q1 + q2 + q3 + th0) + ( ...
+//   -1).*q3dot.*(l3 + r3).*sin(q1 + q2 + q3 + th0) + (-1).*(l3 + r3).*th0dot.*sin( ...
+//   q1 + q2 + q3 + th0);0,0,0,0,0,(-1).*(l3 + r3).*th0dot.*sin(q1 + q2 + q3 + th0)];
+
+
+// Jvw=Je(1:2,3);
+
+// Jvq=Je(1:2,4:6);
+
+// Jwq=Je(3,4:6);  
+
+
+// Jvwdot=Jedot(1:2,3);
+
+// Jvqdot=Jedot(1:2,4:6);
+
+// Jwqdot=Jedot(3,4:6);    
+
+
+
+// J1=[eye(2) zeros(2,1) zeros(2,3);
+//     zeros(1,2) 1 zeros(1,3);
+//     eye(2) Jvw Jvq ;
+//     zeros(1,2) 1 Jwq];
+
+// J1dot=[zeros(2,2) zeros(2,1) zeros(2,3);
+//       zeros(1,2) 0 zeros(1,3);
+//      zeros(2,2) Jvwdot Jvqdot;
+//      zeros(1,2) 0 Jwqdot];  
+
+
+// Hstar=inv(J1')*H*inv(J1);
+
+// cstar=inv(J1')*(c-H*inv(J1)*J1dot*v1);
+
+// Jstar=inv(J1');
+
+// DJstar = det(Jstar);
+
+// H11star=Hstar(1:2,1:2);
+// H12star=Hstar(1:2,3:6);
+// H21star=Hstar(3:6,1:2);
+// H22star=Hstar(3:6,3:6);
+
+// c1star=cstar(1:2,1);
+// c2star=cstar(3:6,1);
+
+// J12star=Jstar(1:2,3:6);
+// J22star=Jstar(3:6,3:6);
+
+// Jestar=Jstar*Je';
+
+// Je11star=Jestar(1:2,1:2);
+// Je12star=Jestar(1:2,3);
+// Je21star=Jestar(3:6,1:2);
+// Je22star=Jestar(3:6,3);
+
+// Hbar=H22star-H21star*inv(H11star)*H12star;
+
+// cbar=c2star-H21star*inv(H11star)*c1star;
+
+// Jbar=J22star-H21star*inv(H11star)*J12star;
+
+// Jebar=[Je21star-H21star*inv(H11star)*Je11star Je22star-H21star*inv(H11star)*Je12star];
+
+
+// omegabdot_des=[0;0;theta0dotdot_des];
+
+// eb1=0;
+// eb2=0;
+// eb3=sin(theta0/2);
+// nb=cos(theta0/2);
+
+// eb1_des=0;
+// eb2_des=0;
+// eb3_des=sin(theta0_des/2);
+// nb_des=cos(theta0_des/2);
+
+
+// eb=[eb1;eb2;eb3];
+
+// eb_des=[eb1_des;eb2_des;eb3_des];
+
+
+// Rb=...
+//   [eb1.^2+(-1).*eb2.^2+(-1).*eb3.^2+nb.^2,2.*eb1.*eb2+(-2).*eb3.*nb,2.*eb1.* ...
+//   eb3+2.*eb2.*nb;2.*eb1.*eb2+2.*eb3.*nb,(-1).*eb1.^2+eb2.^2+(-1).*eb3.^2+nb.^2, ...
+//   2.*eb2.*eb3+(-2).*eb1.*nb;2.*eb1.*eb3+(-2).*eb2.*nb,2.*eb2.*eb3+2.*eb1.*nb,( ...
+//   -1).*eb1.^2+(-1).*eb2.^2+eb3.^2+nb.^2];
+
+
+// omegab_inert=[0;0;theta0Dot];
+
+// omegab=Rb'*omegab_inert;
+
+// omegab_des=[0;0;theta0dot_des];
+
+// errob_omega=omegab-Rb'*omegab_des;
+
+
+// ebdcross=[0 -eb_des(3,1) eb_des(2,1);
+//             eb_des(3,1) 0 -eb_des(1,1);
+//             -eb_des(2,1) eb_des(1,1) 0];
+        
+// Ebd=nb_des*eye(3)+ebdcross;
+
+// error_base=Ebd'*eb-eb_des*nb;
+
+
+// ebn=eb_des'*eb+nb_des*nb;
+
+// omegabcross=[0 -omegab(3,1) omegab(2,1);
+//             omegab(3,1) 0 -omegab(1,1);
+//             -omegab(2,1) omegab(1,1) 0];
+
+
+
+// ee1=0;
+// ee2=0;
+// ee3=sin(thetaE/2);
+// ne=cos(thetaE/2);
+
+// ee1_des=0;
+// ee2_des=0;
+// ee3_des=sin(thetaE_des/2);
+// ne_des=cos(thetaE_des/2);
+
+
+// ee=[ee1;ee2;ee3];
+
+// ee_des=[ee1_des;ee2_des;ee3_des];
+
+
+// omegae_des=[0;0;thetaEdot_des];
+
+// omegaedot_des=[0;0;thetaEdotdot_des];
+
+// Re=...
+//   [ee1.^2+(-1).*ee2.^2+(-1).*ee3.^2+ne.^2,2.*ee1.*ee2+(-2).*ee3.*ne,2.*ee1.* ...
+//   ee3+2.*ee2.*ne;2.*ee1.*ee2+2.*ee3.*ne,(-1).*ee1.^2+ee2.^2+(-1).*ee3.^2+ne.^2, ...
+//   2.*ee2.*ee3+(-2).*ee1.*ne;2.*ee1.*ee3+(-2).*ee2.*ne,2.*ee2.*ee3+2.*ee1.*ne,( ...
+//   -1).*ee1.^2+(-1).*ee2.^2+ee3.^2+ne.^2];
+
+// omegae_LAR=[0;0;thetaEdot];
+
+// omegae=Re'*omegae_LAR;
+
+// errore_omega=omegae-Re'*omegae_des;
+
+// een=ee_des'*ee+ne_des*ne;
+
+
+// omegaecross=[0 -omegae(3,1) omegae(2,1);
+//             omegae(3,1) 0 -omegae(1,1);
+//             -omegae(2,1) omegae(1,1) 0];
+
+// eedcross=[0 -ee_des(3,1) ee_des(2,1);
+//          ee_des(3,1) 0 -ee_des(1,1);
+//          -ee_des(2,1) ee_des(1,1) 0];
+
+
+// Eed=ne_des*eye(3)+eedcross;
+
+// error_ee=Eed'*ee-ee_des*ne;
+
+// error_eecoss=[0 -error_ee(3,1) error_ee(2,1);
+//              error_ee(3,1) 0 -error_ee(1,1);
+//              -error_ee(2,1) error_ee(1,1) 0];
+
+// Ees=een*eye(3)+error_eecoss;
+
+
+
+// Qef=[FextX;FextY];
+
+// Qet=[0;0;Next];        
+
+// uRW = Rb*(Rb'*omegabdot_des+ omegabcross*errob_omega - KD*errob_omega - 2*(KP - errob_omega'*errob_omega/4)*error_base/ebn);
+
+// umr = HPS\(HPS*xEdotdot_des+ DPS*(xEdot_des-xEdot) + KPS*(xE_des-xE) + Qef);
+
+// umw = Re*((HA*Ees)\(HA*Ees*(Re'*omegaedot_des + omegaecross*errore_omega) - DA*Ees*errore_omega + 2*Re'*Qet - 2*(KA*Ees - HA*Ees*(errore_omega'*errore_omega)/4)*error_ee/een));
+
+// uRWn=uRW(3);
+
+// umwn=umw(3);
+
+// u=[uRWn;umr;umwn];
+
+
+// Qe=[FextX;FextY;Next];
+
+// Qbar=Hbar*u+cbar-Jebar*Qe;
+
+// DHbar = det(Hbar);
+
+// DJbar = det(Jbar);
+
+// tau=Jbar\Qbar;
