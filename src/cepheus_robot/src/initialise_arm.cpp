@@ -54,6 +54,40 @@ double q3_init = 45 * (M_PI / 180);
 double Kp = 0.06;
 double Kd = 0.006;
 
+void PSAlxCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+	geometry_msgs::TransformStamped temp;
+	temp = *msg;
+
+	double x = temp.transform.rotation.x;
+	double y = temp.transform.rotation.y;
+	double z = temp.transform.rotation.z;
+	double w = temp.transform.rotation.w;
+	double roll,pitch,yaw;
+
+	tf::Quaternion q(x, y, z, w);
+	tf::Matrix3x3 m(q);
+	m.getRPY(roll,pitch,yaw);
+	// ROS_WARN("PS ALX_GRIPPER: %f  %f  %f", temp.transform.translation.x, temp.transform.translation.y, yaw);
+	return;
+}
+
+void PSCepheusCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+	geometry_msgs::TransformStamped temp;
+	temp = *msg;
+
+	double x = temp.transform.rotation.x;
+	double y = temp.transform.rotation.y;
+	double z = temp.transform.rotation.z;
+	double w = temp.transform.rotation.w;
+	double roll, pitch, yaw;
+
+	tf::Quaternion q(x, y, z, w);
+	tf::Matrix3x3 m(q);
+	m.getRPY(roll, pitch, yaw);
+	// ROS_WARN("PS CEPHEUS: %f  %f  %f", temp.transform.translation.x, temp.transform.translation.y, yaw);
+	return;
+}
+
 void lsPosCallback(const std_msgs::Float64::ConstPtr& cmd) {
 	if (abs(cmd->data - ls_position) > POS_FILTER)
 		return;
@@ -126,6 +160,8 @@ void startMovingCallback(const std_msgs::Bool::ConstPtr& msg) {
 
 void resetMovementCallback(const std_msgs::Bool::ConstPtr& msg) {
 	start_moving = false;
+	sleep(10);
+	ROS_INFO("CONTROL STILL UNTIL SIGNAL FOR MOVEMENT");
 	q1_init = -60 * (M_PI / 180);
 	q2_init = 105 * (M_PI / 180);
 	q3_init = 45 * (M_PI / 180);
@@ -149,7 +185,11 @@ int main(int argc, char** argv) {
 
 	ros::NodeHandle nh;
 
+	ros::Subscriber ps_alx_sub =  nh.subscribe("map_to_alxgripper", 1, PSAlxCallback);
+	ros::Subscriber ps_cepheus_sub =  nh.subscribe("map_to_cepheus", 1, PSCepheusCallback);
+
 	// ros::Subscriber phase_space_sub =  nh.subscribe("joint_states", 1, statesCallback);
+	ros::Publisher rw_torque_pub = nh.advertise<std_msgs::Float64>("set_reaction_wheel_effort", 1);
 	ros::Publisher ls_torque_pub = nh.advertise<std_msgs::Float64>("set_left_shoulder_effort", 1);
 	ros::Publisher le_torque_pub = nh.advertise<std_msgs::Float64>("set_left_elbow_effort", 1);
 	ros::Publisher re_torque_pub = nh.advertise<std_msgs::Float64>("set_right_elbow_effort", 1);
@@ -192,9 +232,9 @@ int main(int argc, char** argv) {
 
 	double s, s_dot;
 	// values from launch file
-	double qd1_init = 1.328828;
-	double qd2_init = 2.22;
-	double qd3_init = 1.777316;
+	double qd1_init = 1.319315;
+	double qd2_init = 2.234099;
+	double qd3_init = 1.414257;
 
 	ros::Time curr_time, t_beg = ros::Time::now();
 	ros::Duration all_time;
@@ -368,12 +408,13 @@ int main(int argc, char** argv) {
 				torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
 
 				// this movement is 10 secs
-				if (secs - le_time >= 10.0)
+				if (secs - le_time >= 2.0) {
+					ROS_INFO("CONTROL STILL UNTIL SIGNAL FOR MOVEMENT");
 					initialized = true;
+				}
 			}
 		} else if (!start_moving) {
 			// stay there until further notice
-			ROS_INFO("CONTROL STILL UNTIL SIGNAL FOR MOVEMENT");
 			error_qdot[0] = 0 - ls_velocity;
 			error_qdot[1] = 0 - le_velocity;
 			error_qdot[2] = 0 - re_velocity;
@@ -394,6 +435,8 @@ int main(int argc, char** argv) {
 
 		prev_secs = secs;
 		if (!start_moving) {
+			torque.data = 0.0;
+			rw_torque_pub.publish(torque);
 			torque.data = filter_torque(torq[0], prev_torq[0]);
 			torque.data = torq[0];
 			ls_torque_pub.publish(torque);

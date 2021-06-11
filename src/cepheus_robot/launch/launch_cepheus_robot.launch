@@ -25,7 +25,9 @@
 	</node>
 
 	<node name="cepheus_ctrl" pkg="cepheus_robot" type="cepheus_ctrl" respawn="false" output="screen" required="true">
-		<param name="controllers_to_spawn" value="joint_state_publisher	reaction_wheel_effort_controller"/>
+		<!-- <param name="controllers_to_spawn" value="joint_state_publisher	reaction_wheel_effort_controller"/> -->
+				<param name="controllers_to_spawn" value="joint_state_publisher	"/>
+
 	</node>
 	
 	<!-- <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
@@ -44,6 +46,11 @@
 	<node name="initialise_arm_node" pkg="cepheus_robot" type="initialise_arm_node" output="screen" required="true">
 		<param name="loop_rate" value="200.0"/>
 	</node>
+
+	<node name="EROSSGripper" pkg="cepheus_robot" type="EROSSGripper" output="screen" required="true">
+	</node>
+
+	<!-- <include file="$(find botasys_force_torque_sensor)/launch/driver.launch"></include> -->
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
 	<param name="use_reaction_wheel" value="True"/>
@@ -76,5 +83,4 @@
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="gripper_target_broadcaster" args="0.215 0.215 0 0 0 0 assist_robot right_gripper_target" /-->
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="left_hand_base_broadcaster" args="0.172628 0.091404 0 0 0 0 cepheus left_hand_base" /-->
 	<!--node pkg="tf2_ros" type="static_transform_publisher" name="right_hand_base_broadcaster" args="0.172628 -0.091404 0 0 0 0 cepheus right_hand_base" /-->
-	<!-- <include file="$(find botasys_force_torque_sensor)/launch/driver.launch"></include> -->
 </launch>

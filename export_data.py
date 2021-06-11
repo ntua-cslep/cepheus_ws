@@ -59,7 +59,7 @@ def main():
 		# print(topic)
 		# if topic not in ['set_ls_qd', 'set_le_qd', 'set_re_qd']:
 		l = get_list_from_file(file, topic)
-		print(len(l))
+		print(topic, len(l))
 		f_contents.append(l)
 	print('Done')
 	# print (len(f_contents))

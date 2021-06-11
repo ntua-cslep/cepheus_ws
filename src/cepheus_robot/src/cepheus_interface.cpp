@@ -250,6 +250,12 @@ void rightGripperActionCallback(const std_msgs::Bool::ConstPtr& cmd)
 }
 
 
+void setReactionWheelEffort(const std_msgs::Float64::ConstPtr& cmd)
+{
+	robot.setCmd(REACTION_WHEEL, cmd->data);
+	robot.writeMotors();
+}
+
 void setLeftShoulderEffort(const std_msgs::Float64::ConstPtr& cmd)
 {
 	robot.setCmd(LEFT_SHOULDER, cmd->data);
@@ -572,6 +578,7 @@ int main(int argc, char** argv)
 	//Initialize the  arms and start the ros controllers
 
 	// 2020
+	ros::Subscriber set_reaction_wheel_effort = nh.subscribe("set_reaction_wheel_effort", 1, setReactionWheelEffort);
 	ros::Subscriber set_left_shoulder_effort = nh.subscribe("set_left_shoulder_effort", 1, setLeftShoulderEffort);
 	ros::Subscriber set_left_elbow_effort = nh.subscribe("set_left_elbow_effort", 1, setLeftElbowEffort);
 	ros::Subscriber set_right_elbow_effort =  nh.subscribe("set_right_elbow_effort", 1, setRightElbowEffort);
@@ -582,9 +589,11 @@ int main(int argc, char** argv)
 	ros::Publisher ls_pos_pub = nh.advertise<std_msgs::Float64>("read_left_shoulder_position", 1);
 	ros::Publisher le_pos_pub = nh.advertise<std_msgs::Float64>("read_left_elbow_position", 1);
 	ros::Publisher re_pos_pub = nh.advertise<std_msgs::Float64>("read_right_elbow_position", 1);
+	ros::Publisher rw_pos_pub = nh.advertise<std_msgs::Float64>("read_reaction_wheel_position", 1);
 	ros::Publisher ls_vel_pub = nh.advertise<std_msgs::Float64>("read_left_shoulder_velocity", 1);
 	ros::Publisher le_vel_pub = nh.advertise<std_msgs::Float64>("read_left_elbow_velocity", 1);
 	ros::Publisher re_vel_pub = nh.advertise<std_msgs::Float64>("read_right_elbow_velocity", 1);
+	ros::Publisher rw_vel_pub = nh.advertise<std_msgs::Float64>("read_reaction_wheel_velocity", 1);
 	ros::Publisher ls_limit_pub = nh.advertise<std_msgs::UInt8>("read_left_shoulder_limit", 1);
 	ros::Publisher le_limit_pub = nh.advertise<std_msgs::UInt8>("read_left_elbow_limit", 1);
 	ros::Publisher re_limit_pub = nh.advertise<std_msgs::UInt8>("read_right_elbow_limit", 1);
@@ -676,12 +685,16 @@ int main(int argc, char** argv)
 		le_pos_pub.publish(robot_info_msg);
 		robot_info_msg.data = robot.getPos(RIGHT_ELBOW);
 		re_pos_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getPos(REACTION_WHEEL);
+		rw_pos_pub.publish(robot_info_msg);
 		robot_info_msg.data = robot.getVel(LEFT_SHOULDER);
 		ls_vel_pub.publish(robot_info_msg);
 		robot_info_msg.data = robot.getVel(LEFT_ELBOW);
 		le_vel_pub.publish(robot_info_msg);
 		robot_info_msg.data = robot.getVel(RIGHT_ELBOW);
 		re_vel_pub.publish(robot_info_msg);
+		robot_info_msg.data = robot.getVel(REACTION_WHEEL);
+		rw_vel_pub.publish(robot_info_msg);
 
 		limit_msg.data = robot.isLimitReached(LEFT_SHOULDER);
 		ls_limit_pub.publish(limit_msg);
