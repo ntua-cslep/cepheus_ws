@@ -168,7 +168,14 @@ add_executable(cepheus_ctrl src/cepheus_ctrl.cpp)
 add_executable(new_base_planner_node src/new_base_planner.cpp)
 # add_executable(alex_gripper_control_node src/alex_gripper_control.cpp)
 add_executable(initialise_arm_node src/initialise_arm.cpp)
-add_executable(eross_control_node src/eross_control.cpp)
+################################################################################################################
+# add_executable(eross_control_node src/eross_control.cpp)
+################################################################################################################
+add_executable(eross_control_node src/eross_control_relative.cpp)
+
+add_executable(EROSSGripper src/EROSSGripper_v3.cpp)
+# add_executable(EROSSGripper_v3 src/EROSSGripper_v3.cpp src/Definitions.h)
+add_executable(test_node src/test.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -191,6 +198,11 @@ target_link_libraries(new_base_planner_node ${catkin_LIBRARIES})
 # target_link_libraries(alex_gripper_control_node ${catkin_LIBRARIES})
 target_link_libraries(initialise_arm_node ${catkin_LIBRARIES})
 target_link_libraries(eross_control_node ${catkin_LIBRARIES})
+target_link_libraries(EROSSGripper ${catkin_LIBRARIES} libEposCmd.so)
+# target_link_libraries(EROSSGripper_v3 ${catkin_LIBRARIES})
+target_link_libraries(test_node ${catkin_LIBRARIES})
+
+set_target_properties(EROSSGripper PROPERTIES COMPILE_FLAGS "-lEposCmd")
 #############
 ## Install ##
 #############
