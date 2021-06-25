@@ -101,6 +101,7 @@ double prev_torque_z = 0.0;
 
 
 double acc_x = 0.0, acc_y = 0.0;
+double acc_x_prev = 0.0, acc_y_prev = 0.0;
 double angular_vel_z = 0.0;
 
 
@@ -584,13 +585,13 @@ int main(int argc, char** argv) {
 	Vector3d qEDot;
 	Vector3d ve;
 	Vector3d vedot;
-	double t0 = 0.0, tf = 100.0, tf1 = 80.0, time = 0.0;
+	double t0 = 0.0, tf = 50.0, tf1 = 40.0, time = 0.0;
 	Matrix2d HPS = eye_2;
-	Matrix2d DPS = eye_2 * 0.05;
-	Matrix2d KPS = eye_2 * 5;
+	Matrix2d DPS = eye_2 * 0.005;
+	Matrix2d KPS = eye_2 * 0.5;
 	Matrix3d HA = eye_3;
-	Matrix3d DA = eye_3 * 0.05;
-	Matrix3d KA = eye_3 * 5;
+	Matrix3d DA = eye_3 * 0.005;
+	Matrix3d KA = eye_3 * 0.5;
 	Vector3d ve_des;
 	Vector3d vedot_des;
 	MatrixXd G(6, 6);
@@ -690,19 +691,16 @@ int main(int argc, char** argv) {
 			xE_in = qE_base(0);
 			yE_in = qE_base(1);
 
-
-
 			//Final conditions
 			xE_fin_abs = 0.368654;
-			yE_fin_abs = 0.444836 + 0.05;
+			yE_fin_abs = 0.444836;
 			thE_fin = -0.426546;
 			th0_fin = th0_in;
 			double th0_metroumeno = -0.564535;
 
-
 			Matrix2d R00_fin;
-			R00_fin << cos(th0_metroumeno), -sin(th0_metroumeno),
-					sin(th0_metroumeno), cos(th0_metroumeno);
+			R00_fin << 	cos(th0_metroumeno), -sin(th0_metroumeno),
+						sin(th0_metroumeno), cos(th0_metroumeno);
 
 			Matrix2d R00_fin_trans;
 			R00_fin_trans = R00_fin.transpose();
@@ -734,12 +732,12 @@ int main(int argc, char** argv) {
 			s0dotdot = 0.0;
 			sfdotdot = 0.0;
 
-			G << 1, t0, pow(t0,2), pow(t0,3), pow(t0,4), pow(t0,5),
-				1, tf, pow(tf,2), pow(tf,3), pow(tf,4), pow(tf,5),
-				0, 1, 2*t0, 3*pow(t0,2), 4*pow(t0,3), 5*pow(t0,4),
-				0, 1, 2*tf, 3*pow(tf,2), 4*pow(tf,3), 5*pow(tf,4),
-				0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
-				0, 0, 2, 6*tf, 12*pow(tf,2), 20*pow(tf,3);
+			G << 	1, t0, pow(t0,2), pow(t0,3), pow(t0,4), pow(t0,5),
+					1, tf, pow(tf,2), pow(tf,3), pow(tf,4), pow(tf,5),
+					0, 1, 2*t0, 3*pow(t0,2), 4*pow(t0,3), 5*pow(t0,4),
+					0, 1, 2*tf, 3*pow(tf,2), 4*pow(tf,3), 5*pow(tf,4),
+					0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
+					0, 0, 2, 6*tf, 12*pow(tf,2), 20*pow(tf,3);
 
 			B1 << s_0, 
 				s_f, 
@@ -759,12 +757,12 @@ int main(int argc, char** argv) {
 			a5 = x1(5);
 
 
-			G1 << 1, t0, pow(t0,2), pow(t0,3), pow(t0,4), pow(t0,5),
-				1, tf1, pow(tf1,2), pow(tf1,3), pow(tf1,4), pow(tf1,5),
-				0, 1, 2*t0, 3*pow(t0,2), 4*pow(t0,3), 5*pow(t0,4),
-				0, 1, 2*tf1, 3*pow(tf1,2), 4*pow(tf1,3), 5*pow(tf1,4),
-				0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
-				0, 0, 2, 6*tf1, 12*pow(tf1,2), 20*pow(tf1,3);
+			G1 << 	1, t0, pow(t0,2), pow(t0,3), pow(t0,4), pow(t0,5),
+					1, tf1, pow(tf1,2), pow(tf1,3), pow(tf1,4), pow(tf1,5),
+					0, 1, 2*t0, 3*pow(t0,2), 4*pow(t0,3), 5*pow(t0,4),
+					0, 1, 2*tf1, 3*pow(tf1,2), 4*pow(tf1,3), 5*pow(tf1,4),
+					0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
+					0, 0, 2, 6*tf1, 12*pow(tf1,2), 20*pow(tf1,3);
 
 			G1inv = G.inverse();
 			x11 = G1inv*B1;
@@ -799,9 +797,9 @@ int main(int argc, char** argv) {
 		if (time <= tf) {
 		///////////////////////////////////////////////////////////////// PATH PLANNING INERTIAL FOR LAR GRASPING ///////////////////////////////////////////////////////////
 
-			s = a5*pow(time,5)+a4*pow(time,4)+a3*pow(time,3)+a2*pow(time,2)+a1*time+a0;
-			sdot = 5*a5*pow(time,4)+4*a4*pow(time,3)+3*a3*pow(time,2)+2*a2*time+a1;
-			sdotdot = 20*a5*pow(time,3)+12*a4*pow(time,2)+6*a3*time+2*a2;
+			s = a5*pow(time,5) + a4*pow(time,4) + a3*pow(time,3) + a2*pow(time,2) + a1*time + a0;
+			sdot = 5*a5*pow(time,4) + 4*a4*pow(time,3) + 3*a3*pow(time,2) + 2*a2*time + a1;
+			sdotdot = 20*a5*pow(time,3) + 12*a4*pow(time,2) + 6*a3*time + 2*a2;
 
 			// cout <<s<<sdot<<s0dotdot<<endl;//---------------------------------------------
 
@@ -832,9 +830,9 @@ int main(int argc, char** argv) {
 		}
 
 		if (time <= tf1){
-			s1 = a15*pow(time,5)+a14*pow(time,4)+a13*pow(time,3)+a12*pow(time,2)+a11*time+a10;
-			s1dot = 5*a15*pow(time,4)+4*a14*pow(time,3)+3*a13*pow(time,2)+2*a12*time+a11;
-			s1dotdot = 20*a15*pow(time,3)+12*a14*pow(time,2)+6*a13*time+2*a12;
+			s1 = a15*pow(time,5) + a14*pow(time,4) + a13*pow(time,3) + a12*pow(time,2) + a11*time + a10;
+			s1dot = 5*a15*pow(time,4) + 4*a14*pow(time,3) + 3*a13*pow(time,2) + 2*a12*time + a11;
+			s1dotdot = 20*a15*pow(time,3) + 12*a14*pow(time,2) + 6*a13*time + 2*a12;
 
 			thE = thE_in+s1*(thE_fin-thE_in);
 			thEdot = s1dot*(thE_fin-thE_in);
@@ -843,19 +841,18 @@ int main(int argc, char** argv) {
 			thE = thE_fin;
 			thEdot = 0;
 			thEdotdot = 0;
-
 			// cout << "xE\n" << xE << endl;//---------------------------------------------
 		}
 
-		if (ps_x[ASSIST] == ps_x_prev[ASSIST]) {
+		if (ps_x[ASSIST] == ps_x_prev[ASSIST])
 			ps_x[ASSIST] = ps_x_prev[ASSIST] + xEdot*time_step;
-		}
-		if (ps_y[ASSIST] == ps_y_prev[ASSIST]) {
+
+		if (ps_y[ASSIST] == ps_y_prev[ASSIST])
 			ps_y[ASSIST] = ps_y_prev[ASSIST] + yEdot*time_step;
-		}
-		if (ps_th[ASSIST] == ps_th_prev[ASSIST]) {
+
+		if (ps_th[ASSIST] == ps_th_prev[ASSIST])
 			ps_th[ASSIST] = ps_th_prev[ASSIST] + thEdot*time_step;
-		}
+
 
 		//////////////////////////////////////////////////////////////// CONTROLLER INERTIAL FOR LAR GRASPING ///////////////////////////////////////////////////////////
 		Matrix3d R0;
@@ -877,11 +874,9 @@ int main(int argc, char** argv) {
 
 		errorq[0] = error_qdot[0] * (secs - prev_secs) + errorq[0];
 
-
 		g_vel_x = (ps_x[ASSIST] - ps_x_prev[ASSIST]) / time_step;
 		g_vel_y	= (ps_y[ASSIST] - ps_y_prev[ASSIST]) / time_step;
 		g_vel_th = (ps_th[ASSIST] - ps_th_prev[ASSIST]) / time_step;
-
 
 		// c_vel_x = (ps_x[CEPHEUS] - ps_x_prev[CEPHEUS]) / time_step;
 		// c_vel_y = (ps_y[CEPHEUS] - ps_y_prev[CEPHEUS]) / time_step;
@@ -897,28 +892,33 @@ int main(int argc, char** argv) {
 			angular_vel_z = 0.0;
 		// cout << acc_x << " " << acc_y << " " << angular_vel_z << endl;
 
-		c_vel_x = c_vel_x + acc_x*time_step;
-		c_vel_y = c_vel_y + acc_y*time_step;
+		// c_vel_x = c_vel_x + acc_x*time_step;
+		// c_vel_y = c_vel_y + acc_y*time_step;
+		c_vel_x = time_step * ((acc_x + acc_x_prev)/2);
+		c_vel_y = time_step * ((acc_y + acc_y_prev)/2);
+
 		c_vel_th = angular_vel_z;
 
-		if (abs(g_vel_x-g_vel_x_prev) > 0.06) {
+		acc_x_prev = acc_x;
+		acc_y_prev = acc_y;
+
+		if (abs(g_vel_x - g_vel_x_prev) > 0.06)
 			g_vel_x = g_vel_x/10;
-		}
-		if (abs(g_vel_y-g_vel_y_prev) > 0.06) {
+
+		if (abs(g_vel_y - g_vel_y_prev) > 0.06)
 			g_vel_y = g_vel_y/10;
-		}
-		if (abs(g_vel_th-g_vel_th_prev) > 0.06) {
+
+		if (abs(g_vel_th - g_vel_th_prev) > 0.06)
 			g_vel_th = g_vel_th/10;
-		}
-		if (abs(c_vel_x-c_vel_x_prev) > 0.06) {
+
+		if (abs(c_vel_x - c_vel_x_prev) > 0.06)
 			c_vel_x = c_vel_x/10;
-		}
-		if (abs(c_vel_y-c_vel_y_prev) > 0.06) {
+
+		if (abs(c_vel_y - c_vel_y_prev) > 0.06)
 			c_vel_y = c_vel_y/10;
-		}
-		if (abs(c_vel_th-c_vel_th_prev) > 0.06) {
+
+		if (abs(c_vel_th - c_vel_th_prev) > 0.06)
 			c_vel_th = c_vel_th/10;
-		}
 
 		g_vel_x_prev = g_vel_x;
 		g_vel_y_prev = g_vel_y;
@@ -933,8 +933,8 @@ int main(int argc, char** argv) {
 		theta0 = ps_th[CEPHEUS];
 
 		Matrix2d R00;
-		R00 << cos(theta0), -sin(theta0),
-			  sin(theta0), cos(theta0);
+		R00 << 	cos(theta0), -sin(theta0),
+			  	sin(theta0), cos(theta0);
 		
 		Vector2d cvel;
 		cvel << c_vel_x, c_vel_y;
@@ -997,7 +997,7 @@ int main(int argc, char** argv) {
 		// qE << 1.5,2.5,1.5;
 
 		
-		// qEDot <<g_vel_x,
+		// qEDot << g_vel_x,
 		// g_vel_y,
 		// g_vel_th;
 
@@ -1037,21 +1037,17 @@ int main(int argc, char** argv) {
 		// cout << "qEdot_des: " << qEdot_des(0) << "  " << qEdot_des(1) << "  " << qEdot_des(2) << endl;//--------------------------------------------
 		// cout << "velocities: " << ls_velocity << "  " << le_velocity << "  " << re_velocity << endl;//--------------------------------------------
 
-
 		// h = (time_step + time_step_prev)/2;
 
 		// qEDot << (1/(2*h))*(ps_x_prev_prev[ASSIST] - 4*ps_x_prev[ASSIST] + 3*ps_x[ASSIST]),
 		// 		 (1/(2*h))*(ps_y_prev_prev[ASSIST] - 4*ps_y_prev[ASSIST] + 3*ps_y[ASSIST]),
 		// 		 (1/(2*h))*(ps_th_prev_prev[ASSIST] - 4*ps_th_prev[ASSIST] + 3*ps_th[ASSIST]);
 
-
-
 		// qE << xE_in, yE_in, thE_in;
 
 		// qEDot << 0, 0, 0;
 
 		// cout /*<< "qE\n" << qE */<< "qEDot\n\n" << qEDot <<endl << endl;//-------------------------------------------------------
-
 
 		Vector2d xEdotdot_des;
 		xEdotdot_des << qEdotdot_rel_des(0), qEdotdot_rel_des(1);
@@ -1074,7 +1070,6 @@ int main(int argc, char** argv) {
 		Vector3d error_ve = ve_des - ve;
 
 		// cout << "error_ve " << error_ve(0) << " " << error_ve(1) << " " << error_ve(2)  << endl;
-
 
 		Vector3d errordot_ve = vedot_des - vedot;
 
@@ -1114,7 +1109,6 @@ int main(int argc, char** argv) {
 
 		///////////relative///////////////////////////////
 
-
 		// for testing matrix results/////////////////////////
 
 		// th0 = 90 * (M_PI / 180);
@@ -1142,39 +1136,38 @@ int main(int argc, char** argv) {
 
 		// cout << "forceeeee_z " << force_z << "force_y " << force_y << "torque_x " << torque_x << endl;
 
-		//////////////////////////////////////////////////////////////////////
-		if ((prev_force_z != force_z) && (force_z != 0)) {
+		if ((prev_force_z != force_z) && (force_z != 0))
 			force_z = force_z - calibration_z;
-		}
-		if ((prev_force_y != force_y) && (force_y != 0)) {
+
+		if ((prev_force_y != force_y) && (force_y != 0))
 			force_y = force_y - calibration_y;
-		}
-		if ((prev_torque_x != torque_x) && (torque_x != 0)) {
+
+		if ((prev_torque_x != torque_x) && (torque_x != 0))
 			torque_x = torque_x - calibration_tx;
-		}
+
 
 		prev_force_z = force_z;
 		prev_force_y = force_y;
 		prev_torque_x = torque_x;
 
-		if (abs(force_z) < 0.8){
+		if (abs(force_z) < 0.8)
 			force_z = 0;
-		}
-		if (abs(force_y) < 0.6){
+
+		if (abs(force_y) < 0.6)
 			force_y = 0;
-		}
-		if (abs(torque_x) < 0.2){
+
+		if (abs(torque_x) < 0.2)
 			torque_x = 0;
-		}
+
 
 		// cout << "force_z " << force_z << " force_y " << force_y << " torque_x " << torque_x << endl;
 	
 		// for production
 		// if (time >= 25) {
 
-			FextX = force_z;
-			FextY = - force_y;
-			Next = - torque_x;
+			// FextX = force_z;
+			// FextY = - force_y;
+			// Next = - torque_x;
 		// }
 
 		// cout << "FextX" << FextX << "FextY" << FextY << "Next" << Next << endl;
@@ -1183,47 +1176,47 @@ int main(int argc, char** argv) {
 		// cout << "Forces: " << force_x << force_y << force_z << " Torques: " << torque_x << torque_y << torque_z << endl;
 
 		MatrixXd H(6, 6);
-		H << p1,
-			0,
-			(-1)*p3*cos(th0) + (-1)*p2*sin(th0) + (-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
-			(-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
-			(-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
-			(-1)*p15*sin(q1 + q2 + q3 + th0), //end of row 1
-			
-			0,
-			p1,
-			p2*cos(th0) + p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) + (-1)*p3*sin(th0),
-			p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0),
-			p5*cos(q1 + q2 + th0) + p15 * cos(q1 + q2 + q3 + th0),
-			p15*cos(q1 + q2 + q3 + th0), // end of row 2
-			
-			(-1)*p3*cos(th0) + (-1)* p2*sin(th0) + (-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)* p15*sin(q1 + q2 + q3 + th0),
-			p2*cos(th0) + p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) + (-1)*p3*sin(th0),
-			p6 + p7 + p8 + p9 + 2* p10*cos(q1) + 2*p12*cos(q2) + 2*p13*cos(q1 + q2) + 2*p19*cos(q3) + 2*p18*cos(q2 + q3) + 2*p16*cos(q1 + q2 + q3) + 2*p11*sin(q1) + 2*p14*sin(q1 + q2) + 2*p17*sin(q1 + q2 + q3),
-			p7 + p8 + p9 + p10*cos(q1) + 2*p12* cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + 2*p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p11*sin(q1) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
-			p8 + p9 + p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
-			p9 + p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p17*sin(q1 + q2 + q3), // end of row 3
+		H << 	p1,
+				0,
+				(-1)*p3*cos(th0) + (-1)*p2*sin(th0) + (-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
+				(-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
+				(-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
+				(-1)*p15*sin(q1 + q2 + q3 + th0), //end of row 1
+				
+				0,
+				p1,
+				p2*cos(th0) + p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) + (-1)*p3*sin(th0),
+				p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0),
+				p5*cos(q1 + q2 + th0) + p15 * cos(q1 + q2 + q3 + th0),
+				p15*cos(q1 + q2 + q3 + th0), // end of row 2
+				
+				(-1)*p3*cos(th0) + (-1)* p2*sin(th0) + (-1)*p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)* p15*sin(q1 + q2 + q3 + th0),
+				p2*cos(th0) + p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) + (-1)*p3*sin(th0),
+				p6 + p7 + p8 + p9 + 2* p10*cos(q1) + 2*p12*cos(q2) + 2*p13*cos(q1 + q2) + 2*p19*cos(q3) + 2*p18*cos(q2 + q3) + 2*p16*cos(q1 + q2 + q3) + 2*p11*sin(q1) + 2*p14*sin(q1 + q2) + 2*p17*sin(q1 + q2 + q3),
+				p7 + p8 + p9 + p10*cos(q1) + 2*p12* cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + 2*p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p11*sin(q1) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
+				p8 + p9 + p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
+				p9 + p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p17*sin(q1 + q2 + q3), // end of row 3
 
-			(-1)* p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 +  th0),
-			p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0),
-			p7 +  p8 + p9 + p10*cos(q1) + 2*p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3)+ 2*p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p11*sin(q1) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
-			p7 + p8 + p9 + 2*p12*cos(q2) + 2*p19*cos(q3) +  2*p18*cos(q2 + q3),
-			p8 + p9 + p12*cos(q2) + 2*p19*cos(q3) + p18*cos(q2 + q3),
-			p9 + p19*cos(q3) + p18*cos(q2 + q3), // end of row 4
+				(-1)* p4*sin(q1 + th0) + (-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 +  th0),
+				p4*cos(q1 + th0) + p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0),
+				p7 +  p8 + p9 + p10*cos(q1) + 2*p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3)+ 2*p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p11*sin(q1) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
+				p7 + p8 + p9 + 2*p12*cos(q2) + 2*p19*cos(q3) +  2*p18*cos(q2 + q3),
+				p8 + p9 + p12*cos(q2) + 2*p19*cos(q3) + p18*cos(q2 + q3),
+				p9 + p19*cos(q3) + p18*cos(q2 + q3), // end of row 4
 
-			(-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
-			p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) ,
-			p8 + p9 + p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + p18*cos(q2 +q3) + p16*cos(q1 + q2 + q3) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
-			p8 + p9 + p12*cos(q2) + 2*p19*cos(q3) + p18*cos(q2 + q3),
-			p8 + p9 + 2*p19*cos(q3),
-			p9 + p19*cos(q3), // end of row 5
+				(-1)*p5*sin(q1 + q2 + th0) + (-1)*p15*sin(q1 + q2 + q3 + th0),
+				p5*cos(q1 + q2 + th0) + p15*cos(q1 + q2 + q3 + th0) ,
+				p8 + p9 + p12*cos(q2) + p13*cos(q1 + q2) + 2*p19*cos(q3) + p18*cos(q2 +q3) + p16*cos(q1 + q2 + q3) + p14*sin(q1 + q2) + p17*sin(q1 + q2 + q3),
+				p8 + p9 + p12*cos(q2) + 2*p19*cos(q3) + p18*cos(q2 + q3),
+				p8 + p9 + 2*p19*cos(q3),
+				p9 + p19*cos(q3), // end of row 5
 
-			(-1)*p15*sin(q1 + q2 + q3 + th0),
-			p15*cos(q1 + q2 + q3 + th0),
-			p9 + p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p17*sin( q1 + q2 + q3),
-			p9 + p19*cos(q3) + p18*cos(q2 + q3),
-			p9 + p19*cos(q3),
-			p9;
+				(-1)*p15*sin(q1 + q2 + q3 + th0),
+				p15*cos(q1 + q2 + q3 + th0),
+				p9 + p19*cos(q3) + p18*cos(q2 + q3) + p16*cos(q1 + q2 + q3) + p17*sin( q1 + q2 + q3),
+				p9 + p19*cos(q3) + p18*cos(q2 + q3),
+				p9 + p19*cos(q3),
+				p9;
 		
 		// cout << "Here is the matrix H:\n" << H << endl;
 
@@ -1301,69 +1294,69 @@ int main(int argc, char** argv) {
 		// cout << "Here is the vector c:\n" << c << endl;
 
 		MatrixXd Je(3, 6);
-		Je <<  1,
-			0,
-			(-1)*r0y*cos(th0) + (-1)*r0x*sin(th0) + (-1)*l1*sin(q1 + th0) + (-1)*r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0),
-			(-1)*(l1 + r1)*sin(q1 + th0) + (-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0),
-			(-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3) *sin(q1 + q2 + q3 + th0),
-			(-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0), //end of row 1
+		Je <<  	1,
+				0,
+				(-1)*r0y*cos(th0) + (-1)*r0x*sin(th0) + (-1)*l1*sin(q1 + th0) + (-1)*r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0),
+				(-1)*(l1 + r1)*sin(q1 + th0) + (-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0),
+				(-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3) *sin(q1 + q2 + q3 + th0),
+				(-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0), //end of row 1
 
-			0,
-			1,
-			r0x*cos(th0) + l1*cos(q1 + th0) + r1*cos(q1 + th0) + l2*cos(q1 + q2 + th0) + r2*cos(q1 + q2 + th0) + l3*cos(q1 + q2 + q3 + th0) + r3*cos(q1 + q2 + q3 + th0) + (-1)*r0y*sin(th0),
-			(l1 + r1)*cos(q1 + th0) + (l2 + r2)*cos(q1 + q2 + th0) + (l3 + r3)*cos(q1 + q2 + q3 + th0),
-			(l2 + r2)*cos(q1 + q2 + th0) + (l3 + r3)*cos(q1 + q2 + q3 + th0),
-			(l3 + r3)*cos(q1 + q2 + q3 + th0), //end of row 2
+				0,
+				1,
+				r0x*cos(th0) + l1*cos(q1 + th0) + r1*cos(q1 + th0) + l2*cos(q1 + q2 + th0) + r2*cos(q1 + q2 + th0) + l3*cos(q1 + q2 + q3 + th0) + r3*cos(q1 + q2 + q3 + th0) + (-1)*r0y*sin(th0),
+				(l1 + r1)*cos(q1 + th0) + (l2 + r2)*cos(q1 + q2 + th0) + (l3 + r3)*cos(q1 + q2 + q3 + th0),
+				(l2 + r2)*cos(q1 + q2 + th0) + (l3 + r3)*cos(q1 + q2 + q3 + th0),
+				(l3 + r3)*cos(q1 + q2 + q3 + th0), //end of row 2
 
-			0, 0, 1, 1, 1, 1;
+				0, 0, 1, 1, 1, 1;
 		
 		// cout << "Here is the matrix Je:\n" << Je << endl;
 
 		MatrixXd Jedot(3, 6);
-		Jedot << 0,
-				0,
-				q3dot*((-1)*l3*cos(q1 + q2 + q3 + th0) + (-1)*r3*cos(q1 + q2 + q3 +th0)) + q2dot*((-1)*l2*cos(q1 + q2 + th0) + 
-				(-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + th0) + (-1)*r3*cos(q1 + q2 + q3 + th0)) + 
-				q1dot*(( -1)*l1*cos(q1 + th0) + (-1)*r1*cos(q1 + th0) + (-1)*l2*cos(q1 + q2 +th0) + (-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + 
-				th0) + (-1)*r3*cos(q1 + q2 + q3 + th0)) + th0dot*((-1)*r0x*cos(th0) + (-1)*l1*cos( q1 + th0) + 
-				(-1)*r1*cos(q1 + th0) + (-1)*l2*cos(q1 + q2 + th0) + (-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + th0) + 
-				(-1)*r3*cos(q1 + q2 + q3 +th0) + r0y*sin(th0)),
-				(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + 
-				q2dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
-				q1dot*((-1)*(l1 + r1)*cos(q1 + th0) + (-1)*(l2 + r2)*cos(q1 + q2 +  th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
-				th0dot*((-1)*(l1 + r1)* cos(q1 + th0) + (-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 +  q2 + q3 + th0)),
-				(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + q1dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + 
-				(-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + q2dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
-				th0dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 +q3 + th0)),
-				(-1)*q1dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + (-1)*q2dot*(l3 +r3)*cos(q1 + q2 + q3 + th0) + 
-				(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + (-1)*(l3 + r3)*th0dot*cos(q1 + q2 + q3 + th0), //end of row 1
-				0,
-				0,
-				q3dot*((-1)*l3*sin( 
-				q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)) + q2dot*((-1)*l2*sin( 
-				q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + ( 
-				-1)*r3*sin(q1 + q2 + q3 + th0)) + q1dot*((-1)*l1*sin(q1 + th0) + (-1)* 
-				r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) +  
-				(-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)) + th0dot*( 
-				(-1)*r0y*cos(th0) + (-1)*r0x*sin(th0) + (-1)*l1*sin(q1 + th0) + (-1) 
-				*r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 +  
-				th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)),
-				(-1) 
-				*q3dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + q2dot*((-1)*(l2 + r2)*sin(q1 +  
-				q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + q1dot*((-1)*(l1 + r1)* 
-				sin(q1 + th0) + (-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 +  
-				q2 + q3 + th0)) + th0dot*((-1)*(l1 + r1)*sin(q1 + th0) + (-1)*(l2 + r2)* 
-				sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)),
-				(-1)*q3dot*(l3 +  
-				r3)*sin(q1 + q2 + q3 + th0) + q1dot*((-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1) 
-				*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + q2dot*((-1)*(l2 + r2)*sin(q1 + q2 +  
-				th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + th0dot*((-1)*(l2 + r2)* 
-				sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)),
-				(-1)*q1dot*(l3 +  
-				r3)*sin(q1 + q2 + q3 + th0) + (-1)*q2dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + ( 
-				-1)*q3dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + (-1)*(l3 + r3)*th0dot*sin( 
-				q1 + q2 + q3 + th0), //end of row 2
-				0, 0, 0, 0, 0, (-1)*(l3 + r3)*th0dot*sin(q1 + q2 + q3 + th0);
+		Jedot << 	0,
+					0,
+					q3dot*((-1)*l3*cos(q1 + q2 + q3 + th0) + (-1)*r3*cos(q1 + q2 + q3 +th0)) + q2dot*((-1)*l2*cos(q1 + q2 + th0) + 
+					(-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + th0) + (-1)*r3*cos(q1 + q2 + q3 + th0)) + 
+					q1dot*(( -1)*l1*cos(q1 + th0) + (-1)*r1*cos(q1 + th0) + (-1)*l2*cos(q1 + q2 +th0) + (-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + 
+					th0) + (-1)*r3*cos(q1 + q2 + q3 + th0)) + th0dot*((-1)*r0x*cos(th0) + (-1)*l1*cos( q1 + th0) + 
+					(-1)*r1*cos(q1 + th0) + (-1)*l2*cos(q1 + q2 + th0) + (-1)*r2*cos(q1 + q2 + th0) + (-1)*l3*cos(q1 + q2 + q3 + th0) + 
+					(-1)*r3*cos(q1 + q2 + q3 +th0) + r0y*sin(th0)),
+					(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + 
+					q2dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
+					q1dot*((-1)*(l1 + r1)*cos(q1 + th0) + (-1)*(l2 + r2)*cos(q1 + q2 +  th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
+					th0dot*((-1)*(l1 + r1)* cos(q1 + th0) + (-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 +  q2 + q3 + th0)),
+					(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + q1dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + 
+					(-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + q2dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 + q3 + th0)) + 
+					th0dot*((-1)*(l2 + r2)*cos(q1 + q2 + th0) + (-1)*(l3 + r3)*cos(q1 + q2 +q3 + th0)),
+					(-1)*q1dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + (-1)*q2dot*(l3 +r3)*cos(q1 + q2 + q3 + th0) + 
+					(-1)*q3dot*(l3 + r3)*cos(q1 + q2 + q3 + th0) + (-1)*(l3 + r3)*th0dot*cos(q1 + q2 + q3 + th0), //end of row 1
+					0,
+					0,
+					q3dot*((-1)*l3*sin( 
+					q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)) + q2dot*((-1)*l2*sin( 
+					q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + ( 
+					-1)*r3*sin(q1 + q2 + q3 + th0)) + q1dot*((-1)*l1*sin(q1 + th0) + (-1)* 
+					r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 + th0) +  
+					(-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)) + th0dot*( 
+					(-1)*r0y*cos(th0) + (-1)*r0x*sin(th0) + (-1)*l1*sin(q1 + th0) + (-1) 
+					*r1*sin(q1 + th0) + (-1)*l2*sin(q1 + q2 + th0) + (-1)*r2*sin(q1 + q2 +  
+					th0) + (-1)*l3*sin(q1 + q2 + q3 + th0) + (-1)*r3*sin(q1 + q2 + q3 + th0)),
+					(-1) 
+					*q3dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + q2dot*((-1)*(l2 + r2)*sin(q1 +  
+					q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + q1dot*((-1)*(l1 + r1)* 
+					sin(q1 + th0) + (-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 +  
+					q2 + q3 + th0)) + th0dot*((-1)*(l1 + r1)*sin(q1 + th0) + (-1)*(l2 + r2)* 
+					sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)),
+					(-1)*q3dot*(l3 +  
+					r3)*sin(q1 + q2 + q3 + th0) + q1dot*((-1)*(l2 + r2)*sin(q1 + q2 + th0) + (-1) 
+					*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + q2dot*((-1)*(l2 + r2)*sin(q1 + q2 +  
+					th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)) + th0dot*((-1)*(l2 + r2)* 
+					sin(q1 + q2 + th0) + (-1)*(l3 + r3)*sin(q1 + q2 + q3 + th0)),
+					(-1)*q1dot*(l3 +  
+					r3)*sin(q1 + q2 + q3 + th0) + (-1)*q2dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + ( 
+					-1)*q3dot*(l3 + r3)*sin(q1 + q2 + q3 + th0) + (-1)*(l3 + r3)*th0dot*sin( 
+					q1 + q2 + q3 + th0), //end of row 2
+					0, 0, 0, 0, 0, (-1)*(l3 + r3)*th0dot*sin(q1 + q2 + q3 + th0);
 
 		// cout << "Here is the matrix Jedot:\n" << Jedot << endl;
 
@@ -1377,7 +1370,7 @@ int main(int argc, char** argv) {
 		Vector2d Jvwdot;
 		Jvwdot << Jedot(0,2), Jedot(1,2);
 		MatrixXd Jvqdot(2, 3);
-		Jvqdot <<  Jedot(0,3), Jedot(0,4), Jedot(0,5),
+		Jvqdot <<  	Jedot(0,3), Jedot(0,4), Jedot(0,5),
 					Jedot(1,3), Jedot(1,4), Jedot(1,5);
 		Vector3d Jwqdot;
 		Jwqdot << Jedot(2,3), Jedot(2,4), Jedot(2,5); 
@@ -1393,7 +1386,7 @@ int main(int argc, char** argv) {
 		// cout << "Here is the matrix J1:\n" << J1 << endl;
 
 		MatrixXd J1dot(6,6);
-		J1dot << 0, 0, 0, 0, 0, 0,
+		J1dot << 	0, 0, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0,
 					0, 0, Jvwdot(0), Jvqdot(0,0), Jvqdot(0,1), Jvqdot(0,2),  
@@ -1426,18 +1419,18 @@ int main(int argc, char** argv) {
 		MatrixXd H22star(4,4);
 
 
-		H11star << Hstar(0,0), Hstar(0,1),
+		H11star << 	Hstar(0,0), Hstar(0,1),
 					Hstar(1,0), Hstar(1,1);
 
-		H12star << Hstar(0,2), Hstar(0,3), Hstar(0,4), Hstar(0,5),
+		H12star << 	Hstar(0,2), Hstar(0,3), Hstar(0,4), Hstar(0,5),
 					Hstar(1,2), Hstar(1,3), Hstar(1,4), Hstar(1,5);
 
-		H21star << Hstar(2,0), Hstar(2,1),
+		H21star << 	Hstar(2,0), Hstar(2,1),
 					Hstar(3,0), Hstar(3,1),
 					Hstar(4,0), Hstar(4,1),
 					Hstar(5,0), Hstar(5,1);
 
-		H22star << Hstar(2,2), Hstar(2,3), Hstar(2,4), Hstar(2,5), 
+		H22star << 	Hstar(2,2), Hstar(2,3), Hstar(2,4), Hstar(2,5), 
 					Hstar(3,2), Hstar(3,3), Hstar(3,4), Hstar(3,5),
 					Hstar(4,2), Hstar(4,3), Hstar(4,4), Hstar(4,5),
 					Hstar(5,2), Hstar(5,3), Hstar(5,4), Hstar(5,5);
@@ -1452,10 +1445,10 @@ int main(int argc, char** argv) {
 		MatrixXd J22star(4,4);
 
 
-		J12star << Jstar(0,2), Jstar(0,3), Jstar(0,4), Jstar(0,5), 
+		J12star << 	Jstar(0,2), Jstar(0,3), Jstar(0,4), Jstar(0,5), 
 					Jstar(1,2), Jstar(1,3), Jstar(1,4), Jstar(1,5); 
 
-		J22star << Jstar(2,2), Jstar(2,3), Jstar(2,4), Jstar(2,5), 
+		J22star << 	Jstar(2,2), Jstar(2,3), Jstar(2,4), Jstar(2,5), 
 					Jstar(3,2), Jstar(3,3), Jstar(3,4), Jstar(3,5),
 					Jstar(4,2), Jstar(4,3), Jstar(4,4), Jstar(4,5),
 					Jstar(5,2), Jstar(5,3), Jstar(5,4), Jstar(5,5);
@@ -1499,7 +1492,7 @@ int main(int argc, char** argv) {
 		Vector4d Jebar_s;
 		Jebar_s=Je22star-H21star*H11star_inv*Je12star;
 		MatrixXd Jebar(4,3);
-		Jebar << Jebar_f(0,0), Jebar_f(0,1), Jebar_s(0),
+		Jebar << 	Jebar_f(0,0), Jebar_f(0,1), Jebar_s(0),
 					Jebar_f(1,0), Jebar_f(1,1), Jebar_s(1),
 					Jebar_f(2,0), Jebar_f(2,1), Jebar_s(2),
 					Jebar_f(3,0), Jebar_f(3,1), Jebar_s(3);
@@ -1522,9 +1515,9 @@ int main(int argc, char** argv) {
 		eb_des << eb1_des, eb2_des, eb3_des;
 
 		Matrix3d Rb;
-		Rb << pow(eb1,2)+(-1)*pow(eb2,2)+(-1)*pow(eb3,2)+pow(nb,2),      2*eb1*eb2+(-2)*eb3*nb,      2*eb1*eb3+2*eb2*nb,
-		2*eb1*eb2+2*eb3*nb,       (-1)*pow(eb1,2)+pow(eb2,2)+(-1)*pow(eb3,2)+pow(nb,2),        2*eb2*eb3+(-2)*eb1*nb, 
-		2*eb1*eb3+(-2)*eb2*nb,    2*eb2*eb3+2*eb1*nb,        (-1)*pow(eb1,2)+(-1)*pow(eb2,2)+pow(eb3,2)+pow(nb,2);
+		Rb << 	pow(eb1,2)+(-1)*pow(eb2,2)+(-1)*pow(eb3,2)+pow(nb,2),      2*eb1*eb2+(-2)*eb3*nb,      2*eb1*eb3+2*eb2*nb,
+				2*eb1*eb2+2*eb3*nb,       (-1)*pow(eb1,2)+pow(eb2,2)+(-1)*pow(eb3,2)+pow(nb,2),        2*eb2*eb3+(-2)*eb1*nb, 
+				2*eb1*eb3+(-2)*eb2*nb,    2*eb2*eb3+2*eb1*nb,        (-1)*pow(eb1,2)+(-1)*pow(eb2,2)+pow(eb3,2)+pow(nb,2);
 
 		
 		Vector3d omegab_inert;
@@ -1564,7 +1557,7 @@ int main(int argc, char** argv) {
 		double ebn = eb_des_trans*eb + nb_des*nb;
 
 		Matrix3d omegabcross;
-		omegabcross << 0, -omegab(2,0), omegab(1, 0),
+		omegabcross << 	0, -omegab(2,0), omegab(1, 0),
 						omegab(2, 0), 0, -omegab(0,0),
 						-omegab(1, 0), omegab(0, 0), 0;
 
@@ -1619,16 +1612,14 @@ int main(int argc, char** argv) {
 		double een=ee_des_trans*ee+ne_des*ne;
 
 		Matrix3d omegaecross;
-		omegaecross << 
-				0, -omegae(2,0), omegae(1,0),
-				omegae(2,0), 0, -omegae(0,0),
-				-omegae(1,0), omegae(0,0), 0;
+		omegaecross << 	0, -omegae(2,0), omegae(1,0),
+						omegae(2,0), 0, -omegae(0,0),
+						-omegae(1,0), omegae(0,0), 0;
 
 		Matrix3d eedcross;
-		eedcross <<
-				0, -ee_des(2,0), ee_des(1,0),
-				ee_des(2,0), 0, -ee_des(0,0),
-				-ee_des(1,0), ee_des(0,0), 0;
+		eedcross << 0, -ee_des(2,0), ee_des(1,0),
+					ee_des(2,0), 0, -ee_des(0,0),
+					-ee_des(1,0), ee_des(0,0), 0;
 
 		Matrix3d Eed;
 		Eed = ne_des*eye_3 + eedcross;
@@ -1668,7 +1659,7 @@ int main(int argc, char** argv) {
 		double wtf = errob_omega_trans*errob_omega;
 		wtf=wtf/4;
 		
-		uRW = Rb*(Rb_trans*omegabdot_des+ omegabcross*errob_omega - KD*errob_omega - 2.0*(KP*error_base - wtf*error_base)/ebn);
+		uRW = Rb*(Rb_trans*omegabdot_des + omegabcross*errob_omega - KD*errob_omega - 2.0*(KP*error_base - wtf*error_base)/ebn);
 
 		// cout << "errob_omega" << errob_omega << endl;
 		// cout << "error_base" << error_base << endl;
@@ -1679,7 +1670,7 @@ int main(int argc, char** argv) {
 		HPS_inv = HPS.inverse();
 
 
-		umr = HPS_inv*(HPS*xEdotdot_des+ DPS*(xEdot_des-xEdot) + KPS*(xE_des-xE) + Qef);
+		umr = HPS_inv*(HPS*xEdotdot_des + DPS*(xEdot_des-xEdot) + KPS*(xE_des-xE) + Qef);
 
 		// cout << "umr" << umr << endl;
 
@@ -1699,7 +1690,6 @@ int main(int argc, char** argv) {
 		test = KA*Ees - HA*Ees*test_num;
 
 		umw = Re*((HAEes_inv)*(HA*Ees*(Re_trans*omegaedot_des + omegaecross*errore_omega) - DA*Ees*errore_omega + 2*Re_trans*Qet - 2*test*error_ee/een));
-
 
 		// cout << "Re_trans:\n" << Re_trans << endl << endl;
 		// cout << "Ees:\n" << Ees << endl << endl;
@@ -1740,11 +1730,11 @@ int main(int argc, char** argv) {
 		Vector4d tau;
 		Matrix4d Jbar_inv;
 		Jbar_inv = Jbar.inverse();
-		tau=Jbar_inv*Qbar;
+		tau = Jbar_inv * Qbar;
 
-		torq[0]=-tau(1)/186;
-		torq[1]=tau(2)/186;
-		torq[2]=-tau(3)/186;
+		torq[0] = - tau(1)/186;
+		torq[1] = tau(2)/186;
+		torq[2] = - tau(3)/186;
 
 		// test w/o joints
 		// torq[0] = 0.000001;
@@ -1841,11 +1831,11 @@ int main(int argc, char** argv) {
 		// gripper_error_y_pub.publish(temp_msg);
 		// temp_msg.data = gripper_error_th;
 		// gripper_error_th_pub.publish(temp_msg);
-		temp_msg.data = qE_des(0);
+		temp_msg.data = qE_rel_des(0);
 		qe_des_x_pub.publish(temp_msg);
-		temp_msg.data = qE_des(1);
+		temp_msg.data = qE_rel_des(1);
 		qe_des_y_pub.publish(temp_msg);
-		temp_msg.data = qE_des(2);
+		temp_msg.data = qE_rel_des(2);
 		qe_des_th_pub.publish(temp_msg);
 		// temp_msg.data = qEdot_des(0);
 		// qe_dot_des_x_pub.publish(temp_msg);
@@ -1915,7 +1905,6 @@ int main(int argc, char** argv) {
 		// botarm_force_z_pub.publish(temp_msg);
 		// temp_msg.data = botarm_torque_y;
 		// botarm_torque_y_pub.publish(temp_msg);
-		
 
 		ps_x_prev_prev[ALX_GRIPPER] = ps_x_prev[ALX_GRIPPER];
 		ps_y_prev_prev[ALX_GRIPPER] = ps_y_prev[ALX_GRIPPER];
@@ -1944,7 +1933,7 @@ int main(int argc, char** argv) {
 			sum_of_torques[k] = 0;
 		}
 		
-        rokubimini_queue.callAvailable(ros::WallDuration(0.0));
+		rokubimini_queue.callAvailable(ros::WallDuration(0.0));
 		if (num_of_avail_rokubimini_readings){
 			// ROS_WARN("WOWWW readiiingsss %f", num_of_avail_rokubimini_readings);
 			force_x = sum_of_forces[X] / num_of_avail_rokubimini_readings;
