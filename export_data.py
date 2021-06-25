@@ -54,21 +54,25 @@ def main():
 	# get file contents
 	print('Getting file contents')
 	f_contents = []
+	lengths = []
 	for file in filepaths:
 		topic = file.split('bag.', 1)[1].split('.txt', 1)[0]
 		# print(topic)
 		# if topic not in ['set_ls_qd', 'set_le_qd', 'set_re_qd']:
 		l = get_list_from_file(file, topic)
 		print(topic, len(l))
+		lengths.append(len(l))
 		f_contents.append(l)
 	print('Done')
+	lengths.sort()
+	min_len = lengths[0]
 	# print (len(f_contents))
 	# write to csv
 	csv_filename = f_prefix + '.csv'
 	with open(csv_filename, "w") as f:
 		writer = csv.writer(f)
 		# print(list(zip(*f_contents)))
-		writer.writerows(list(zip(*f_contents)))
+		writer.writerows(list(zip(*f_contents[-min_len:])))
 
 	# delete all txt
 	# for (dirpath, dirnames, filenames) in os.walk(mypath):

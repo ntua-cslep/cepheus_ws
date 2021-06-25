@@ -620,10 +620,10 @@ int main(int argc, char** argv) {
 			// xE_fin = xE_in;
 			// yE_fin = yE_in + 0.1;
 
-			xE_fin = ps_x[ASSIST] - 0.270 - 0.04 + 0.05;
+			xE_fin = ps_x[ASSIST] - 0.270 - 0.04/* + 0.05*/;
 			yE_fin = ps_y[ASSIST] - 0.282 + 0.056 - 0.01;
 
-			thE_fin = -ps_th[ASSIST];
+			thE_fin = - ps_th[ASSIST];
 
 			// thE_fin = -ps_th[ASSIST] + 5*(M_PI/180);
 			// thE_fin = thE_in;
@@ -643,8 +643,8 @@ int main(int argc, char** argv) {
 			// thE_fin=150*(M_PI/180);
 			// th0_fin=90*(M_PI/180);
 
-			// cout << "EndEf in: " << xE_in << " " << yE_in << " " << thE_in << endl;//---------------------------------------
-			// cout << "EndEf fin: " << xE_fin << " " << yE_fin << " " << thE_fin << endl;//------------------------------
+			// cout << "EndEf in: " << xE_in << " " << yE_in << " " << thE_in << endl;
+			// cout << "EndEf fin: " << xE_fin << " " << yE_fin << " " << thE_fin << endl;
 			
 			s_0 = 0.0;
 			s_f = 1.0;
@@ -704,7 +704,7 @@ int main(int argc, char** argv) {
 			sdot = 5*a5*pow(time,4)+4*a4*pow(time,3)+3*a3*pow(time,2)+2*a2*time+a1;
 			sdotdot = 20*a5*pow(time,3)+12*a4*pow(time,2)+6*a3*time+2*a2;
 
-			// cout <<s<<sdot<<s0dotdot<<endl;//---------------------------------------------
+			// cout <<s<<sdot<<s0dotdot<<endl;
 
 			theta0_des = th0_in+s*(th0_fin-th0_in);
 			xE = xE_in+s*(xE_fin-xE_in);
@@ -739,7 +739,7 @@ int main(int argc, char** argv) {
 			yEdotdot = 0;
 			thEdotdot = 0;
 			// if (!capture_complete) {
-				ROS_WARN("reached the LAR");
+				// ROS_WARN("reached the LAR");
 			// 	lar_command.data = "softcapture";
 			// 	lar_pub.publish(lar_command);
 			// 	sleep(1);
@@ -801,12 +801,12 @@ int main(int argc, char** argv) {
 		c_vel_y_prev = c_vel_y;
 		c_vel_th_prev = c_vel_th;
 
-		// cout << "ALX_GRIPPER: " /*<< ps_x[ALX_GRIPPER] << "  " << ps_y[ALX_GRIPPER] << endl; << "  " */<< ps_th[ALX_GRIPPER] << endl;//----------------------
-		// cout << "CEPHEUS: " /*<< ps_x[CEPHEUS] << "  " << ps_y[CEPHEUS] << "  " */<< ps_th[CEPHEUS] << endl;//--------------------------------------------
-		// cout << "positions: " << ls_position << "  " << le_position << "  " << re_position << endl;//--------------------------------------------
-		// cout << "qE_des: " << qE_des(0) << "  " << qE_des(1) << "  " << qE_des(2) << endl;//--------------------------------------------
-		// cout << "qEdot_des: " << qEdot_des(0) << "  " << qEdot_des(1) << "  " << qEdot_des(2) << endl;//--------------------------------------------
-		// cout << "velocities: " << ls_velocity << "  " << le_velocity << "  " << re_velocity << endl;//--------------------------------------------
+		// cout << "ALX_GRIPPER: " /*<< ps_x[ALX_GRIPPER] << "  " << ps_y[ALX_GRIPPER] << endl; << "  " */<< ps_th[ALX_GRIPPER] << endl;
+		// cout << "CEPHEUS: " /*<< ps_x[CEPHEUS] << "  " << ps_y[CEPHEUS] << "  " */<< ps_th[CEPHEUS] << endl;
+		// cout << "positions: " << ls_position << "  " << le_position << "  " << re_position << endl;
+		// cout << "qE_des: " << qE_des(0) << "  " << qE_des(1) << "  " << qE_des(2) << endl;
+		// cout << "qEdot_des: " << qEdot_des(0) << "  " << qEdot_des(1) << "  " << qEdot_des(2) << endl;
+		// cout << "velocities: " << ls_velocity << "  " << le_velocity << "  " << re_velocity << endl;
 
 		qE << ps_x[ALX_GRIPPER], ps_y[ALX_GRIPPER], ps_th[ALX_GRIPPER];
 
@@ -824,7 +824,7 @@ int main(int argc, char** argv) {
 
 		// qEDot << 0, 0, 0;
 
-		// cout /*<< "qE\n" << qE */<< "qEDot\n\n" << qEDot <<endl << endl;//-------------------------------------------------------
+		// cout /*<< "qE\n" << qE */<< "qEDot\n\n" << qEDot <<endl << endl;
 
 		ve = qE;
 		vedot = qEDot;
@@ -838,7 +838,7 @@ int main(int argc, char** argv) {
 		theta3 = re_position;
 		theta0 = ps_th[CEPHEUS];
 
-		// cout << "theta0 :\n" << theta0 << endl;//-------------------------------------------------------
+		// cout << "theta0 :\n" << theta0 << endl;
 
 		// for test
 		// theta0 = th0_in;
@@ -895,7 +895,7 @@ int main(int argc, char** argv) {
 		double errordot_theta = theta0dot_des - theta0Dot;
 		Vector3d error_ve = ve_des - ve;
 
-		// cout << "error_ve" << error_ve << endl;
+		// cout << error_ve(0) << " " << error_ve(1) << " " << error_ve(2) << endl;
 
 
 		Vector3d errordot_ve = vedot_des - vedot;
@@ -921,7 +921,7 @@ int main(int argc, char** argv) {
 				le_velocity,
 				re_velocity;
 
-		// cout << "qDot:\n" << qDot << endl;//----------//----------//----------//----------//----------//----------//----------
+		// cout << "qDot:\n" << qDot << endl
 
 		VectorXd v1(6);
 		v1 = qDot;
@@ -947,9 +947,9 @@ int main(int argc, char** argv) {
 		// thetaEdot_des = 30 * (M_PI / 180);
 		// thetaEdotdot_des = 30 * (M_PI / 180);
 
-		FextX = 0.0;
-		Next = 0.0;
-		FextY = 0.0;
+		// FextX = 0.0;
+		// Next = 0.0;
+		// FextY = 0.0;
 
 		// cout << "forceeeee_z " << force_z << "force_y " << force_y << "torque_x " << torque_x << endl;
 
@@ -987,12 +987,20 @@ int main(int argc, char** argv) {
 		
 
 		// for production
-		// if (time >= 25) {
-
-			// FextX = force_z;
-			// FextY = - force_y;
-			// Next = - torque_x;
+		// if (time >= 10) {
+			FextX = force_z;
+			FextY = - force_y;
+			Next = - torque_x;
 		// }
+
+		if(abs(FextX) > 1.0 || abs(FextY) > 1.0 || abs(Next) > 0.5){
+			HPS = eye_2;
+			DPS = eye_2 * 0.25;
+			KPS = eye_2 * 25;
+			HA = eye_3;
+			DA = eye_3 * 0.25;
+			KA = eye_3 * 25;
+		}
 
 		// cout << "FextX" << FextX << "FextY" << FextY << "Next" << Next << endl;
 		// printf("FextX: %-10f   FextY: %-10f   Next: %-10f\n", FextX, FextY, Next);
@@ -1559,7 +1567,7 @@ int main(int argc, char** argv) {
 		// cout << "H21star\n" << H21star << endl << endl;
 		// cout << "H11star_inv\n" << H11star_inv << endl << endl;
 		// cout << "H12star\n" << H12star << endl << endl;
-		// cout << "tau\n" << tau << endl << endl;//--------`-------------------------------------------------------------------
+		// cout << "tau\n" << tau << endl << endl;
 		// cout << "q1" << q1 << "q2" << q2 << "q3" << q3 << endl;
 		// ROS_WARN("position: %f, torq: %f",rw_position,torq[3]);
 

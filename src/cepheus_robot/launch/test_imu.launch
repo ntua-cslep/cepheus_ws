@@ -1,0 +1,5 @@
+<launch>
+	<include file="$(find xsens_mti_driver)/launch/display.launch"></include>
+	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus  /imu/acceleration 
+																														/imu/angular_velocity" respawn="true" output="screen"/>
+</launch>

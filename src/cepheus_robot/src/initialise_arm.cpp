@@ -47,9 +47,14 @@ double ps_x[3];
 double ps_y[3];
 double ps_th[3];
 
-double q1_init = -60 * (M_PI / 180);
-double q2_init = 105 * (M_PI / 180);
-double q3_init = 45 * (M_PI / 180);
+// -- inertial
+// double q1_init = -60 * (M_PI / 180);
+// double q2_init = 105 * (M_PI / 180);
+// double q3_init = 45 * (M_PI / 180);
+// -- relative
+double q1_init = - 0.157781;
+double q2_init = 1.635468;
+double q3_init = 0.901461;
 
 double Kp = 0.06;
 double Kd = 0.006;
@@ -162,9 +167,6 @@ void resetMovementCallback(const std_msgs::Bool::ConstPtr& msg) {
 	start_moving = false;
 	sleep(10);
 	ROS_INFO("CONTROL STILL UNTIL SIGNAL FOR MOVEMENT");
-	q1_init = -60 * (M_PI / 180);
-	q2_init = 105 * (M_PI / 180);
-	q3_init = 45 * (M_PI / 180);
 }
 
 
@@ -422,7 +424,8 @@ int main(int argc, char** argv) {
 			errorq[0] = q1_init - ls_position;
 			errorq[1] = q2_init - le_position;
 			errorq[2] = q3_init - re_position;
-			// ROS_INFO("ERRORQ:  %f   %f   %f", errorq[0], errorq[1], errorq[2]);
+			std::cout << errorq[0] << " " << errorq[1] << " " << errorq[2] << std::endl;
+			
 			// ROS_INFO("pos:  %f   %f   %f", ls_position, le_position,re_position);
 
 			torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
