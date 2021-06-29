@@ -176,6 +176,7 @@ add_executable(eross_control_relative_node src/eross_control_relative.cpp)
 add_executable(EROSSGripper src/EROSSGripper_v3.cpp)
 # add_executable(EROSSGripper_v3 src/EROSSGripper_v3.cpp src/Definitions.h)
 add_executable(test_node src/test.cpp)
+add_executable(calibrate_imu_node src/calibrate_imu.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -198,10 +199,11 @@ target_link_libraries(new_base_planner_node ${catkin_LIBRARIES})
 # target_link_libraries(alex_gripper_control_node ${catkin_LIBRARIES})
 target_link_libraries(initialise_arm_node ${catkin_LIBRARIES})
 target_link_libraries(eross_control_node ${catkin_LIBRARIES})
-target_link_libraries(eross_control_relative_node ${catkin_LIBRARIES})
+target_link_libraries(eross_control_relative_node ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(EROSSGripper ${catkin_LIBRARIES} libEposCmd.so)
 # target_link_libraries(EROSSGripper_v3 ${catkin_LIBRARIES})
 target_link_libraries(test_node ${catkin_LIBRARIES})
+target_link_libraries(calibrate_imu_node ${catkin_LIBRARIES} yaml-cpp)
 
 set_target_properties(EROSSGripper PROPERTIES COMPILE_FLAGS "-lEposCmd")
 #############

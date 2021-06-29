@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find xsens_mti_driver)/launch/display.launch"></include>
+	<node name="calibrate_imu_node" pkg="cepheus_robot" type="calibrate_imu_node" output="screen" required="true">
+		<param name="loop_rate" value="400.0"/>
+	</node>
+</launch>

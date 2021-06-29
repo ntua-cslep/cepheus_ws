@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <ros/callback_queue.h>
 #include <ros/callback_queue_interface.h>
 #include <std_msgs/UInt8.h>
@@ -25,7 +26,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
-
+#include <yaml-cpp/yaml.h>
 
 #include "digital_filter.h"
 
@@ -101,22 +102,24 @@ double prev_torque_z = 0.0;
 
 
 double acc_x = 0.0, acc_y = 0.0;
+double acc_x_offset = 0.0, acc_y_offset = 0.0;
 double acc_x_prev = 0.0, acc_y_prev = 0.0;
 double angular_vel_z = 0.0;
+double angular_vel_z_offset = 0.0;
 
 
 void imuAccelerationCallback(const geometry_msgs::Vector3Stamped::ConstPtr& msg) {
 	geometry_msgs::Vector3Stamped temp;
 	temp = *msg;
-	acc_x = temp.vector.x;
-	acc_y = temp.vector.y;
+	acc_x = temp.vector.x - acc_x_offset;
+	acc_y = temp.vector.y - acc_y_offset;
 }
 
 
 void imuAngularVelCallback(const geometry_msgs::Vector3Stamped::ConstPtr& msg) {
 	geometry_msgs::Vector3Stamped temp;
 	temp = *msg;
-	angular_vel_z = temp.vector.z;
+	angular_vel_z = temp.vector.z - angular_vel_z_offset;
 }
 
 
@@ -421,7 +424,7 @@ int main(int argc, char** argv) {
 	ros::Publisher cepheus_th_pub = nh.advertise<std_msgs::Float64>("c_th", 1);
 	ros::Publisher cepheus_th_des_pub = nh.advertise<std_msgs::Float64>("c_th_des", 1);
 	ros::Publisher cepheus_th_dot_pub = nh.advertise<std_msgs::Float64>("c_th_dot", 1);
-	// ros::Publisher gripper_error_x_pub = nh.advertise<std_msgs::Float64>("g_error_x", 1);
+	// ros::Publisher gripper_error_x_pub = nh.advertiYAML::Node config = YAML::LoadFile("config.yaml");se<std_msgs::Float64>("g_error_x", 1);
 	// ros::Publisher gripper_error_y_pub = nh.advertise<std_msgs::Float64>("g_error_y", 1);
 	// ros::Publisher gripper_error_th_pub = nh.advertise<std_msgs::Float64>("g_error_th", 1);
 	ros::Publisher qe_des_x_pub = nh.advertise<std_msgs::Float64>("qe_des_x", 1);
@@ -453,8 +456,6 @@ int main(int argc, char** argv) {
 	ros::Publisher botarm_force_x_pub = nh.advertise<std_msgs::Float64>("botarm_force_x", 1);
 	ros::Publisher botarm_force_z_pub = nh.advertise<std_msgs::Float64>("botarm_force_z", 1);
 	ros::Publisher botarm_torque_y_pub = nh.advertise<std_msgs::Float64>("botarm_torque_y", 1);
-
-
 
 	ros::Publisher error_0_pub = nh.advertise<std_msgs::Float64>("error_0", 1);
 	ros::Publisher error_1_pub = nh.advertise<std_msgs::Float64>("error_1", 1);
@@ -587,11 +588,11 @@ int main(int argc, char** argv) {
 	Vector3d vedot;
 	double t0 = 0.0, tf = 50.0, tf1 = 40.0, time = 0.0;
 	Matrix2d HPS = eye_2;
-	Matrix2d DPS = eye_2 * 0.005;
-	Matrix2d KPS = eye_2 * 0.5;
+	Matrix2d DPS = eye_2 * 0.01;
+	Matrix2d KPS = eye_2 * 1;
 	Matrix3d HA = eye_3;
-	Matrix3d DA = eye_3 * 0.005;
-	Matrix3d KA = eye_3 * 0.5;
+	Matrix3d DA = eye_3 * 0.01;
+	Matrix3d KA = eye_3 * 1;
 	Vector3d ve_des;
 	Vector3d vedot_des;
 	MatrixXd G(6, 6);
@@ -606,6 +607,12 @@ int main(int argc, char** argv) {
 	// lar_pub.publish(lar_command);
 	// sleep(1);
 	// lar_pub.publish(lar_command);
+    string yaml_path = ros::package::getPath("cepheus_robot");
+    yaml_path.append("/config/imu_offsets.yaml");
+	YAML::Node imu_offsets = YAML::LoadFile(yaml_path);
+	acc_x_offset = imu_offsets["acc_x_offset"].as<double>();
+	acc_y_offset = imu_offsets["acc_y_offset"].as<double>();
+	angular_vel_z_offset = imu_offsets["angular_vel_z_offset"].as<double>();
 
 	while (
 		ps_th[CEPHEUS] == 0 || 
@@ -880,12 +887,12 @@ int main(int argc, char** argv) {
 
 		// c_vel_x = (ps_x[CEPHEUS] - ps_x_prev[CEPHEUS]) / time_step;
 		// c_vel_y = (ps_y[CEPHEUS] - ps_y_prev[CEPHEUS]) / time_step;
-		// c_vel_th = (ps_th[CEPHEUS] - ps_th_prev[CEPHEUS]) / time_step;
+		c_vel_th = (ps_th[CEPHEUS] - ps_th_prev[CEPHEUS]) / time_step;
 
-		if (abs(acc_x) < 0.05)
+		if (abs(acc_x) < 0.0005)
 			acc_x = 0.0;
 
-		if (abs(acc_y) < 0.05)
+		if (abs(acc_y) < 0.002)
 			acc_y = 0.0;
 
 		if (abs(angular_vel_z) < 0.007)
@@ -897,7 +904,7 @@ int main(int argc, char** argv) {
 		c_vel_x = time_step * ((acc_x + acc_x_prev)/2);
 		c_vel_y = time_step * ((acc_y + acc_y_prev)/2);
 
-		c_vel_th = angular_vel_z;
+		// c_vel_th = angular_vel_z;
 
 		acc_x_prev = acc_x;
 		acc_y_prev = acc_y;
