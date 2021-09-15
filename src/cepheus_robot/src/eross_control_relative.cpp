@@ -442,10 +442,10 @@ int main(int argc, char** argv) {
 	ros::Publisher det_h_pub = nh.advertise<std_msgs::Float64>("det_h", 1);
 	ros::Publisher fextx_pub = nh.advertise<std_msgs::Float64>("fextx", 1);
 	ros::Publisher fexty_pub = nh.advertise<std_msgs::Float64>("fexty", 1);
-	ros::Publisher fextz_pub = nh.advertise<std_msgs::Float64>("fextz", 1);
+	ros::Publisher force_z_pub = nh.advertise<std_msgs::Float64>("force_z", 1);
+	ros::Publisher force_y_pub = nh.advertise<std_msgs::Float64>("force_y", 1);
 	ros::Publisher next_pub = nh.advertise<std_msgs::Float64>("next", 1);
-	ros::Publisher nexty_pub = nh.advertise<std_msgs::Float64>("nexty", 1);
-	ros::Publisher nextx_pub = nh.advertise<std_msgs::Float64>("nextx", 1);
+	ros::Publisher torque_x_pub = nh.advertise<std_msgs::Float64>("torque_x", 1);
 	ros::Publisher uRWn_pub = nh.advertise<std_msgs::Float64>("uRWn", 1);  
 	ros::Publisher umr_x_pub = nh.advertise<std_msgs::Float64>("umrX", 1); 
 	ros::Publisher umr_y_pub = nh.advertise<std_msgs::Float64>("umrY", 1); 
@@ -588,11 +588,11 @@ int main(int argc, char** argv) {
 	Vector3d vedot;
 	double t0 = 0.0, tf = 50.0, tf1 = 40.0, time = 0.0;
 	Matrix2d HPS = eye_2;
-	Matrix2d DPS = eye_2 * 0.01;
-	Matrix2d KPS = eye_2 * 1;
+	Matrix2d DPS = eye_2 * 0.005;
+	Matrix2d KPS = eye_2 * 0.5;
 	Matrix3d HA = eye_3;
-	Matrix3d DA = eye_3 * 0.01;
-	Matrix3d KA = eye_3 * 1;
+	Matrix3d DA = eye_3 * 0.005;
+	Matrix3d KA = eye_3 * 0.5;
 	Vector3d ve_des;
 	Vector3d vedot_des;
 	MatrixXd G(6, 6);
@@ -602,7 +602,7 @@ int main(int argc, char** argv) {
 	VectorXd x11(6);
 	MatrixXd Ginv(6, 6);
 	MatrixXd G1inv(6, 6);
-
+	double th0_metroumeno;
 	// lar_command.data = "enable";
 	// lar_pub.publish(lar_command);
 	// sleep(1);
@@ -614,6 +614,16 @@ int main(int argc, char** argv) {
 	acc_y_offset = imu_offsets["acc_y_offset"].as<double>();
 	angular_vel_z_offset = imu_offsets["angular_vel_z_offset"].as<double>();
 
+	Matrix2d R00;
+	Matrix2d R00_trans;
+	Vector2d xys;
+	Vector2d qE_base;
+	Matrix2d R00_fin;
+	Matrix2d R00_fin_trans;
+	Vector2d xys_fin;
+	Vector2d qE_base_fin;
+	Matrix3d R0;
+
 	while (
 		ps_th[CEPHEUS] == 0 || 
 		ps_th[ASSIST] == 0 || 
@@ -622,15 +632,16 @@ int main(int argc, char** argv) {
 		re_position == 0 ||
 		force_z == 0 ||
 		force_y == 0 ||
-		torque_x == 0 ||
+		torque_x == 0/* ||
 		acc_x == 0 ||
 		acc_y == 0 ||
-		angular_vel_z == 0
+		angular_vel_z == 0*/
 	) {
 		cout << "ps_th[ASSIST] " << ps_th[ASSIST] << " " << "ps_th " << ps_th[CEPHEUS] << " " << "ls_position " << ls_position << " " << "le_position " << le_position 
-		<< " " << "re_position " << re_position << "force_z " << force_z << "force_x " << force_x << "torque_y " << torque_y << endl;
+		<< " " << "re_position " << re_position << "force_z " << force_z << "force_x " << force_x << "torque_x " << torque_x << "acc_x " << acc_x << "acc_y " << acc_y
+		<< "angular_vel_z " << angular_vel_z << endl;
 		main_queue.callAvailable(ros::WallDuration(1.0));
-        rokubimini_queue.callAvailable(ros::WallDuration(1.0));
+		rokubimini_queue.callAvailable(ros::WallDuration(1.0));
 		if (num_of_avail_rokubimini_readings){
 			// ROS_WARN("WOWWW readiiingsss %f", num_of_avail_rokubimini_readings);
 			force_x = sum_of_forces[X] / num_of_avail_rokubimini_readings;
@@ -682,17 +693,13 @@ int main(int argc, char** argv) {
 			thE_in = ps_th[ASSIST] - ps_th[CEPHEUS];	
 			th0_in = ps_th[CEPHEUS];
 
-			Matrix2d R00;
 			R00 << cos(th0_in), -sin(th0_in),
 					sin(th0_in), cos(th0_in);
 
-			Matrix2d R00_trans;
 			R00_trans = R00.transpose();
-			
-			Vector2d xys;
+
 			xys << xE_in_abs, yE_in_abs;
 
-			Vector2d qE_base;
 			qE_base = R00_trans * xys;
 
 			xE_in = qE_base(0);
@@ -703,19 +710,15 @@ int main(int argc, char** argv) {
 			yE_fin_abs = 0.444836;
 			thE_fin = -0.426546;
 			th0_fin = th0_in;
-			double th0_metroumeno = -0.564535;
+			th0_metroumeno = -0.564535;
 
-			Matrix2d R00_fin;
 			R00_fin << 	cos(th0_metroumeno), -sin(th0_metroumeno),
 						sin(th0_metroumeno), cos(th0_metroumeno);
 
-			Matrix2d R00_fin_trans;
 			R00_fin_trans = R00_fin.transpose();
-			
-			Vector2d xys_fin;
+
 			xys_fin << xE_fin_abs, yE_fin_abs;
 
-			Vector2d qE_base_fin;
 			qE_base_fin = R00_fin_trans * xys_fin;
 
 			xE_fin = qE_base_fin(0);
@@ -746,12 +749,12 @@ int main(int argc, char** argv) {
 					0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
 					0, 0, 2, 6*tf, 12*pow(tf,2), 20*pow(tf,3);
 
-			B1 << s_0, 
-				s_f, 
-				s0dot, 
-				sfdot, 
-				s0dotdot, 
-				sfdotdot;
+			B1 << 	s_0, 
+					s_f, 
+					s0dot, 
+					sfdot, 
+					s0dotdot, 
+					sfdotdot;
 
 			Ginv = G.inverse();
 			x1 = Ginv*B1;
@@ -771,7 +774,7 @@ int main(int argc, char** argv) {
 					0, 0, 2, 6*t0, 12*pow(t0,2), 20*pow(t0,3),
 					0, 0, 2, 6*tf1, 12*pow(tf1,2), 20*pow(tf1,3);
 
-			G1inv = G.inverse();
+			G1inv = G1.inverse();
 			x11 = G1inv*B1;
 
 			a10 = x11(0);
@@ -862,7 +865,7 @@ int main(int argc, char** argv) {
 
 
 		//////////////////////////////////////////////////////////////// CONTROLLER INERTIAL FOR LAR GRASPING ///////////////////////////////////////////////////////////
-		Matrix3d R0;
+
 		R0 << cos(theta0_des), -sin(theta0_des), 0,
 			  sin(theta0_des), cos(theta0_des), 0,
 			  0, 0, 1;
@@ -939,10 +942,9 @@ int main(int argc, char** argv) {
 		theta3 = re_position;
 		theta0 = ps_th[CEPHEUS];
 
-		Matrix2d R00;
 		R00 << 	cos(theta0), -sin(theta0),
 			  	sin(theta0), cos(theta0);
-		
+
 		Vector2d cvel;
 		cvel << c_vel_x, c_vel_y;
 
@@ -1137,9 +1139,9 @@ int main(int argc, char** argv) {
 		// thetaEdot_des = 30 * (M_PI / 180);
 		// thetaEdotdot_des = 30 * (M_PI / 180);
 
-		FextX = 0.0;
-		Next = 0.0;
-		FextY = 0.0;
+		// FextX = 0.0;
+		// Next = 0.0;
+		// FextY = 0.0;
 
 		// cout << "forceeeee_z " << force_z << "force_y " << force_y << "torque_x " << torque_x << endl;
 
@@ -1157,24 +1159,24 @@ int main(int argc, char** argv) {
 		prev_force_y = force_y;
 		prev_torque_x = torque_x;
 
-		if (abs(force_z) < 0.8)
-			force_z = 0;
+		FextX = force_z;
+		FextY = - force_y;
+		Next = - torque_x;
 
-		if (abs(force_y) < 0.6)
-			force_y = 0;
+		if (abs(FextX) < 0.3)
+			FextX = 0;
 
-		if (abs(torque_x) < 0.2)
-			torque_x = 0;
+		if (abs(FextY) < 0.3)
+			FextY = 0;
+
+		if (abs(Next) < 0.008)
+			Next = 0;
 
 
 		// cout << "force_z " << force_z << " force_y " << force_y << " torque_x " << torque_x << endl;
 	
 		// for production
 		// if (time >= 25) {
-
-			// FextX = force_z;
-			// FextY = - force_y;
-			// Next = - torque_x;
 		// }
 
 		// cout << "FextX" << FextX << "FextY" << FextY << "Next" << Next << endl;
@@ -1648,13 +1650,13 @@ int main(int argc, char** argv) {
 		ReAng << cos(thetaE), -sin(thetaE), sin(thetaE), cos(thetaE);
 
 		Vector2d Fextee;
-		Fextee << FextX, FextY;
+		Fextee << FextX / 2, FextY / 2;
 		
 		Vector2d Fext;
 		Fext = ReAng*Fextee;
 		// cout << "Fext:\n" << Fext << endl << endl;
 		Vector2d Qef(Fext(0), Fext(1));
-		Vector3d Qet(0.0, 0.0, Next);      
+		Vector3d Qet(0.0, 0.0, Next / 2);      
 			
 		Vector3d uRW;
 
@@ -1864,17 +1866,17 @@ int main(int argc, char** argv) {
 		// temp_msg.data = gripper_x_desdot;
 		// gripper_x_desdot_pub.publish(temp_msg);
 		temp_msg.data = force_z;
-		fextx_pub.publish(temp_msg);
+		force_z_pub.publish(temp_msg);
 		temp_msg.data = force_y;
-		fexty_pub.publish(temp_msg);
-		temp_msg.data = force_x;
-		fextz_pub.publish(temp_msg);
+		force_y_pub.publish(temp_msg);
 		temp_msg.data = torque_x;
+		torque_x_pub.publish(temp_msg);
+		temp_msg.data = FextX;
+		fextx_pub.publish(temp_msg);
+		temp_msg.data = FextY;
+		fexty_pub.publish(temp_msg);
+		temp_msg.data = Next;
 		next_pub.publish(temp_msg);
-		temp_msg.data = torque_y;
-		nexty_pub.publish(temp_msg);
-		temp_msg.data = torque_z;
-		nextx_pub.publish(temp_msg);
 		temp_msg.data = DJbar;
 		det_pub.publish(temp_msg);
 		temp_msg.data = DHbar;

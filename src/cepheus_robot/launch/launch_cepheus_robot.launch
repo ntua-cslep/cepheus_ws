@@ -39,7 +39,7 @@
 		<param name="publish_frequency" value="200"/>
 	</node>
 
-	<include file="$(find xsens_mti_driver)/launch/display.launch"></include>
+	<!-- <include file="$(find xsens_mti_driver)/launch/display.launch"></include> -->
 
 	<!-- <node name="alex_gripper_control_node" pkg="cepheus_robot" type="alex_gripper_control_node" output="screen" required="true">
 		<param name="loop_rate" value="200.0"/>
@@ -53,9 +53,9 @@
 	</node> -->
 
 	<!-- <include file="$(find botasys_force_torque_sensor)/launch/driver.launch"></include> -->
-	<include file="$(find bota_device_driver)/launch/rokubimini_serial.launch">
-		<arg name="time_step" value="0.0025" />
-	</include>
+	<!-- <include file="$(find bota_device_driver)/launch/rokubimini_serial.launch">
+		<arg name="time_step" value="0.012" />
+	</include> -->
 
 	<!--node name="base_controller" pkg="cepheus_robot" type="base_controller_node" output="screen" required="true">
 	<param name="use_reaction_wheel" value="True"/>

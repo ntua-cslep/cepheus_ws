@@ -1,0 +1,25 @@
+<launch>
+	<node name="obsidian_bp1a_node" pkg="cepheus_robot" type="obsidian_bp1a_node" output="screen" required="true">
+		<param name="loop_rate" value="200.0"/>
+	</node>
+	<node name="record_topics_for_verification" pkg="rosbag" type="record" args="-o $(find cepheus_robot)/bags/cepheus  /secs
+                                                                                                                        /ls_torque 
+																														/le_torque 
+																														/rw_torque
+																														/left_shoulder_pos
+																														/left_elbow_pos
+																														/left_shoulder_vel
+																														/left_elbow_vel
+																														/reaction_wheel_pos
+																														/reaction_wheel_vel
+																														/reaction_wheel_vell
+                                                                                                                        /qe_des_x
+                                                                                                                        /qe_des_y
+                                                                                                                        /qe_dot_des_x
+                                                                                                                        /qe_dot_des_y
+                                                                                                                        /qe_dotdot_des_x
+                                                                                                                        /qe_dotdot_des_y
+																														/ps_theta
+																														/ps_theta_dot
+																														/imu_angular_vel" respawn="true" output="screen"/>
+</launch>

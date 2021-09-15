@@ -889,7 +889,7 @@ void CepheusHW::readLimitSwitches()
 		//limit[RIGHT_SHOULDER] = 1;
 		limit[RIGHT_ELBOW] = 1;
 		// may print if sensor not connected
-		ROS_WARN("limit 6 pressed");
+		// ROS_WARN("limit 6 pressed");
 	}
 	else
 		limit[RIGHT_ELBOW] = 0;

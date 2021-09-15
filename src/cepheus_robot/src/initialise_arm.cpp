@@ -52,9 +52,13 @@ double ps_th[3];
 // double q2_init = 105 * (M_PI / 180);
 // double q3_init = 45 * (M_PI / 180);
 // -- relative
-double q1_init = - 0.157781;
-double q2_init = 1.635468;
-double q3_init = 0.901461;
+// double q1_init = - 0.157781;
+// double q2_init = 1.635468;
+// double q3_init = 0.901461;
+// -- obsidian
+double q1_init = 0.0;
+double q2_init = 0.0;
+double q3_init = 0.0;
 
 double Kp = 0.06;
 double Kd = 0.006;
@@ -234,9 +238,9 @@ int main(int argc, char** argv) {
 
 	double s, s_dot;
 	// values from launch file
-	double qd1_init = 1.319315;
-	double qd2_init = 2.234099;
-	double qd3_init = 1.414257;
+	double qd1_init = 1.425384;
+	double qd2_init = 2.206710;
+	double qd3_init = 1.500667;
 
 	ros::Time curr_time, t_beg = ros::Time::now();
 	ros::Duration all_time;
@@ -279,7 +283,11 @@ int main(int argc, char** argv) {
 				torq[1] = Kp/6 * error_qdot[1] + Kd/6 * errorq[1];
 				torq[2] = - (Kp/5 * error_qdot[2] + Kd/5 * errorq[2]);
 
-			} else if (!re_initialized) {
+			} 
+			// 3 joints
+			// else if (!re_initialized) {
+			// 2 joints
+			else if (!le_initialized) {
 				if (!ls_moved) {
 					// move ls to pose position
 					if (ls_first_time) {
@@ -317,56 +325,20 @@ int main(int argc, char** argv) {
 						ls_moved = true;
 						
 				} else {
-  
-					error_qdot[0] = 0 - ls_velocity;
-					error_qdot[1] = 0 - le_velocity;
-					error_qdot[2] = 0.08 + re_velocity;
+					// 3 joints
+					// error_qdot[0] = 0 - ls_velocity;
+					// error_qdot[1] = 0 - le_velocity;
+					// error_qdot[2] = 0.08 + re_velocity;
 
-					errorq[0] = q1_init - ls_position;
-					errorq[1] = le_position_after_ls_init - le_position;
-					errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
+					// errorq[0] = q1_init - ls_position;
+					// errorq[1] = le_position_after_ls_init - le_position;
+					// errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
 
-					torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
-					torq[1] = Kp/2 * errorq[1] + Kd/2 * error_qdot[1];
-					torq[2] = - (Kp/5 * error_qdot[2] + Kd/5 * errorq[2]);
-				}
-			} else if (!le_initialized) {
-				if (!re_moved) {
-					// move re to pose position
-					if (re_first_time) {
-						//calculate and set offset
-						offset.data = qd3_init + re_position;
-						re_offset_pub.publish(offset);
-
-						re_first_time = false;
-						re_time = secs;
-						re_position = qd3_init;
-					}
-
-					s = (0.00006 * pow(secs - re_time, 5)) + (-0.0015 * pow(secs - re_time, 4)) + (0.01 * pow(secs - re_time, 3));
-					s_dot = (5 * 0.00006 * pow(secs - re_time, 4)) + (4 * -0.0015 * pow(secs - re_time, 3)) + (3 * 0.01 * pow(secs - re_time, 2));
-
-					qd[2] = qd3_init + (q3_init - qd3_init) * s;
-					qd_dot[2] = (q3_init - qd3_init) * s_dot;
-
-					error_qdot[0] = 0 - ls_velocity;
-					error_qdot[1] = 0 - le_velocity;
-					error_qdot[2] = qd_dot[2] - re_velocity;
-
-					errorq[0] = q1_init - ls_position;
-					errorq[1] = le_position_after_ls_init - le_position;
-					errorq[2] = qd[2] - re_position;
-
-					torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
-					torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
-					torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
-
-					// this movement is 10 secs
-					if (secs - re_time >= 10.0)
-						re_moved = true;
-
-				} else {
-						
+					// torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
+					// torq[1] = Kp/2 * errorq[1] + Kd/2 * error_qdot[1];
+					// torq[2] = - (Kp/5 * error_qdot[2] + Kd/5 * errorq[2]);
+					
+					// 2 joints
 					error_qdot[0] = 0 - ls_velocity;
 					error_qdot[1] = 0.08 - le_velocity;
 					error_qdot[2] = 0 - re_velocity;
@@ -379,7 +351,60 @@ int main(int argc, char** argv) {
 					torq[1] = Kp/6 * error_qdot[1] + Kd/6 * errorq[1];
 					torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
 				}
-			} else {
+			}
+			// 3 joints
+
+			// else if (!le_initialized) {
+			// 	if (!re_moved) {
+			// 		// move re to pose position
+			// 		if (re_first_time) {
+			// 			//calculate and set offset
+			// 			offset.data = qd3_init + re_position;
+			// 			re_offset_pub.publish(offset);
+
+			// 			re_first_time = false;
+			// 			re_time = secs;
+			// 			re_position = qd3_init;
+			// 		}
+
+			// 		s = (0.00006 * pow(secs - re_time, 5)) + (-0.0015 * pow(secs - re_time, 4)) + (0.01 * pow(secs - re_time, 3));
+			// 		s_dot = (5 * 0.00006 * pow(secs - re_time, 4)) + (4 * -0.0015 * pow(secs - re_time, 3)) + (3 * 0.01 * pow(secs - re_time, 2));
+
+			// 		qd[2] = qd3_init + (q3_init - qd3_init) * s;
+			// 		qd_dot[2] = (q3_init - qd3_init) * s_dot;
+
+			// 		error_qdot[0] = 0 - ls_velocity;
+			// 		error_qdot[1] = 0 - le_velocity;
+			// 		error_qdot[2] = qd_dot[2] - re_velocity;
+
+			// 		errorq[0] = q1_init - ls_position;
+			// 		errorq[1] = le_position_after_ls_init - le_position;
+			// 		errorq[2] = qd[2] - re_position;
+
+			// 		torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
+			// 		torq[1] = Kp * errorq[1] + Kd * error_qdot[1];
+			// 		torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
+
+			// 		// this movement is 10 secs
+			// 		if (secs - re_time >= 10.0)
+			// 			re_moved = true;
+
+			// 	} else {
+						
+			// 		error_qdot[0] = 0 - ls_velocity;
+			// 		error_qdot[1] = 0.08 - le_velocity;
+			// 		error_qdot[2] = 0 - re_velocity;
+
+			// 		errorq[0] = q1_init - ls_position;
+			// 		errorq[1] = error_qdot[1] * (secs - prev_secs) + errorq[1];
+			// 		errorq[2] = q3_init - re_position;
+
+			// 		torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
+			// 		torq[1] = Kp/6 * error_qdot[1] + Kd/6 * errorq[1];
+			// 		torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
+			// 	}
+			// } 
+			else {
 				// move re to pose position
 				if (le_first_time) {
 					//calculate and set offset
@@ -446,9 +471,10 @@ int main(int argc, char** argv) {
 			torque.data = filter_torque(torq[1], prev_torq[1]);
 			torque.data = torq[1];
 			le_torque_pub.publish(torque);
-			torque.data = filter_torque(torq[2], prev_torq[2]);
-			torque.data = torq[2];
-			re_torque_pub.publish(torque);
+			// 3 joints
+			// torque.data = filter_torque(torq[2], prev_torq[2]);
+			// torque.data = torq[2];
+			// re_torque_pub.publish(torque);
 		}
 
 		ros::spinOnce();
