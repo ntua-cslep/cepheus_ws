@@ -63,6 +63,11 @@ double q3_init = 0.0;
 double Kp = 0.06;
 double Kd = 0.006;
 
+double Kp_ls = 0.09644245;
+double Kp_le = 0.01127526;
+double Kd_ls = 0.009644245;
+double Kd_le = 0.001127526;
+
 void PSAlxCallback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
 	geometry_msgs::TransformStamped temp;
 	temp = *msg;
@@ -238,8 +243,8 @@ int main(int argc, char** argv) {
 
 	double s, s_dot;
 	// values from launch file
-	double qd1_init = 1.425384;
-	double qd2_init = 2.206710;
+	double qd1_init = 1.472466;
+	double qd2_init = 2.258042;
 	double qd3_init = 1.500667;
 
 	ros::Time curr_time, t_beg = ros::Time::now();
@@ -253,7 +258,7 @@ int main(int argc, char** argv) {
 	std_msgs::Float64 offset;
 	std_msgs::Float64 temp_msg;
 	std_msgs::Float64 _secs;
-	bool initialized = false;
+	bool initialized = true;
 	sleep(4);
 	double secs, ls_time, le_time, re_time;
 
@@ -279,8 +284,8 @@ int main(int argc, char** argv) {
 				errorq[1] = error_qdot[1] * (secs - prev_secs) + errorq[1];
 				errorq[2] = error_qdot[2] * (secs - prev_secs) + errorq[2];
 
-				torq[0] = - (Kp/5 * error_qdot[0] + Kd/5 * errorq[0]);
-				torq[1] = Kp/6 * error_qdot[1] + Kd/6 * errorq[1];
+				torq[0] = - (Kp_ls/5 * error_qdot[0] + Kd_ls/5 * errorq[0]);
+				torq[1] = Kp_le/6 * error_qdot[1] + Kd_le/6 * errorq[1];
 				torq[2] = - (Kp/5 * error_qdot[2] + Kd/5 * errorq[2]);
 
 			} 
@@ -453,7 +458,7 @@ int main(int argc, char** argv) {
 			
 			// ROS_INFO("pos:  %f   %f   %f", ls_position, le_position,re_position);
 
-			torq[0] = - (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
+			torq[0] = (1.5*Kp * errorq[0] + 1.5*Kd * error_qdot[0]);
 			torq[1] = 1.5*Kp * errorq[1] + 1.5*Kd * error_qdot[1];
 			torq[2] = - (1.5*Kp * errorq[2] + 1.5*Kd * error_qdot[2]);
 

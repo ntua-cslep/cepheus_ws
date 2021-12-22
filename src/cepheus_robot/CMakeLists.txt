@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   actionlib_msgs
   actionlib
+  rosbag
 )
 
 # find_package(Eigen3 REQUIRED)
@@ -169,14 +170,20 @@ add_executable(cepheus_ctrl src/cepheus_ctrl.cpp)
 # add_executable(alex_gripper_control_node src/alex_gripper_control.cpp)
 add_executable(initialise_arm_node src/initialise_arm.cpp)
 ################################################################################################################
-# add_executable(eross_control_node src/eross_control.cpp)
+# add_executable(eross_control_node src/eross/eross_control.cpp)
 ################################################################################################################
-add_executable(eross_control_relative_node src/eross_control_relative.cpp)
-# add_executable(EROSSGripper src/EROSSGripper_v3.cpp)
-# add_executable(EROSSGripper_v3 src/EROSSGripper_v3.cpp src/Definitions.h)
+add_executable(eross_control_relative_node src/eross/eross_control_relative.cpp)
+# add_executable(EROSSGripper src/eross/EROSSGripper_v3.cpp)
+# add_executable(EROSSGripper_v3 src/eross/EROSSGripper_v3.cpp src/eross/Definitions.h)
 # add_executable(test_node src/test.cpp)
 add_executable(calibrate_imu_node src/calibrate_imu.cpp)
-add_executable(obsidian_bp1a_node src/obsidian_bp1a.cpp)
+add_executable(obsidian_bp1a_node src/obsidian/obsidian_bp1a.cpp)
+add_executable(obsidian_bp2_node src/obsidian/obsidian_bp2.cpp)
+add_executable(obsidian_bp1b_node src/obsidian/obsidian_bp1b.cpp)
+add_executable(thruster_exp_node src/obsidian/thruster_exp.cpp)
+add_executable(obsidian_sc1_node src/obsidian/obsidian_sc1.cpp)
+add_executable(obsidian_sc2_node src/obsidian/obsidian_sc2.cpp)
+add_executable(obsidian_sc2_validation_node src/obsidian/obsidian_sc2_validation.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -205,6 +212,13 @@ target_link_libraries(eross_control_relative_node ${catkin_LIBRARIES} yaml-cpp)
 # target_link_libraries(test_node ${catkin_LIBRARIES})
 target_link_libraries(calibrate_imu_node ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(obsidian_bp1a_node ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(obsidian_bp2_node ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(obsidian_bp1b_node ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(thruster_exp_node ${catkin_LIBRARIES})
+target_link_libraries(obsidian_sc1_node ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(obsidian_sc2_node ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(obsidian_sc2_validation_node ${catkin_LIBRARIES} yaml-cpp)
+
 
 # set_target_properties(EROSSGripper PROPERTIES COMPILE_FLAGS "-lEposCmd")
 #############

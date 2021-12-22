@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     ros::Subscriber imu_ang_vel_sub = nh.subscribe("/imu/angular_velocity", 1, imuAngularVelCallback);
 
     double rate, iterations;
-    ros::param::param<double>("~loop_rate", rate, 400);
+    ros::param::param<double>("~loop_rate", rate, 200);
     ros::param::param<double>("~iterations", iterations, 500);
     ros::Rate loop_rate(rate);
 
@@ -81,9 +81,9 @@ int main(int argc, char** argv) {
         i++;
     }
 
-    cout << acc_x_sum / iterations << endl;
-    cout << acc_y_sum / iterations << endl;
-    cout << angular_vel_z_sum / iterations << endl;
+    cout << "acc_x_sum: " << acc_x_sum / iterations << endl;
+    cout << "acc_y_sum: " << acc_y_sum / iterations << endl;
+    cout << "angular_vel_z_sum: " << angular_vel_z_sum / iterations << endl;
     // write average to yaml
     YAML::Emitter out;
     out << YAML::BeginMap;

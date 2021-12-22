@@ -21,5 +21,9 @@
                                                                                                                         /qe_dotdot_des_y
 																														/ps_theta
 																														/ps_theta_dot
-																														/imu_angular_vel" respawn="true" output="screen"/>
+																														/imu_angular_vel																			
+																														/x_value
+																														/y_value
+																														/z_value
+																														/w_value" respawn="true" output="screen"/>
 </launch>

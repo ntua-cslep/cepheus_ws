@@ -30,16 +30,23 @@
 
 	</node>
 	
-	<!-- <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+	<node ns="arduino_1_2" pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+		<!-- <param name="port" value="/dev/ttyACM1"/> -->
 		<param name="port" value="/dev/ttyACM0"/>
 		<param name="baud" value="115200"/>
-	</node> -->
+	</node>
+	
+	<node ns="arduino_3" pkg="rosserial_python" type="serial_node.py" name="serial_node_2" output="screen">
+		<!-- <param name="port" value="/dev/ttyACM0"/> -->
+		<param name="port" value="/dev/ttyACM1"/>
+		<param name="baud" value="115200"/>
+	</node>
 
 	<node name="cepheus_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" required="true">
 		<param name="publish_frequency" value="200"/>
 	</node>
 
-	<!-- <include file="$(find xsens_mti_driver)/launch/display.launch"></include> -->
+	<include file="$(find xsens_mti_driver)/launch/display.launch"></include>
 
 	<!-- <node name="alex_gripper_control_node" pkg="cepheus_robot" type="alex_gripper_control_node" output="screen" required="true">
 		<param name="loop_rate" value="200.0"/>

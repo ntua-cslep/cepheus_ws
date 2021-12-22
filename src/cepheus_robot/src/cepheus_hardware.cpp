@@ -1182,7 +1182,7 @@ void CepheusHW::readEncoders(ros::Duration dt)
 
 
 
-	//ROS_INFO("1: %d, 2: %d, 3: %d, 4: %d", encoder_1, encoder_2, encoder_3, encoder_4);
+	// ROS_INFO("1: %d, 2: %d, 3: %d, 4: %d", encoder_1, encoder_2, encoder_3, encoder_4);
 	//190:1 = 12167/64
 	// Position Calculation radians
 	pos[0]=  (double)encoder_1*2*M_PI/(4095) + offset_pos[0];
